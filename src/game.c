@@ -23,6 +23,7 @@
 #include "config.h"
 #include "game.h"
 #include "editor.h"
+#include "world/footpath.h"
 #include "input.h"
 #include "localisation/localisation.h"
 #include "interface/screenshot.h"
@@ -386,7 +387,7 @@ int game_do_command_p(int command, int *eax, int *ebx, int *ecx, int *edx, int *
 	// Increment nest count
 	RCT2_GLOBAL(0x009A8C28, uint8)++;
 
-	*ebx &= ~1;
+	*ebx &= ~GAME_COMMAND_FLAG_APPLY;
 	
 	// Primary command
 	if (game_do_command_table[command] == 0) {
@@ -874,9 +875,9 @@ static uint32 game_do_command_table[58] = {
 	0x006E0E01,
 	0x006E08F4,
 	0x006E650F,
-	0x006A61DE,
+	0,
 	0x006A68AE,
-	0x006A67C0,
+	0,
 	0x00663CCD, // 20
 	0x006B53E9,
 	0x00698D6C, // text input
@@ -937,9 +938,9 @@ static GAME_COMMAND_POINTER* new_game_command_table[58] = {
 	game_command_emptysub,
 	game_command_emptysub,
 	game_command_emptysub,
+	game_command_place_footpath,
 	game_command_emptysub,
-	game_command_emptysub,
-	game_command_emptysub,
+	game_command_remove_footpath,
 	game_command_emptysub, // 20
 	game_command_emptysub,
 	game_command_emptysub,
