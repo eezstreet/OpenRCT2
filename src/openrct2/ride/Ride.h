@@ -560,9 +560,9 @@ enum
     RIDE_TYPE_SWINGING_SHIP,
     RIDE_TYPE_SWINGING_INVERTER_SHIP,
     RIDE_TYPE_FOOD_STALL,
-    RIDE_TYPE_1D,
+    RIDE_TYPE_1D,   // food stall but connects to paths like an Information Kiosk does
     RIDE_TYPE_DRINK_STALL = 30,
-    RIDE_TYPE_1F,
+    RIDE_TYPE_1F,   // drink stall but connects to paths like an Information Kiosk does
     RIDE_TYPE_SHOP,
     RIDE_TYPE_MERRY_GO_ROUND,
     RIDE_TYPE_22,
