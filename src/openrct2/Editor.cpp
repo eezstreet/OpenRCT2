@@ -136,7 +136,7 @@ namespace Editor
         climate_reset(gClimate);
 
         gScreenFlags = SCREEN_FLAGS_SCENARIO_EDITOR;
-        gS7Info.editor_step = EDITOR_STEP_OBJECTIVE_SELECTION;
+        gS7Info.editor_step = EDITOR_STEP_OBJECT_SELECTION;
         gS7Info.category = SCENARIO_CATEGORY_OTHER;
         viewport_init_all();
         news_item_init_queue();

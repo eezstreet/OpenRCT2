@@ -360,7 +360,7 @@ static bool browse(bool isSave, char* path, size_t pathSize)
     {
         case LOADSAVETYPE_GAME:
             extension = ".sv7";
-            fileType = FILE_EXTENSION_SV6;
+            fileType = FILE_EXTENSION_SV7;
             title = isSave ? STR_FILE_DIALOG_TITLE_SAVE_GAME : STR_FILE_DIALOG_TITLE_LOAD_GAME;
             desc.filters[0].name = language_get_string(STR_OPENRCT2_SAVED_GAME);
             desc.filters[0].pattern = getFilterPatternByType(_type, isSave);
@@ -368,7 +368,7 @@ static bool browse(bool isSave, char* path, size_t pathSize)
 
         case LOADSAVETYPE_LANDSCAPE:
             extension = ".sc7";
-            fileType = FILE_EXTENSION_SC6;
+            fileType = FILE_EXTENSION_SC7;
             title = isSave ? STR_FILE_DIALOG_TITLE_SAVE_LANDSCAPE : STR_FILE_DIALOG_TITLE_LOAD_LANDSCAPE;
             desc.filters[0].name = language_get_string(STR_OPENRCT2_LANDSCAPE_FILE);
             desc.filters[0].pattern = getFilterPatternByType(_type, isSave);
@@ -376,7 +376,7 @@ static bool browse(bool isSave, char* path, size_t pathSize)
 
         case LOADSAVETYPE_SCENARIO:
             extension = ".sc7";
-            fileType = FILE_EXTENSION_SC6;
+            fileType = FILE_EXTENSION_SC7;
             title = STR_FILE_DIALOG_TITLE_SAVE_SCENARIO;
             desc.filters[0].name = language_get_string(STR_OPENRCT2_SCENARIO_FILE);
             desc.filters[0].pattern = getFilterPatternByType(_type, isSave);

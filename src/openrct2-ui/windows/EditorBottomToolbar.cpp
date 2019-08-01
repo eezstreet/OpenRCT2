@@ -376,7 +376,7 @@ void window_editor_bottom_toolbar_invalidate(rct_window* w)
         }
         else if (!(gScreenFlags & SCREEN_FLAGS_TRACK_DESIGNER))
         {
-            if (gSpriteListCount[SPRITE_LIST_FREE] != MAX_SPRITES || gParkFlags & PARK_FLAGS_SPRITES_INITIALISED)
+            if (gSpriteListCount[SPRITE_LIST_FREE] != MAX_SPRITES/* || gParkFlags & PARK_FLAGS_SPRITES_INITIALISED*/)
             {
                 hide_previous_step_button();
             }
@@ -405,10 +405,10 @@ void window_editor_bottom_toolbar_paint(rct_window* w, rct_drawpixelinfo* dpi)
     {
         drawNextButton = true;
     }
-    else if (gParkFlags & PARK_FLAGS_SPRITES_INITIALISED)
+    /*else if (gParkFlags & PARK_FLAGS_SPRITES_INITIALISED)
     {
         drawNextButton = true;
-    }
+    }*/
     else
     {
         drawPreviousButton = true;

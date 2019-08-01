@@ -530,6 +530,10 @@ namespace OpenRCT2
                         // Save is an S4 (RCT1 format)
                         parkImporter = ParkImporter::CreateS4();
                     }
+                    else if (info.Version == S7_VERSION)
+                    {   // Save is an S7 (Mod format)
+                        parkImporter = ParkImporter::CreateS7(*_objectRepository);
+                    }
                     else
                     {
                         // Save is an S6 (RCT2 format)
