@@ -941,7 +941,7 @@ static void window_editor_objective_options_main_paint(rct_window* w, rct_drawpi
         // Objective argument 2 value
         x = w->x + w->widgets[WIDX_OBJECTIVE_ARG_2].left + 1;
         y = w->y + w->widgets[WIDX_OBJECTIVE_ARG_2].top;
-        arg = (gScenarioObjectiveYear * MONTH_COUNT) - 1;
+        arg = (gScenarioObjectiveYear * date_get_months_in_year()) - 1;
         gfx_draw_string_left(dpi, STR_WINDOW_OBJECTIVE_VALUE_DATE, &arg, COLOUR_BLACK, x, y);
     }
 
