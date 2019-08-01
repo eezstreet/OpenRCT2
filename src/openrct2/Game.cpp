@@ -585,15 +585,15 @@ void game_convert_news_items_to_utf8()
 /**
  * Converts all the user strings and news item strings to RCT2 encoding.
  */
-void game_convert_strings_to_rct2(rct_s6_data* s6)
+void game_convert_strings_to_rct2(rct_scenario_data* sc)
 {
     // Scenario details
-    utf8_to_rct2_self(s6->scenario_completed_name, sizeof(s6->scenario_completed_name));
-    utf8_to_rct2_self(s6->scenario_name, sizeof(s6->scenario_name));
-    utf8_to_rct2_self(s6->scenario_description, sizeof(s6->scenario_description));
+    utf8_to_rct2_self(sc->scenario_completed_name, sizeof(sc->scenario_completed_name));
+    utf8_to_rct2_self(sc->scenario_name, sizeof(sc->scenario_name));
+    utf8_to_rct2_self(sc->scenario_description, sizeof(sc->scenario_description));
 
     // User strings
-    for (auto* userString : s6->custom_strings)
+    for (auto* userString : sc->custom_strings)
     {
         if (!str_is_null_or_empty(userString))
         {
@@ -602,7 +602,7 @@ void game_convert_strings_to_rct2(rct_s6_data* s6)
     }
 
     // News items
-    for (auto& newsItem : s6->news_items)
+    for (auto& newsItem : sc->news_items)
     {
         if (!str_is_null_or_empty(newsItem.Text))
         {

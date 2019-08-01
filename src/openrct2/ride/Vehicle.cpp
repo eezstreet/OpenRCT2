@@ -869,7 +869,7 @@ static void vehicle_update_sound_params(rct_vehicle* vehicle)
     if (gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR)
         return;
 
-    if ((gScreenFlags & SCREEN_FLAGS_TRACK_DESIGNER) && gS6Info.editor_step != EDITOR_STEP_ROLLERCOASTER_DESIGNER)
+    if ((gScreenFlags & SCREEN_FLAGS_TRACK_DESIGNER) && gS7Info.editor_step != EDITOR_STEP_ROLLERCOASTER_DESIGNER)
         return;
 
     if (vehicle->sound1_id == SoundId::Null && vehicle->sound2_id == SoundId::Null)
@@ -1335,7 +1335,7 @@ void vehicle_update_all()
     if (gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR)
         return;
 
-    if ((gScreenFlags & SCREEN_FLAGS_TRACK_DESIGNER) && gS6Info.editor_step != EDITOR_STEP_ROLLERCOASTER_DESIGNER)
+    if ((gScreenFlags & SCREEN_FLAGS_TRACK_DESIGNER) && gS7Info.editor_step != EDITOR_STEP_ROLLERCOASTER_DESIGNER)
         return;
 
     sprite_index = gSpriteListHead[SPRITE_LIST_VEHICLE_HEAD];

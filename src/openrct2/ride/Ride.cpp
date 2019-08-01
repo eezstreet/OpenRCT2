@@ -2089,7 +2089,7 @@ void Ride::UpdateAll()
     // Remove all rides if scenario editor
     if (gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR)
     {
-        if (gS6Info.editor_step <= EDITOR_STEP_INVENTIONS_LIST_SET_UP)
+        if (gS7Info.editor_step <= EDITOR_STEP_INVENTIONS_LIST_SET_UP)
             FOR_ALL_RIDES (i, ride)
                 ride->Delete();
         return;

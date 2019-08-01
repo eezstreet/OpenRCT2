@@ -337,9 +337,9 @@ private:
         auto context = OpenRCT2::GetContext();
         context->GetObjectManager().UnloadAll();
         context->GetGameState()->InitAll(mapSize);
-        gS6Info.editor_step = EDITOR_STEP_OBJECT_SELECTION;
+        gS7Info.editor_step = EDITOR_STEP_OBJECT_SELECTION;
         gParkFlags |= PARK_FLAGS_SHOW_REAL_GUEST_NAMES;
-        gS6Info.category = SCENARIO_CATEGORY_OTHER;
+        gS7Info.category = SCENARIO_CATEGORY_OTHER;
     }
 
     std::string GetRCT1ScenarioName()
@@ -2664,8 +2664,8 @@ private:
             }
         }
 
-        String::Set(gS6Info.name, sizeof(gS6Info.name), name.c_str());
-        String::Set(gS6Info.details, sizeof(gS6Info.details), details.c_str());
+        String::Set(gS7Info.name, sizeof(gS7Info.name), name.c_str());
+        String::Set(gS7Info.details, sizeof(gS7Info.details), details.c_str());
         gScenarioName = name;
         gScenarioDetails = details;
     }

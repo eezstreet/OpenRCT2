@@ -410,11 +410,11 @@ static void window_editor_objective_options_main_mouseup(rct_window* w, rct_widg
             break;
         }
         case WIDX_SCENARIO_NAME:
-            window_text_input_raw_open(w, WIDX_SCENARIO_NAME, STR_SCENARIO_NAME, STR_ENTER_SCENARIO_NAME, gS6Info.name, 64);
+            window_text_input_raw_open(w, WIDX_SCENARIO_NAME, STR_SCENARIO_NAME, STR_ENTER_SCENARIO_NAME, gS7Info.name, 64);
             break;
         case WIDX_DETAILS:
             window_text_input_raw_open(
-                w, WIDX_DETAILS, STR_PARK_SCENARIO_DETAILS, STR_ENTER_SCENARIO_DESCRIPTION, gS6Info.details, 256);
+                w, WIDX_DETAILS, STR_PARK_SCENARIO_DETAILS, STR_ENTER_SCENARIO_DESCRIPTION, gS7Info.details, 256);
             break;
     }
 }
@@ -513,7 +513,7 @@ static void window_editor_objective_options_show_category_dropdown(rct_window* w
     window_dropdown_show_text_custom_width(
         w->x + dropdownWidget->left, w->y + dropdownWidget->top, dropdownWidget->bottom - dropdownWidget->top + 1,
         w->colours[1], 0, DROPDOWN_FLAG_STAY_OPEN, 5, dropdownWidget->right - dropdownWidget->left - 3);
-    dropdown_set_checked(gS6Info.category, true);
+    dropdown_set_checked(gS7Info.category, true);
 }
 
 static void window_editor_objective_options_arg_1_increase(rct_window* w)
@@ -719,9 +719,9 @@ static void window_editor_objective_options_main_dropdown(rct_window* w, rct_wid
                 window_editor_objective_options_set_objective(w, newObjectiveType);
             break;
         case WIDX_CATEGORY_DROPDOWN:
-            if (gS6Info.category != (uint8_t)dropdownIndex)
+            if (gS7Info.category != (uint8_t)dropdownIndex)
             {
-                gS6Info.category = (uint8_t)dropdownIndex;
+                gS7Info.category = (uint8_t)dropdownIndex;
                 window_invalidate(w);
             }
             break;
@@ -774,19 +774,19 @@ static void window_editor_objective_options_main_textinput(rct_window* w, rct_wi
             auto action = ParkSetNameAction(text);
             GameActions::Execute(&action);
 
-            if (gS6Info.name[0] == '\0')
+            if (gS7Info.name[0] == '\0')
             {
                 auto& park = OpenRCT2::GetContext()->GetGameState()->GetPark();
-                String::Set(gS6Info.name, sizeof(gS6Info.name), park.Name.c_str());
+                String::Set(gS7Info.name, sizeof(gS7Info.name), park.Name.c_str());
             }
             break;
         }
         case WIDX_SCENARIO_NAME:
-            safe_strcpy(gS6Info.name, text, std::size(gS6Info.name));
+            safe_strcpy(gS7Info.name, text, std::size(gS7Info.name));
             window_invalidate(w);
             break;
         case WIDX_DETAILS:
-            safe_strcpy(gS6Info.details, text, std::size(gS6Info.details));
+            safe_strcpy(gS7Info.details, text, std::size(gS7Info.details));
             window_invalidate(w);
             break;
     }
@@ -965,7 +965,7 @@ static void window_editor_objective_options_main_paint(rct_window* w, rct_drawpi
     width = w->widgets[WIDX_SCENARIO_NAME].left - 16;
 
     set_format_arg(0, rct_string_id, STR_STRING);
-    set_format_arg(2, const char*, gS6Info.name);
+    set_format_arg(2, const char*, gS7Info.name);
 
     gfx_draw_string_left_clipped(dpi, STR_WINDOW_SCENARIO_NAME, gCommonFormatArgs, COLOUR_BLACK, x, y, width);
 
@@ -980,7 +980,7 @@ static void window_editor_objective_options_main_paint(rct_window* w, rct_drawpi
     width = w->widgets[WIDX_DETAILS].left - 4;
 
     set_format_arg(0, rct_string_id, STR_STRING);
-    set_format_arg(2, const char*, gS6Info.details);
+    set_format_arg(2, const char*, gS7Info.details);
 
     gfx_draw_string_left_wrapped(dpi, gCommonFormatArgs, x, y, width, STR_BLACK_STRING, COLOUR_BLACK);
 
@@ -992,7 +992,7 @@ static void window_editor_objective_options_main_paint(rct_window* w, rct_drawpi
     // Scenario category value
     x = w->x + w->widgets[WIDX_CATEGORY].left + 1;
     y = w->y + w->widgets[WIDX_CATEGORY].top;
-    stringId = ScenarioCategoryStringIds[gS6Info.category];
+    stringId = ScenarioCategoryStringIds[gS7Info.category];
     gfx_draw_string_left(dpi, STR_WINDOW_COLOUR_2_STRINGID, &stringId, COLOUR_BLACK, x, y);
 }
 

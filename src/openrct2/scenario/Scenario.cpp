@@ -56,7 +56,7 @@ const rct_string_id ScenarioCategoryStringIds[SCENARIO_CATEGORY_COUNT] = {
     STR_DLC_PARKS,      STR_BUILD_YOUR_OWN_PARKS,
 };
 
-rct_s6_info gS6Info;
+rct_scenario_info gS7Info;
 std::string gScenarioName;
 std::string gScenarioDetails;
 std::string gScenarioCompletedBy;
@@ -109,12 +109,12 @@ void scenario_begin()
     gHistoricalProfit = gInitialCash - gBankLoan;
     gCash = gInitialCash;
 
-    gScenarioDetails = std::string_view(gS6Info.details, 256);
-    gScenarioName = std::string_view(gS6Info.name, 64);
+    gScenarioDetails = std::string_view(gS7Info.details, 256);
+    gScenarioName = std::string_view(gS7Info.name, 64);
 
     {
         utf8 normalisedName[64];
-        scenario_normalise_name(normalisedName, sizeof(normalisedName), gS6Info.name);
+        scenario_normalise_name(normalisedName, sizeof(normalisedName), gS7Info.name);
 
         rct_string_id localisedStringIds[3];
         if (language_get_localised_scenario_strings(normalisedName, localisedStringIds))
@@ -314,8 +314,6 @@ static void scenario_day_update()
 
 static void scenario_week_update()
 {
-    int32_t month = date_get_month(gDateMonthsElapsed);
-
     finance_pay_wages();
     finance_pay_research();
     finance_pay_interest();
@@ -326,7 +324,7 @@ static void scenario_week_update()
 
     auto water_type = (rct_water_type*)object_entry_get_chunk(OBJECT_TYPE_WATER, 0);
 
-    if (month <= MONTH_APRIL && water_type != nullptr && water_type->flags & WATER_FLAGS_ALLOW_DUCKS)
+    if (climate_should_spawn_ducks() && water_type != nullptr && water_type->flags & WATER_FLAGS_ALLOW_DUCKS)
     {
         // 100 attempts at finding some water to create a few ducks at
         for (int32_t i = 0; i < 100; i++)
@@ -579,14 +577,14 @@ bool scenario_prepare_for_save()
     auto& park = GetContext()->GetGameState()->GetPark();
     auto parkName = park.Name.c_str();
 
-    gS6Info.entry.flags = 255;
-    if (gS6Info.name[0] == 0)
-        String::Set(gS6Info.name, sizeof(gS6Info.name), parkName);
+    gS7Info.entry.flags = 255;
+    if (gS7Info.name[0] == 0)
+        String::Set(gS7Info.name, sizeof(gS7Info.name), parkName);
 
-    gS6Info.objective_type = gScenarioObjectiveType;
-    gS6Info.objective_arg_1 = gScenarioObjectiveYear;
-    gS6Info.objective_arg_2 = gScenarioObjectiveCurrency;
-    gS6Info.objective_arg_3 = gScenarioObjectiveNumGuests;
+    gS7Info.objective_type = gScenarioObjectiveType;
+    gS7Info.objective_arg_1 = gScenarioObjectiveYear;
+    gS7Info.objective_arg_2 = gScenarioObjectiveCurrency;
+    gS7Info.objective_arg_3 = gScenarioObjectiveNumGuests;
 
     // This can return false if the goal is 'Finish 5 roller coaster' and there are too few.
     if (!scenario_prepare_rides_for_save())
@@ -608,7 +606,7 @@ bool scenario_prepare_for_save()
  *
  * TODO: This employs some black casting magic that should go away once we export to our own format instead of SV6.
  */
-void scenario_fix_ghosts(rct_s6_data* s6)
+void scenario_fix_ghosts(rct_scenario_data* s6)
 {
     // Remove all ghost elements
     RCT12TileElement* destinationElement = s6->tile_elements;
@@ -646,7 +644,7 @@ void scenario_fix_ghosts(rct_s6_data* s6)
     }
 }
 
-void scenario_remove_trackless_rides(rct_s6_data* s6)
+void scenario_remove_trackless_rides(rct_scenario_data* s6)
 {
     bool rideHasTrack[MAX_RIDES];
     ride_all_has_any_track_elements(rideHasTrack);

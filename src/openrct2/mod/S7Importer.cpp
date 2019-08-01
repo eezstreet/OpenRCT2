@@ -56,17 +56,17 @@
 /**
  * Class to import RollerCoaster Tycoon 2 scenarios (*.SC6) and saved games (*.SV6).
  */
-class S6Importer final : public IParkImporter
+class S7Importer final : public IParkImporter
 {
 private:
     IObjectRepository& _objectRepository;
 
-    const utf8* _s6Path = nullptr;
-    rct_s6_data _s6{};
+    const utf8* _s7Path = nullptr;
+    rct_scenario_data _s7{};
     uint8_t _gameVersion = 0;
 
 public:
-    S6Importer(IObjectRepository& objectRepository)
+    S7Importer(IObjectRepository& objectRepository)
         : _objectRepository(objectRepository)
     {
     }
@@ -74,11 +74,11 @@ public:
     ParkLoadResult Load(const utf8* path) override
     {
         const utf8* extension = Path::GetExtension(path);
-        if (String::Equals(extension, ".sc6", true))
+        if (String::Equals(extension, ".sc7", true))
         {
             return LoadScenario(path);
         }
-        else if (String::Equals(extension, ".sv6", true))
+        else if (String::Equals(extension, ".sv7", true))
         {
             return LoadSavedGame(path);
         }
@@ -92,7 +92,7 @@ public:
     {
         auto fs = FileStream(path, FILE_MODE_OPEN);
         auto result = LoadFromStream(&fs, false, skipObjectCheck);
-        _s6Path = path;
+        _s7Path = path;
         return result;
     }
 
@@ -100,7 +100,7 @@ public:
     {
         auto fs = FileStream(path, FILE_MODE_OPEN);
         auto result = LoadFromStream(&fs, true, skipObjectCheck);
-        _s6Path = path;
+        _s7Path = path;
         return result;
     }
 
@@ -114,62 +114,62 @@ public:
         }
 
         auto chunkReader = SawyerChunkReader(stream);
-        chunkReader.ReadChunk(&_s6.header, sizeof(_s6.header));
+        chunkReader.ReadChunk(&_s7.header, sizeof(_s7.header));
 
-        log_verbose("saved game classic_flag = 0x%02x", _s6.header.classic_flag);
+        log_verbose("saved game classic_flag = 0x%02x", _s7.header.classic_flag);
         if (isScenario)
         {
-            if (_s6.header.type != S6_TYPE_SCENARIO)
+            if (_s7.header.type != S7_TYPE_SCENARIO)
             {
                 throw std::runtime_error("Park is not a scenario.");
             }
-            chunkReader.ReadChunk(&_s6.info, sizeof(_s6.info));
+            chunkReader.ReadChunk(&_s7.info, sizeof(_s7.info));
         }
         else
         {
-            if (_s6.header.type != S6_TYPE_SAVEDGAME)
+            if (_s7.header.type != S7_TYPE_SAVEDGAME)
             {
                 throw std::runtime_error("Park is not a saved game.");
             }
         }
 
-        if (_s6.header.classic_flag == 0xf)
+        if (_s7.header.classic_flag == 0xf)
         {
-            throw UnsupportedRCTCFlagException(_s6.header.classic_flag);
+            throw UnsupportedRCTCFlagException(_s7.header.classic_flag);
         }
 
         // Read packed objects
         // TODO try to contain this more and not store objects until later
-        for (uint16_t i = 0; i < _s6.header.num_packed_objects; i++)
+        for (uint16_t i = 0; i < _s7.header.num_packed_objects; i++)
         {
             _objectRepository.ExportPackedObject(stream);
         }
 
         if (isScenario)
         {
-            chunkReader.ReadChunk(&_s6.objects, sizeof(_s6.objects));
-            chunkReader.ReadChunk(&_s6.elapsed_months, 16);
-            chunkReader.ReadChunk(&_s6.tile_elements, sizeof(_s6.tile_elements));
-            chunkReader.ReadChunk(&_s6.next_free_tile_element_pointer_index, 2560076);
-            chunkReader.ReadChunk(&_s6.guests_in_park, 4);
-            chunkReader.ReadChunk(&_s6.last_guests_in_park, 8);
-            chunkReader.ReadChunk(&_s6.park_rating, 2);
-            chunkReader.ReadChunk(&_s6.active_research_types, 1082);
-            chunkReader.ReadChunk(&_s6.current_expenditure, 16);
-            chunkReader.ReadChunk(&_s6.park_value, 4);
-            chunkReader.ReadChunk(&_s6.completed_company_value, 483816);
+            chunkReader.ReadChunk(&_s7.objects, sizeof(_s7.objects));
+            chunkReader.ReadChunk(&_s7.elapsed_months, 16);
+            chunkReader.ReadChunk(&_s7.tile_elements, sizeof(_s7.tile_elements));
+            chunkReader.ReadChunk(&_s7.next_free_tile_element_pointer_index, 2560076);
+            chunkReader.ReadChunk(&_s7.guests_in_park, 4);
+            chunkReader.ReadChunk(&_s7.last_guests_in_park, 8);
+            chunkReader.ReadChunk(&_s7.park_rating, 2);
+            chunkReader.ReadChunk(&_s7.active_research_types, 1082);
+            chunkReader.ReadChunk(&_s7.current_expenditure, 16);
+            chunkReader.ReadChunk(&_s7.park_value, 4);
+            chunkReader.ReadChunk(&_s7.completed_company_value, 483816);
         }
         else
         {
-            chunkReader.ReadChunk(&_s6.objects, sizeof(_s6.objects));
-            chunkReader.ReadChunk(&_s6.elapsed_months, 16);
-            chunkReader.ReadChunk(&_s6.tile_elements, sizeof(_s6.tile_elements));
-            chunkReader.ReadChunk(&_s6.next_free_tile_element_pointer_index, 3048816);
+            chunkReader.ReadChunk(&_s7.objects, sizeof(_s7.objects));
+            chunkReader.ReadChunk(&_s7.elapsed_months, 16);
+            chunkReader.ReadChunk(&_s7.tile_elements, sizeof(_s7.tile_elements));
+            chunkReader.ReadChunk(&_s7.next_free_tile_element_pointer_index, 3048816);
         }
 
-        _s6Path = path;
+        _s7Path = path;
 
-        return ParkLoadResult(std::vector<rct_object_entry>(std::begin(_s6.objects), std::end(_s6.objects)));
+        return ParkLoadResult(std::vector<rct_object_entry>(std::begin(_s7.objects), std::end(_s7.objects)));
     }
 
     bool GetDetails(scenario_index_entry* dst) override
@@ -182,54 +182,44 @@ public:
     {
         Initialise();
 
-        // _s6.header
-        gS7Info.editor_step = _s6.info.editor_step;
-        gS7Info.category = _s6.info.category;
-        gS7Info.objective_type = _s6.info.objective_type;
-        gS7Info.objective_arg_1 = _s6.info.objective_arg_1;
-        gS7Info.objective_arg_2 = _s6.info.objective_arg_2;
-        gS7Info.objective_arg_3 = _s6.info.objective_arg_3;
-        gS7Info.starting_month = MONTH_MARCH;
-        gS7Info.ending_month = MONTH_OCTOBER;
-        memcpy(gS7Info.name, _s6.info.name, sizeof(char) * 64);
-        memcpy(gS7Info.details, _s6.info.details, sizeof(char) * 64);
-        gS7Info.entry = _s6.info.entry;
+        // _s7.header
+        gS7Info = _s7.info;
 
         // Some scenarios have their scenario details in UTF-8, due to earlier bugs in OpenRCT2.
         // This is hard to detect. Therefore, consider invalid characters like colour codes as a sign the text is in UTF-8.
         bool alreadyInUTF8 = false;
 
-        if (String::ContainsColourCode(_s6.info.name) || String::ContainsColourCode(_s6.info.details))
+        if (String::ContainsColourCode(_s7.info.name) || String::ContainsColourCode(_s7.info.details))
         {
             alreadyInUTF8 = true;
         }
 
         if (!alreadyInUTF8)
         {
-            auto temp = rct2_to_utf8(_s6.info.name, RCT2_LANGUAGE_ID_ENGLISH_UK);
+            auto temp = rct2_to_utf8(_s7.info.name, RCT2_LANGUAGE_ID_ENGLISH_UK);
             safe_strcpy(gS7Info.name, temp.data(), sizeof(gS7Info.name));
-            auto temp2 = rct2_to_utf8(_s6.info.details, RCT2_LANGUAGE_ID_ENGLISH_UK);
+            auto temp2 = rct2_to_utf8(_s7.info.details, RCT2_LANGUAGE_ID_ENGLISH_UK);
             safe_strcpy(gS7Info.details, temp2.data(), sizeof(gS7Info.details));
         }
         else
         {
-            safe_strcpy(gS7Info.name, _s6.info.name, sizeof(gS7Info.name));
-            safe_strcpy(gS7Info.details, _s6.info.details, sizeof(gS7Info.details));
+            safe_strcpy(gS7Info.name, _s7.info.name, sizeof(gS7Info.name));
+            safe_strcpy(gS7Info.details, _s7.info.details, sizeof(gS7Info.details));
         }
 
-        gDateMonthsElapsed = _s6.elapsed_months;
-        gDateMonthTicks = _s6.current_day;
-        gScenarioTicks = _s6.scenario_ticks;
+        gDateMonthsElapsed = _s7.elapsed_months;
+        gDateMonthTicks = _s7.current_day;
+        gScenarioTicks = _s7.scenario_ticks;
 
-        scenario_rand_seed(_s6.scenario_srand_0, _s6.scenario_srand_1);
+        scenario_rand_seed(_s7.scenario_srand_0, _s7.scenario_srand_1);
 
         ImportTileElements();
         ImportSprites();
 
-        gInitialCash = _s6.initial_cash;
-        gBankLoan = _s6.current_loan;
-        gParkFlags = _s6.park_flags;
-        gParkEntranceFee = _s6.park_entrance_fee;
+        gInitialCash = _s7.initial_cash;
+        gBankLoan = _s7.current_loan;
+        gParkFlags = _s7.park_flags;
+        gParkEntranceFee = _s7.park_entrance_fee;
         // rct1_park_entrance_x
         // rct1_park_entrance_y
         // pad_013573EE
@@ -237,201 +227,201 @@ public:
 
         ImportPeepSpawns();
 
-        gGuestChangeModifier = _s6.guest_count_change_modifier;
-        gResearchFundingLevel = _s6.current_research_level;
+        gGuestChangeModifier = _s7.guest_count_change_modifier;
+        gResearchFundingLevel = _s7.current_research_level;
         // pad_01357400
         ImportResearchedRideTypes();
         ImportResearchedRideEntries();
-        // _s6.researched_track_types_a
-        // _s6.researched_track_types_b
+        // _s7.researched_track_types_a
+        // _s7.researched_track_types_b
 
-        gNumGuestsInPark = _s6.guests_in_park;
-        gNumGuestsHeadingForPark = _s6.guests_heading_for_park;
+        gNumGuestsInPark = _s7.guests_in_park;
+        gNumGuestsHeadingForPark = _s7.guests_heading_for_park;
 
         for (size_t i = 0; i < RCT12_EXPENDITURE_TABLE_MONTH_COUNT; i++)
         {
             for (size_t j = 0; j < RCT12_EXPENDITURE_TYPE_COUNT; j++)
             {
-                gExpenditureTable[i][j] = _s6.expenditure_table[i][j];
+                gExpenditureTable[i][j] = _s7.expenditure_table[i][j];
             }
         }
 
-        gNumGuestsInParkLastWeek = _s6.last_guests_in_park;
+        gNumGuestsInParkLastWeek = _s7.last_guests_in_park;
         // pad_01357BCA
-        gStaffHandymanColour = _s6.handyman_colour;
-        gStaffMechanicColour = _s6.mechanic_colour;
-        gStaffSecurityColour = _s6.security_colour;
+        gStaffHandymanColour = _s7.handyman_colour;
+        gStaffMechanicColour = _s7.mechanic_colour;
+        gStaffSecurityColour = _s7.security_colour;
 
         ImportResearchedSceneryItems();
 
-        gParkRating = _s6.park_rating;
+        gParkRating = _s7.park_rating;
 
-        std::memcpy(gParkRatingHistory, _s6.park_rating_history, sizeof(_s6.park_rating_history));
-        std::memcpy(gGuestsInParkHistory, _s6.guests_in_park_history, sizeof(_s6.guests_in_park_history));
+        std::memcpy(gParkRatingHistory, _s7.park_rating_history, sizeof(_s7.park_rating_history));
+        std::memcpy(gGuestsInParkHistory, _s7.guests_in_park_history, sizeof(_s7.guests_in_park_history));
 
-        gResearchPriorities = _s6.active_research_types;
-        gResearchProgressStage = _s6.research_progress_stage;
-        gResearchLastItem.rawValue = _s6.last_researched_item_subject;
+        gResearchPriorities = _s7.active_research_types;
+        gResearchProgressStage = _s7.research_progress_stage;
+        gResearchLastItem.rawValue = _s7.last_researched_item_subject;
         // pad_01357CF8
-        gResearchNextItem.rawValue = _s6.next_research_item;
-        gResearchProgress = _s6.research_progress;
-        gResearchNextItem.category = _s6.next_research_category;
-        gResearchExpectedDay = _s6.next_research_expected_day;
-        gResearchExpectedMonth = _s6.next_research_expected_month;
-        gGuestInitialHappiness = _s6.guest_initial_happiness;
-        gParkSize = _s6.park_size;
-        _guestGenerationProbability = _s6.guest_generation_probability;
-        gTotalRideValueForMoney = _s6.total_ride_value_for_money;
-        gMaxBankLoan = _s6.maximum_loan;
-        gGuestInitialCash = _s6.guest_initial_cash;
-        gGuestInitialHunger = _s6.guest_initial_hunger;
-        gGuestInitialThirst = _s6.guest_initial_thirst;
-        gScenarioObjectiveType = _s6.objective_type;
-        gScenarioObjectiveYear = _s6.objective_year;
+        gResearchNextItem.rawValue = _s7.next_research_item;
+        gResearchProgress = _s7.research_progress;
+        gResearchNextItem.category = _s7.next_research_category;
+        gResearchExpectedDay = _s7.next_research_expected_day;
+        gResearchExpectedMonth = _s7.next_research_expected_month;
+        gGuestInitialHappiness = _s7.guest_initial_happiness;
+        gParkSize = _s7.park_size;
+        _guestGenerationProbability = _s7.guest_generation_probability;
+        gTotalRideValueForMoney = _s7.total_ride_value_for_money;
+        gMaxBankLoan = _s7.maximum_loan;
+        gGuestInitialCash = _s7.guest_initial_cash;
+        gGuestInitialHunger = _s7.guest_initial_hunger;
+        gGuestInitialThirst = _s7.guest_initial_thirst;
+        gScenarioObjectiveType = _s7.objective_type;
+        gScenarioObjectiveYear = _s7.objective_year;
         // pad_013580FA
-        gScenarioObjectiveCurrency = _s6.objective_currency;
-        gScenarioObjectiveNumGuests = _s6.objective_guests;
+        gScenarioObjectiveCurrency = _s7.objective_currency;
+        gScenarioObjectiveNumGuests = _s7.objective_guests;
         ImportMarketingCampaigns();
 
-        gCurrentExpenditure = _s6.current_expenditure;
-        gCurrentProfit = _s6.current_profit;
-        gWeeklyProfitAverageDividend = _s6.weekly_profit_average_dividend;
-        gWeeklyProfitAverageDivisor = _s6.weekly_profit_average_divisor;
+        gCurrentExpenditure = _s7.current_expenditure;
+        gCurrentProfit = _s7.current_profit;
+        gWeeklyProfitAverageDividend = _s7.weekly_profit_average_dividend;
+        gWeeklyProfitAverageDivisor = _s7.weekly_profit_average_divisor;
         // pad_0135833A
 
-        gParkValue = _s6.park_value;
+        gParkValue = _s7.park_value;
 
         for (size_t i = 0; i < RCT12_FINANCE_GRAPH_SIZE; i++)
         {
-            gCashHistory[i] = _s6.balance_history[i];
-            gWeeklyProfitHistory[i] = _s6.weekly_profit_history[i];
-            gParkValueHistory[i] = _s6.park_value_history[i];
+            gCashHistory[i] = _s7.balance_history[i];
+            gWeeklyProfitHistory[i] = _s7.weekly_profit_history[i];
+            gParkValueHistory[i] = _s7.park_value_history[i];
         }
 
-        gScenarioCompletedCompanyValue = _s6.completed_company_value;
-        gTotalAdmissions = _s6.total_admissions;
-        gTotalIncomeFromAdmissions = _s6.income_from_admissions;
-        gCompanyValue = _s6.company_value;
-        std::memcpy(gPeepWarningThrottle, _s6.peep_warning_throttle, sizeof(_s6.peep_warning_throttle));
+        gScenarioCompletedCompanyValue = _s7.completed_company_value;
+        gTotalAdmissions = _s7.total_admissions;
+        gTotalIncomeFromAdmissions = _s7.income_from_admissions;
+        gCompanyValue = _s7.company_value;
+        std::memcpy(gPeepWarningThrottle, _s7.peep_warning_throttle, sizeof(_s7.peep_warning_throttle));
 
         // Awards
         for (int32_t i = 0; i < RCT12_MAX_AWARDS; i++)
         {
-            rct12_award* src = &_s6.awards[i];
+            rct12_award* src = &_s7.awards[i];
             Award* dst = &gCurrentAwards[i];
             dst->Time = src->time;
             dst->Type = src->type;
         }
 
-        gLandPrice = _s6.land_price;
-        gConstructionRightsPrice = _s6.construction_rights_price;
+        gLandPrice = _s7.land_price;
+        gConstructionRightsPrice = _s7.construction_rights_price;
         // unk_01358774
         // pad_01358776
-        // _s6.cd_key
-        _gameVersion = _s6.game_version_number;
-        gScenarioCompanyValueRecord = _s6.completed_company_value_record;
-        // _s6.loan_hash;
-        gRideCount = _s6.ride_count;
+        // _s7.cd_key
+        _gameVersion = _s7.game_version_number;
+        gScenarioCompanyValueRecord = _s7.completed_company_value_record;
+        // _s7.loan_hash;
+        gRideCount = _s7.ride_count;
         // pad_013587CA
-        gHistoricalProfit = _s6.historical_profit;
+        gHistoricalProfit = _s7.historical_profit;
         // pad_013587D4
-        gScenarioCompletedBy = std::string_view(_s6.scenario_completed_name, sizeof(_s6.scenario_completed_name));
-        gCash = DECRYPT_MONEY(_s6.cash);
+        gScenarioCompletedBy = std::string_view(_s7.scenario_completed_name, sizeof(_s7.scenario_completed_name));
+        gCash = DECRYPT_MONEY(_s7.cash);
         // pad_013587FC
-        gParkRatingCasualtyPenalty = _s6.park_rating_casualty_penalty;
-        gMapSizeUnits = _s6.map_size_units;
-        gMapSizeMinus2 = _s6.map_size_minus_2;
-        gMapSize = _s6.map_size;
-        gMapSizeMaxXY = _s6.map_max_xy;
-        gSamePriceThroughoutPark = _s6.same_price_throughout
-            | (static_cast<uint64_t>(_s6.same_price_throughout_extended) << 32);
-        _suggestedGuestMaximum = _s6.suggested_max_guests;
-        gScenarioParkRatingWarningDays = _s6.park_rating_warning_days;
-        gLastEntranceStyle = _s6.last_entrance_style;
+        gParkRatingCasualtyPenalty = _s7.park_rating_casualty_penalty;
+        gMapSizeUnits = _s7.map_size_units;
+        gMapSizeMinus2 = _s7.map_size_minus_2;
+        gMapSize = _s7.map_size;
+        gMapSizeMaxXY = _s7.map_max_xy;
+        gSamePriceThroughoutPark = _s7.same_price_throughout
+            | (static_cast<uint64_t>(_s7.same_price_throughout_extended) << 32);
+        _suggestedGuestMaximum = _s7.suggested_max_guests;
+        gScenarioParkRatingWarningDays = _s7.park_rating_warning_days;
+        gLastEntranceStyle = _s7.last_entrance_style;
         // rct1_water_colour
         // pad_01358842
         ImportResearchList();
-        gMapBaseZ = _s6.map_base_z;
-        gScenarioName = std::string_view(_s6.scenario_name, sizeof(_s6.scenario_name));
-        gScenarioDetails = std::string_view(_s6.scenario_description, sizeof(_s6.scenario_description));
-        gBankLoanInterestRate = _s6.current_interest_rate;
+        gMapBaseZ = _s7.map_base_z;
+        gScenarioName = std::string_view(_s7.scenario_name, sizeof(_s7.scenario_name));
+        gScenarioDetails = std::string_view(_s7.scenario_description, sizeof(_s7.scenario_description));
+        gBankLoanInterestRate = _s7.current_interest_rate;
         // pad_0135934B
         // Preserve compatibility with vanilla RCT2's save format.
         gParkEntrances.clear();
         for (uint8_t i = 0; i < RCT12_MAX_PARK_ENTRANCES; i++)
         {
-            if (_s6.park_entrance_x[i] != LOCATION_NULL)
+            if (_s7.park_entrance_x[i] != LOCATION_NULL)
             {
                 CoordsXYZD entrance;
-                entrance.x = _s6.park_entrance_x[i];
-                entrance.y = _s6.park_entrance_y[i];
-                entrance.z = _s6.park_entrance_z[i];
-                entrance.direction = _s6.park_entrance_direction[i];
+                entrance.x = _s7.park_entrance_x[i];
+                entrance.y = _s7.park_entrance_y[i];
+                entrance.z = _s7.park_entrance_z[i];
+                entrance.direction = _s7.park_entrance_direction[i];
                 gParkEntrances.push_back(entrance);
             }
         }
-        if (_s6.header.type == S6_TYPE_SCENARIO)
+        if (_s7.header.type == S7_TYPE_SCENARIO)
         {
-            // _s6.scenario_filename is wrong for some RCT2 expansion scenarios, so we use the real filename
-            String::Set(gScenarioFileName, sizeof(gScenarioFileName), Path::GetFileName(_s6Path));
+            // _s7.scenario_filename is wrong for some RCT2 expansion scenarios, so we use the real filename
+            String::Set(gScenarioFileName, sizeof(gScenarioFileName), Path::GetFileName(_s7Path));
         }
         else
         {
             // For savegames the filename can be arbitrary, so we have no choice but to rely on the name provided
-            String::Set(gScenarioFileName, sizeof(gScenarioFileName), _s6.scenario_filename);
+            String::Set(gScenarioFileName, sizeof(gScenarioFileName), _s7.scenario_filename);
         }
-        std::memcpy(gScenarioExpansionPacks, _s6.saved_expansion_pack_names, sizeof(_s6.saved_expansion_pack_names));
+        std::memcpy(gScenarioExpansionPacks, _s7.saved_expansion_pack_names, sizeof(_s7.saved_expansion_pack_names));
         // Clear all of the strings, since we will probably have a higher limit on user strings in the future than RCT2.
         user_string_clear_all();
-        std::memcpy(gUserStrings, _s6.custom_strings, sizeof(_s6.custom_strings));
-        gCurrentTicks = _s6.game_ticks_1;
+        std::memcpy(gUserStrings, _s7.custom_strings, sizeof(_s7.custom_strings));
+        gCurrentTicks = _s7.game_ticks_1;
         gCurrentRealTimeTicks = 0;
 
         ImportRides();
 
-        gSavedAge = _s6.saved_age;
-        gSavedViewX = _s6.saved_view_x;
-        gSavedViewY = _s6.saved_view_y;
-        gSavedViewZoom = _s6.saved_view_zoom;
-        gSavedViewRotation = _s6.saved_view_rotation;
+        gSavedAge = _s7.saved_age;
+        gSavedViewX = _s7.saved_view_x;
+        gSavedViewY = _s7.saved_view_y;
+        gSavedViewZoom = _s7.saved_view_zoom;
+        gSavedViewRotation = _s7.saved_view_rotation;
 
         for (size_t i = 0; i < RCT2_MAX_ANIMATED_OBJECTS; i++)
         {
-            gAnimatedObjects[i] = _s6.map_animations[i];
+            gAnimatedObjects[i] = _s7.map_animations[i];
         }
-        gNumMapAnimations = _s6.num_map_animations;
+        gNumMapAnimations = _s7.num_map_animations;
         // pad_0138B582
 
-        gRideRatingsCalcData = _s6.ride_ratings_calc_data;
+        gRideRatingsCalcData = _s7.ride_ratings_calc_data;
         ImportRideMeasurements();
-        gNextGuestNumber = _s6.next_guest_index;
-        gGrassSceneryTileLoopPosition = _s6.grass_and_scenery_tilepos;
-        std::memcpy(gStaffPatrolAreas, _s6.patrol_areas, sizeof(_s6.patrol_areas));
-        std::memcpy(gStaffModes, _s6.staff_modes, sizeof(_s6.staff_modes));
+        gNextGuestNumber = _s7.next_guest_index;
+        gGrassSceneryTileLoopPosition = _s7.grass_and_scenery_tilepos;
+        std::memcpy(gStaffPatrolAreas, _s7.patrol_areas, sizeof(_s7.patrol_areas));
+        std::memcpy(gStaffModes, _s7.staff_modes, sizeof(_s7.staff_modes));
         // unk_13CA73E
         // pad_13CA73F
-        gUnk13CA740 = _s6.byte_13CA740;
-        gClimate = _s6.climate;
+        gUnk13CA740 = _s7.byte_13CA740;
+        gClimate = _s7.climate;
         // pad_13CA741;
         // byte_13CA742
         // pad_013CA747
-        gClimateUpdateTimer = _s6.climate_update_timer;
-        gClimateCurrent.Weather = _s6.current_weather;
-        gClimateNext.Weather = _s6.next_weather;
-        gClimateCurrent.Temperature = _s6.temperature;
-        gClimateNext.Temperature = _s6.next_temperature;
-        gClimateCurrent.WeatherEffect = _s6.current_weather_effect;
-        gClimateNext.WeatherEffect = _s6.next_weather_effect;
-        gClimateCurrent.WeatherGloom = _s6.current_weather_gloom;
-        gClimateNext.WeatherGloom = _s6.next_weather_gloom;
-        gClimateCurrent.RainLevel = _s6.current_rain_level;
-        gClimateNext.RainLevel = _s6.next_rain_level;
+        gClimateUpdateTimer = _s7.climate_update_timer;
+        gClimateCurrent.Weather = _s7.current_weather;
+        gClimateNext.Weather = _s7.next_weather;
+        gClimateCurrent.Temperature = _s7.temperature;
+        gClimateNext.Temperature = _s7.next_temperature;
+        gClimateCurrent.WeatherEffect = _s7.current_weather_effect;
+        gClimateNext.WeatherEffect = _s7.next_weather_effect;
+        gClimateCurrent.WeatherGloom = _s7.current_weather_gloom;
+        gClimateNext.WeatherGloom = _s7.next_weather_gloom;
+        gClimateCurrent.RainLevel = _s7.current_rain_level;
+        gClimateNext.RainLevel = _s7.next_rain_level;
 
         // News items
         news_item_init_queue();
         for (size_t i = 0; i < RCT12_MAX_NEWS_ITEMS; i++)
         {
-            const rct12_news_item* src = &_s6.news_items[i];
+            const rct12_news_item* src = &_s7.news_items[i];
             NewsItem* dst = &gNewsItems[i];
             if (src->Type < std::size(news_type_properties))
             {
@@ -455,8 +445,8 @@ public:
 
         // pad_13CE730
         // rct1_scenario_flags
-        gWidePathTileLoopX = _s6.wide_path_tile_loop_x;
-        gWidePathTileLoopY = _s6.wide_path_tile_loop_y;
+        gWidePathTileLoopX = _s7.wide_path_tile_loop_x;
+        gWidePathTileLoopY = _s7.wide_path_tile_loop_y;
         // pad_13CE778
 
         // Fix and set dynamic variables
@@ -467,13 +457,13 @@ public:
         determine_ride_entrance_and_exit_locations();
 
         // Park name, must be after user strings are loaded
-        // Eventually format_string should be something that the S6 user strings can be passed directly to
+        // Eventually format_string should be something that the S7 user strings can be passed directly to
         {
             char parkName[128]{};
-            format_string(parkName, sizeof(parkName), _s6.park_name, &_s6.park_name_args);
+            format_string(parkName, sizeof(parkName), _s7.park_name, &_s7.park_name_args);
             auto& park = OpenRCT2::GetContext()->GetGameState()->GetPark();
             park.Name = parkName;
-            user_string_free(_s6.park_name);
+            user_string_free(_s7.park_name);
         }
 
         // We try to fix the cycles on import, hence the 'true' parameter
@@ -486,7 +476,7 @@ public:
             log_error("Found %d disjoint null sprites", disjoint_sprites_count);
         }
 
-        if (String::Equals(_s6.scenario_filename, "Europe - European Cultural Festival.SC6"))
+        if (String::Equals(_s7.scenario_filename, "Europe - European Cultural Festival.SC6"))
         {
             // This scenario breaks pathfinding. Create passages between the worlds. (List is grouped by neighbouring tiles.)
             // clang-format off
@@ -506,7 +496,7 @@ public:
     {
         for (uint8_t index = 0; index < RCT12_MAX_RIDES_IN_PARK; index++)
         {
-            auto src = &_s6.rides[index];
+            auto src = &_s7.rides[index];
             if (src->type != RIDE_TYPE_NULL)
             {
                 auto dst = get_ride(index);
@@ -767,7 +757,7 @@ public:
 
     void ImportRideMeasurements()
     {
-        for (const auto& src : _s6.ride_measurements)
+        for (const auto& src : _s7.ride_measurements)
         {
             if (src.ride_index != RCT12_RIDE_ID_NULL)
             {
@@ -804,7 +794,7 @@ public:
         {
             int32_t quadIndex = rideType >> 5;
             int32_t bitIndex = rideType & 0x1F;
-            bool invented = (_s6.researched_ride_types[quadIndex] & ((uint32_t)1 << bitIndex));
+            bool invented = (_s7.researched_ride_types[quadIndex] & ((uint32_t)1 << bitIndex));
 
             if (invented)
                 ride_type_set_invented(rideType);
@@ -819,7 +809,7 @@ public:
         {
             int32_t quadIndex = rideEntryIndex >> 5;
             int32_t bitIndex = rideEntryIndex & 0x1F;
-            bool invented = (_s6.researched_ride_entries[quadIndex] & ((uint32_t)1 << bitIndex));
+            bool invented = (_s7.researched_ride_entries[quadIndex] & ((uint32_t)1 << bitIndex));
 
             if (invented)
                 ride_entry_set_invented(rideEntryIndex);
@@ -834,7 +824,7 @@ public:
         {
             int32_t quadIndex = sceneryEntryIndex >> 5;
             int32_t bitIndex = sceneryEntryIndex & 0x1F;
-            bool invented = (_s6.researched_scenery_items[quadIndex] & ((uint32_t)1 << bitIndex));
+            bool invented = (_s7.researched_scenery_items[quadIndex] & ((uint32_t)1 << bitIndex));
 
             if (invented)
                 scenery_set_invented(sceneryEntryIndex);
@@ -843,7 +833,7 @@ public:
 
     void ImportResearchList()
     {
-        std::memcpy(gResearchItems, _s6.research_items, sizeof(_s6.research_items));
+        std::memcpy(gResearchItems, _s7.research_items, sizeof(_s7.research_items));
     }
 
     void ImportBanner(Banner* dst, const RCT12Banner* src)
@@ -869,7 +859,7 @@ public:
 
     void Initialise()
     {
-        OpenRCT2::GetContext()->GetGameState()->InitAll(_s6.map_size);
+        OpenRCT2::GetContext()->GetGameState()->InitAll(_s7.map_size);
     }
 
     /**
@@ -878,36 +868,13 @@ public:
      */
     void ImportPeepSpawns()
     {
-        // Many WW and TT have scenario_filename fields containing an incorrect filename. Check for both this filename
-        // and the corrected filename.
-
-        // In this park, peep_spawns[0] is incorrect, and peep_spawns[1] is correct.
-        if (String::Equals(_s6.scenario_filename, "WW South America - Rio Carnival.SC6")
-            || String::Equals(_s6.scenario_filename, "South America - Rio Carnival.SC6"))
-        {
-            _s6.peep_spawns[0] = { 2160, 3167, 6, 1 };
-            _s6.peep_spawns[1].x = PEEP_SPAWN_UNDEFINED;
-        }
-        // In this park, peep_spawns[0] is correct. Just clear the other.
-        else if (
-            String::Equals(_s6.scenario_filename, "Great Wall of China Tourism Enhancement.SC6")
-            || String::Equals(_s6.scenario_filename, "Asia - Great Wall of China Tourism Enhancement.SC6"))
-        {
-            _s6.peep_spawns[1].x = PEEP_SPAWN_UNDEFINED;
-        }
-        // Amity Airfield has peeps entering from the corner of the tile, instead of the middle.
-        else if (String::Equals(_s6.scenario_filename, "Amity Airfield.SC6"))
-        {
-            _s6.peep_spawns[0].y = 1296;
-        }
-
         gPeepSpawns.clear();
         for (size_t i = 0; i < RCT12_MAX_PEEP_SPAWNS; i++)
         {
-            if (_s6.peep_spawns[i].x != PEEP_SPAWN_UNDEFINED)
+            if (_s7.peep_spawns[i].x != PEEP_SPAWN_UNDEFINED)
             {
-                PeepSpawn spawn = { _s6.peep_spawns[i].x, _s6.peep_spawns[i].y, _s6.peep_spawns[i].z * 16,
-                                    _s6.peep_spawns[i].direction };
+                PeepSpawn spawn = { _s7.peep_spawns[i].x, _s7.peep_spawns[i].y, _s7.peep_spawns[i].z * 16,
+                                    _s7.peep_spawns[i].direction };
                 gPeepSpawns.push_back(spawn);
             }
         }
@@ -917,7 +884,7 @@ public:
     {
         // The number of riders might have overflown or underflown. Re-calculate the value.
         uint16_t numRiders = 0;
-        for (const auto& sprite : _s6.sprites)
+        for (const auto& sprite : _s7.sprites)
         {
             if (sprite.unknown.sprite_identifier == SPRITE_IDENTIFIER_PEEP)
             {
@@ -935,7 +902,7 @@ public:
     {
         for (uint32_t index = 0; index < RCT2_MAX_TILE_ELEMENTS; index++)
         {
-            auto src = &_s6.tile_elements[index];
+            auto src = &_s7.tile_elements[index];
             auto dst = &gTileElements[index];
             if (src->base_height == 0xFF)
             {
@@ -953,7 +920,7 @@ public:
                     ImportTileElement(dst, src);
             }
         }
-        gNextFreeTileElementPointerIndex = _s6.next_free_tile_element_pointer_index;
+        gNextFreeTileElementPointerIndex = _s7.next_free_tile_element_pointer_index;
     }
 
     void ImportTileElement(TileElement* dst, const RCT12TileElement* src)
@@ -1076,9 +1043,9 @@ public:
                 if (entry != nullptr && entry->wall.scrolling_mode != SCROLLING_MODE_NONE)
                 {
                     auto bannerIndex = dst2->GetBannerIndex();
-                    if (bannerIndex < std::size(_s6.banners))
+                    if (bannerIndex < std::size(_s7.banners))
                     {
-                        auto srcBanner = &_s6.banners[bannerIndex];
+                        auto srcBanner = &_s7.banners[bannerIndex];
                         auto dstBanner = GetBanner(bannerIndex);
                         ImportBanner(dstBanner, srcBanner);
                     }
@@ -1105,9 +1072,9 @@ public:
                 if (entry != nullptr && entry->large_scenery.scrolling_mode != SCROLLING_MODE_NONE)
                 {
                     auto bannerIndex = dst2->GetBannerIndex();
-                    if (bannerIndex < std::size(_s6.banners))
+                    if (bannerIndex < std::size(_s7.banners))
                     {
-                        auto srcBanner = &_s6.banners[bannerIndex];
+                        auto srcBanner = &_s7.banners[bannerIndex];
                         auto dstBanner = GetBanner(bannerIndex);
                         ImportBanner(dstBanner, srcBanner);
                     }
@@ -1128,9 +1095,9 @@ public:
                 dst2->SetAllowedEdges(src2->GetAllowedEdges());
 
                 auto bannerIndex = src2->GetIndex();
-                if (bannerIndex < std::size(_s6.banners))
+                if (bannerIndex < std::size(_s7.banners))
                 {
-                    auto srcBanner = &_s6.banners[bannerIndex];
+                    auto srcBanner = &_s7.banners[bannerIndex];
                     auto dstBanner = GetBanner(bannerIndex);
                     ImportBanner(dstBanner, srcBanner);
                 }
@@ -1149,22 +1116,22 @@ public:
     {
         for (size_t i = 0; i < ADVERTISING_CAMPAIGN_COUNT; i++)
         {
-            if (_s6.campaign_weeks_left[i] & CAMPAIGN_ACTIVE_FLAG)
+            if (_s7.campaign_weeks_left[i] & CAMPAIGN_ACTIVE_FLAG)
             {
                 MarketingCampaign campaign{};
                 campaign.Type = (uint8_t)i;
-                campaign.WeeksLeft = _s6.campaign_weeks_left[i] & ~(CAMPAIGN_ACTIVE_FLAG | CAMPAIGN_FIRST_WEEK_FLAG);
-                if ((_s6.campaign_weeks_left[i] & CAMPAIGN_FIRST_WEEK_FLAG) != 0)
+                campaign.WeeksLeft = _s7.campaign_weeks_left[i] & ~(CAMPAIGN_ACTIVE_FLAG | CAMPAIGN_FIRST_WEEK_FLAG);
+                if ((_s7.campaign_weeks_left[i] & CAMPAIGN_FIRST_WEEK_FLAG) != 0)
                 {
                     campaign.Flags |= MarketingCampaignFlags::FIRST_WEEK;
                 }
                 if (campaign.Type == ADVERTISING_CAMPAIGN_RIDE_FREE || campaign.Type == ADVERTISING_CAMPAIGN_RIDE)
                 {
-                    campaign.RideId = _s6.campaign_ride_index[i];
+                    campaign.RideId = _s7.campaign_ride_index[i];
                 }
                 else if (campaign.Type == ADVERTISING_CAMPAIGN_FOOD_OR_DRINK_FREE)
                 {
-                    campaign.ShopItemType = _s6.campaign_ride_index[i];
+                    campaign.ShopItemType = _s7.campaign_ride_index[i];
                 }
                 gMarketingCampaigns.push_back(campaign);
             }
@@ -1175,15 +1142,15 @@ public:
     {
         for (int32_t i = 0; i < RCT2_MAX_SPRITES; i++)
         {
-            auto src = &_s6.sprites[i];
+            auto src = &_s7.sprites[i];
             auto dst = get_sprite(i);
             ImportSprite(dst, src);
         }
 
         for (int32_t i = 0; i < SPRITE_LIST_COUNT; i++)
         {
-            gSpriteListHead[i] = _s6.sprite_lists_head[i];
-            gSpriteListCount[i] = _s6.sprite_lists_count[i];
+            gSpriteListHead[i] = _s7.sprite_lists_head[i];
+            gSpriteListCount[i] = _s7.sprite_lists_count[i];
         }
         // This list contains the number of free slots. Increase it according to our own sprite limit.
         gSpriteListCount[SPRITE_LIST_FREE] += (MAX_SPRITES - RCT2_MAX_SPRITES);
@@ -1526,21 +1493,21 @@ public:
     }
 };
 
-std::unique_ptr<IParkImporter> ParkImporter::CreateS6(IObjectRepository& objectRepository)
+std::unique_ptr<IParkImporter> ParkImporter::CreateS7(IObjectRepository& objectRepository)
 {
-    return std::make_unique<S6Importer>(objectRepository);
+    return std::make_unique<S7Importer>(objectRepository);
 }
 
-void load_from_sv6(const char* path)
+void load_from_sv7(const char* path)
 {
     auto context = OpenRCT2::GetContext();
-    auto s6Importer = std::make_unique<S6Importer>(context->GetObjectRepository());
+    auto s7Importer = std::make_unique<S7Importer>(context->GetObjectRepository());
     try
     {
         auto& objectMgr = context->GetObjectManager();
-        auto result = s6Importer->LoadSavedGame(path);
+        auto result = s7Importer->LoadSavedGame(path);
         objectMgr.LoadObjects(result.RequiredObjects.data(), result.RequiredObjects.size());
-        s6Importer->Import();
+        s7Importer->Import();
         game_fix_save_vars();
         sprite_position_tween_reset();
         gScreenAge = 0;
@@ -1564,21 +1531,16 @@ void load_from_sv6(const char* path)
     }
 }
 
-/**
- *
- *  rct2: 0x00676053
- * scenario (ebx)
- */
-void load_from_sc6(const char* path)
+void load_from_sc7(const char* path)
 {
     auto context = OpenRCT2::GetContext();
     auto& objManager = context->GetObjectManager();
-    auto s6Importer = std::make_unique<S6Importer>(context->GetObjectRepository());
+    auto s7Importer = std::make_unique<S7Importer>(context->GetObjectRepository());
     try
     {
-        auto result = s6Importer->LoadScenario(path);
+        auto result = s7Importer->LoadScenario(path);
         objManager.LoadObjects(result.RequiredObjects.data(), result.RequiredObjects.size());
-        s6Importer->Import();
+        s7Importer->Import();
         game_fix_save_vars();
         sprite_position_tween_reset();
         return;

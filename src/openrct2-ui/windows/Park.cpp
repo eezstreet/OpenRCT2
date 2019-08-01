@@ -1588,7 +1588,7 @@ static void window_park_objective_paint(rct_window* w, rct_drawpixelinfo* dpi)
 
     // Objective
     set_format_arg(0, uint16_t, gScenarioObjectiveNumGuests);
-    set_format_arg(2, int16_t, date_get_total_months(MONTH_OCTOBER, gScenarioObjectiveYear));
+    set_format_arg(2, int16_t, date_get_total_months(gS7Info.ending_month, gScenarioObjectiveYear));
     set_format_arg(4, money32, gScenarioObjectiveCurrency);
 
     y += gfx_draw_string_left_wrapped(dpi, gCommonFormatArgs, x, y, 221, ObjectiveNames[gScenarioObjectiveType], COLOUR_BLACK);

@@ -81,9 +81,9 @@ namespace Editor
         object_list_load();
         OpenRCT2::GetContext()->GetGameState()->InitAll(150);
         gScreenFlags = SCREEN_FLAGS_SCENARIO_EDITOR;
-        gS6Info.editor_step = EDITOR_STEP_OBJECT_SELECTION;
+        gS7Info.editor_step = EDITOR_STEP_OBJECT_SELECTION;
         gParkFlags |= PARK_FLAGS_SHOW_REAL_GUEST_NAMES;
-        gS6Info.category = SCENARIO_CATEGORY_OTHER;
+        gS7Info.category = SCENARIO_CATEGORY_OTHER;
         viewport_init_all();
         rct_window* mainWindow = context_open_window_view(WV_EDITOR_MAIN);
         window_set_location(mainWindow, 2400, 2400, 112);
@@ -127,17 +127,17 @@ namespace Editor
         }
         gParkFlags |= PARK_FLAGS_NO_MONEY;
 
-        safe_strcpy(gS6Info.name, gScenarioName.c_str(), sizeof(gS6Info.name));
-        safe_strcpy(gS6Info.details, gScenarioDetails.c_str(), sizeof(gS6Info.details));
-        gS6Info.objective_type = gScenarioObjectiveType;
-        gS6Info.objective_arg_1 = gScenarioObjectiveYear;
-        gS6Info.objective_arg_2 = gScenarioObjectiveCurrency;
-        gS6Info.objective_arg_3 = gScenarioObjectiveNumGuests;
+        safe_strcpy(gS7Info.name, gScenarioName.c_str(), sizeof(gS7Info.name));
+        safe_strcpy(gS7Info.details, gScenarioDetails.c_str(), sizeof(gS7Info.details));
+        gS7Info.objective_type = gScenarioObjectiveType;
+        gS7Info.objective_arg_1 = gScenarioObjectiveYear;
+        gS7Info.objective_arg_2 = gScenarioObjectiveCurrency;
+        gS7Info.objective_arg_3 = gScenarioObjectiveNumGuests;
         climate_reset(gClimate);
 
         gScreenFlags = SCREEN_FLAGS_SCENARIO_EDITOR;
-        gS6Info.editor_step = EDITOR_STEP_OBJECTIVE_SELECTION;
-        gS6Info.category = SCENARIO_CATEGORY_OTHER;
+        gS7Info.editor_step = EDITOR_STEP_OBJECTIVE_SELECTION;
+        gS7Info.category = SCENARIO_CATEGORY_OTHER;
         viewport_init_all();
         news_item_init_queue();
         context_open_window_view(WV_EDITOR_MAIN);
@@ -159,7 +159,7 @@ namespace Editor
         object_list_load();
         OpenRCT2::GetContext()->GetGameState()->InitAll(150);
         SetAllLandOwned();
-        gS6Info.editor_step = EDITOR_STEP_OBJECT_SELECTION;
+        gS7Info.editor_step = EDITOR_STEP_OBJECT_SELECTION;
         viewport_init_all();
         rct_window* mainWindow = context_open_window_view(WV_EDITOR_MAIN);
         window_set_location(mainWindow, 2400, 2400, 112);
@@ -180,7 +180,7 @@ namespace Editor
         object_list_load();
         OpenRCT2::GetContext()->GetGameState()->InitAll(150);
         SetAllLandOwned();
-        gS6Info.editor_step = EDITOR_STEP_OBJECT_SELECTION;
+        gS7Info.editor_step = EDITOR_STEP_OBJECT_SELECTION;
         viewport_init_all();
         rct_window* mainWindow = context_open_window_view(WV_EDITOR_MAIN);
         window_set_location(mainWindow, 2400, 2400, 112);
@@ -239,7 +239,7 @@ namespace Editor
         load_from_sv4(path);
         ClearMapForEditing(true);
 
-        gS6Info.editor_step = EDITOR_STEP_LANDSCAPE_EDITOR;
+        gS7Info.editor_step = EDITOR_STEP_LANDSCAPE_EDITOR;
         gScreenAge = 0;
         gScreenFlags = SCREEN_FLAGS_SCENARIO_EDITOR;
         viewport_init_all();
@@ -253,7 +253,7 @@ namespace Editor
         load_from_sc4(path);
         ClearMapForEditing(false);
 
-        gS6Info.editor_step = EDITOR_STEP_LANDSCAPE_EDITOR;
+        gS7Info.editor_step = EDITOR_STEP_LANDSCAPE_EDITOR;
         gScreenAge = 0;
         gScreenFlags = SCREEN_FLAGS_SCENARIO_EDITOR;
         viewport_init_all();
@@ -280,7 +280,7 @@ namespace Editor
 
         ClearMapForEditing(true);
 
-        gS6Info.editor_step = EDITOR_STEP_LANDSCAPE_EDITOR;
+        gS7Info.editor_step = EDITOR_STEP_LANDSCAPE_EDITOR;
         gScreenAge = 0;
         gScreenFlags = SCREEN_FLAGS_SCENARIO_EDITOR;
         viewport_init_all();
@@ -384,7 +384,7 @@ namespace Editor
             return;
         }
 
-        switch (gS6Info.editor_step)
+        switch (gS7Info.editor_step)
         {
             case EDITOR_STEP_OBJECT_SELECTION:
                 if (window_find_by_class(WC_EDITOR_OBJECT_SELECTION))

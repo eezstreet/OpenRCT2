@@ -8,6 +8,7 @@
  *****************************************************************************/
 
 #include "../Game.h"
+#include "../scenario/Scenario.h"
 #include "Date.h"
 #include "StringIds.h"
 
@@ -17,8 +18,11 @@
 uint16_t gDateMonthTicks;
 uint16_t gDateMonthsElapsed;
 
-// rct2: 0x00993988
-const int16_t days_in_month[MONTH_COUNT] = { 31, 30, 31, 30, 31, 31, 30, 31 };
+// expanded to fit January, February, November, December
+// note that we don't take into account leap years
+const int16_t days_in_month[MONTH_COUNT] = {
+    31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+};
 
 // clang-format off
 const rct_string_id DateFormatStringIds[] = {
@@ -38,19 +42,30 @@ const rct_string_id DateFormatStringFormatIds[] = {
 
 openrct_timeofday gRealTimeOfDay;
 
+int32_t date_get_months_in_year()
+{
+    return gS7Info.ending_month - gS7Info.starting_month + 1;
+}
+
 int32_t date_get_month(int32_t months)
 {
-    return months % MONTH_COUNT;
+    int32_t num_months = date_get_months_in_year();
+    if (num_months == 0)
+    {
+        return 0;
+    }
+    int32_t business_month = months % num_months;
+    return business_month + gS7Info.starting_month;
 }
 
 int32_t date_get_year(int32_t months)
 {
-    return months / MONTH_COUNT;
+    return months / date_get_months_in_year();
 }
 
 int32_t date_get_total_months(int32_t month, int32_t year)
 {
-    return (year - 1) * MONTH_COUNT + month;
+    return (year - 1) * date_get_months_in_year() + (month - gS7Info.starting_month);
 }
 
 /**

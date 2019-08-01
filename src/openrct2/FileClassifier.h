@@ -21,6 +21,8 @@ enum
     FILE_EXTENSION_SC6,
     FILE_EXTENSION_SV6,
     FILE_EXTENSION_TD6,
+    FILE_EXTENSION_SC7,
+    FILE_EXTENSION_SV7,
 };
 
 #include <string>

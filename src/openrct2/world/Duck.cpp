@@ -14,6 +14,7 @@
 #include "../sprites.h"
 #include "../world/Surface.h"
 #include "Sprite.h"
+#include "Climate.h"
 
 #include <algorithm>
 #include <iterator>
@@ -192,9 +193,8 @@ void rct_duck::UpdateSwim()
     }
     else
     {
-        int32_t currentMonth = date_get_month(gDateMonthsElapsed);
-        if (currentMonth >= MONTH_SEPTEMBER && (randomNumber >> 16) < 218)
-        {
+        if (climate_should_migrate_ducks() && (randomNumber >> 16) < 218)
+        {   // ducks migrate for the winter!
             state = DUCK_STATE::FLY_AWAY;
             UpdateFlyAway();
         }

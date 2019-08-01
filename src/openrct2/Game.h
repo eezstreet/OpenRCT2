@@ -167,6 +167,8 @@ int32_t game_do_command(int32_t eax, int32_t ebx, int32_t ecx, int32_t edx, int3
 int32_t game_do_command_p(
     uint32_t command, int32_t* eax, int32_t* ebx, int32_t* ecx, int32_t* edx, int32_t* esi, int32_t* edi, int32_t* ebp);
 
+struct rct_scenario_data;
+
 void game_load_or_quit_no_save_prompt();
 void load_from_sv6(const char* path);
 void game_load_init();
@@ -181,7 +183,7 @@ void save_game_with_name(const utf8* name);
 void game_autosave();
 void game_convert_strings_to_utf8();
 void game_convert_news_items_to_utf8();
-void game_convert_strings_to_rct2(rct_s6_data* s6);
+void game_convert_strings_to_rct2(rct_scenario_data* s6);
 void utf8_to_rct2_self(char* buffer, size_t length);
 void rct2_to_utf8_self(char* buffer, size_t length);
 void game_fix_save_vars();

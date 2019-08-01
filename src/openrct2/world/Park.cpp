@@ -301,8 +301,8 @@ void Park::Initialise()
     finance_reset_history();
     award_reset();
 
-    gS6Info.name[0] = '\0';
-    format_string(gS6Info.details, 256, STR_NO_DETAILS_YET, nullptr);
+    gS7Info.name[0] = '\0';
+    format_string(gS7Info.details, 256, STR_NO_DETAILS_YET, nullptr);
 }
 
 void Park::Update(const Date& date)

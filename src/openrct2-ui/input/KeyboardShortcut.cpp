@@ -92,7 +92,7 @@ static void shortcut_close_all_floating_windows()
 {
     if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR))
         window_close_all();
-    else if (gS6Info.editor_step == EDITOR_STEP_LANDSCAPE_EDITOR)
+    else if (gS7Info.editor_step == EDITOR_STEP_LANDSCAPE_EDITOR)
         window_close_top();
 }
 
@@ -346,7 +346,7 @@ static void shortcut_adjust_land()
     if (gScreenFlags & SCREEN_FLAGS_TITLE_DEMO)
         return;
 
-    if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) || gS6Info.editor_step == EDITOR_STEP_LANDSCAPE_EDITOR)
+    if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) || gS7Info.editor_step == EDITOR_STEP_LANDSCAPE_EDITOR)
     {
         if (!(gScreenFlags & (SCREEN_FLAGS_TRACK_DESIGNER | SCREEN_FLAGS_TRACK_MANAGER)))
         {
@@ -365,7 +365,7 @@ static void shortcut_adjust_water()
     if (gScreenFlags & SCREEN_FLAGS_TITLE_DEMO)
         return;
 
-    if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) || gS6Info.editor_step == EDITOR_STEP_LANDSCAPE_EDITOR)
+    if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) || gS7Info.editor_step == EDITOR_STEP_LANDSCAPE_EDITOR)
     {
         if (!(gScreenFlags & (SCREEN_FLAGS_TRACK_DESIGNER | SCREEN_FLAGS_TRACK_MANAGER)))
         {
@@ -384,7 +384,7 @@ static void shortcut_build_scenery()
     if (gScreenFlags & SCREEN_FLAGS_TITLE_DEMO)
         return;
 
-    if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) || gS6Info.editor_step == EDITOR_STEP_LANDSCAPE_EDITOR)
+    if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) || gS7Info.editor_step == EDITOR_STEP_LANDSCAPE_EDITOR)
     {
         if (!(gScreenFlags & (SCREEN_FLAGS_TRACK_DESIGNER | SCREEN_FLAGS_TRACK_MANAGER)))
         {
@@ -403,7 +403,7 @@ static void shortcut_build_paths()
     if (gScreenFlags & SCREEN_FLAGS_TITLE_DEMO)
         return;
 
-    if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) || gS6Info.editor_step == EDITOR_STEP_LANDSCAPE_EDITOR)
+    if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) || gS7Info.editor_step == EDITOR_STEP_LANDSCAPE_EDITOR)
     {
         if (!(gScreenFlags & (SCREEN_FLAGS_TRACK_DESIGNER | SCREEN_FLAGS_TRACK_MANAGER)))
         {
@@ -510,7 +510,7 @@ static void shortcut_show_map()
     if (gScreenFlags & SCREEN_FLAGS_TITLE_DEMO)
         return;
 
-    if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) || gS6Info.editor_step == EDITOR_STEP_LANDSCAPE_EDITOR)
+    if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) || gS7Info.editor_step == EDITOR_STEP_LANDSCAPE_EDITOR)
         if (!(gScreenFlags & (SCREEN_FLAGS_TRACK_DESIGNER | SCREEN_FLAGS_TRACK_MANAGER)))
             context_open_window(WC_MAP);
 }
@@ -558,7 +558,7 @@ static void shortcut_clear_scenery()
     if (gScreenFlags & SCREEN_FLAGS_TITLE_DEMO)
         return;
 
-    if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) || gS6Info.editor_step == EDITOR_STEP_LANDSCAPE_EDITOR)
+    if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) || gS7Info.editor_step == EDITOR_STEP_LANDSCAPE_EDITOR)
     {
         if (!(gScreenFlags & (SCREEN_FLAGS_TRACK_DESIGNER | SCREEN_FLAGS_TRACK_MANAGER)))
         {
@@ -592,7 +592,7 @@ static void shortcut_quick_save_game()
     {
         auto intent = Intent(WC_LOADSAVE);
         intent.putExtra(INTENT_EXTRA_LOADSAVE_TYPE, LOADSAVETYPE_SAVE | LOADSAVETYPE_LANDSCAPE);
-        intent.putExtra(INTENT_EXTRA_PATH, std::string{ gS6Info.name });
+        intent.putExtra(INTENT_EXTRA_PATH, std::string{ gS7Info.name });
         context_open_intent(&intent);
     }
 }
@@ -771,7 +771,7 @@ static void shortcut_advance_to_next_tick()
 static void shortcut_open_scenery_picker()
 {
     if ((gScreenFlags & (SCREEN_FLAGS_TITLE_DEMO | SCREEN_FLAGS_TRACK_DESIGNER | SCREEN_FLAGS_TRACK_MANAGER))
-        || (gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR && gS6Info.editor_step != EDITOR_STEP_LANDSCAPE_EDITOR))
+        || (gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR && gS7Info.editor_step != EDITOR_STEP_LANDSCAPE_EDITOR))
         return;
 
     rct_window* window_scenery = window_find_by_class(WC_SCENERY);

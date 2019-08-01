@@ -16,6 +16,7 @@
 #include "scenario/Scenario.h"
 #include "util/SawyerCoding.h"
 
+static bool TryClassifyAsS7(IStream* stream, ClassifiedFileInfo* result);
 static bool TryClassifyAsS6(IStream* stream, ClassifiedFileInfo* result);
 static bool TryClassifyAsS4(IStream* stream, ClassifiedFileInfo* result);
 static bool TryClassifyAsTD4_TD6(IStream* stream, ClassifiedFileInfo* result);
@@ -40,6 +41,12 @@ bool TryClassifyFile(IStream* stream, ClassifiedFileInfo* result)
     //      between them is to decode it. Decoding however is currently not protected
     //      against invalid compression data for that decoding algorithm and will crash.
 
+    // S7 detection
+    if (TryClassifyAsS7(stream, result))
+    {
+        return true;
+    }
+
     // S6 detection
     if (TryClassifyAsS6(stream, result))
     {
@@ -59,6 +66,40 @@ bool TryClassifyFile(IStream* stream, ClassifiedFileInfo* result)
     }
 
     return false;
+}
+
+static bool TryClassifyAsS7(IStream* stream, ClassifiedFileInfo* result)
+{
+    bool success = false;
+    uint64_t originalPosition = stream->GetPosition();
+    try
+    {
+        auto chunkReader = SawyerChunkReader(stream);
+        auto s7Header = chunkReader.ReadChunkAs<rct_scenario_header>();
+        if (s7Header.version != S7_VERSION)
+        {
+            // it's not a S7 version, so probably is an S6
+            throw std::exception("version doesn't match S7_VERSION");
+        }
+
+        if (s7Header.type == S7_TYPE_SAVEDGAME)
+        {
+            result->Type = FILE_TYPE::SAVED_GAME;
+        }
+        else if (s7Header.type == S7_TYPE_SCENARIO)
+        {
+            result->Type = FILE_TYPE::SCENARIO;
+        }
+        result->Version = s7Header.version;
+        success = true;
+    }
+    catch (const std::exception& e)
+    {
+        // Exceptions are likely to occur if file is not S6 format
+        log_verbose(e.what());
+    }
+    stream->SetPosition(originalPosition);
+    return success;
 }
 
 static bool TryClassifyAsS6(IStream* stream, ClassifiedFileInfo* result)

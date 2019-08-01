@@ -16,6 +16,8 @@ constexpr int32_t MAX_YEAR = 8192;
 
 enum
 {
+    MONTH_JANUARY,
+    MONTH_FEBRUARY,
     MONTH_MARCH,
     MONTH_APRIL,
     MONTH_MAY,
@@ -24,6 +26,8 @@ enum
     MONTH_AUGUST,
     MONTH_SEPTEMBER,
     MONTH_OCTOBER,
+    MONTH_NOVEMBER,
+    MONTH_DECEMBER,
 
     MONTH_COUNT
 };
@@ -52,8 +56,16 @@ extern uint16_t gDateMonthsElapsed;
 
 extern openrct_timeofday gRealTimeOfDay;
 
+// gets the number of months in a business year
+int32_t date_get_months_in_year();
+
+// converts number of months into real date months (eg, month 0 on vanilla RCT = March, so return 2)
 int32_t date_get_month(int32_t months);
+
+// returns the real year based on the number of months passed
 int32_t date_get_year(int32_t months);
+
+
 int32_t date_get_total_months(int32_t month, int32_t year);
 void date_reset();
 void date_update();

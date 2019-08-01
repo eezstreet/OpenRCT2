@@ -1,21 +1,39 @@
 /*****************************************************************************
- * Copyright (c) 2019 eezstreet
+ * Copyright (c) 2014-2019 OpenRCT2 developers
  *
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
  *
  * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
 
-#ifndef _SCENARIO_H
-#define _SCENARIO_H
+#ifndef _SCENARIO_VANILLA_H_
+#define _SCENARIO_VANILLA_H_
 
-#include "ScenarioVanilla.h"
+#include "../common.h"
+#include "../core/Random.hpp"
+#include "../management/Finance.h"
+#include "../management/Research.h"
+#include "../object/Object.h"
+#include "../rct12/RCT12.h"
+#include "../rct2/RCT2.h"
+#include "../ride/Ride.h"
+#include "../ride/RideRatings.h"
+#include "../world/Banner.h"
+#include "../world/Map.h"
+#include "../world/MapAnimation.h"
+#include "../world/Sprite.h"
+
+using random_engine_t = Random::Rct2::Engine;
+
+struct ParkLoadResult;
 
 #pragma pack(push, 1)
 /**
- * SV7/SC7 header chunk
+ * SV6/SC6 header chunk
  * size: 0x20
  */
-struct rct_scenario_header
+struct rct_s6_header
 {
     uint8_t type;                // 0x00
     uint8_t classic_flag;        // 0x01
@@ -24,13 +42,13 @@ struct rct_scenario_header
     uint32_t magic_number;       // 0x08
     uint8_t pad_0C[0x14];
 };
-assert_struct_size(rct_scenario_header, 0x20);
+assert_struct_size(rct_s6_header, 0x20);
 
 /**
- * SC7 information chunk
+ * SC6 information chunk
  * size: 0x198
  */
-struct rct_scenario_info
+struct rct_s6_info
 {
     uint8_t editor_step;
     uint8_t category;        // 0x01
@@ -38,23 +56,42 @@ struct rct_scenario_info
     uint8_t objective_arg_1; // 0x03
     int32_t objective_arg_2; // 0x04
     int16_t objective_arg_3; // 0x08
-    uint8_t starting_month;  // new
-    uint8_t ending_month;    // new
-    uint8_t pad_00A[0x3C];
+    uint8_t pad_00A[0x3E];
     char name[64];          // 0x48
     char details[256];      // 0x88
     rct_object_entry entry; // 0x188
 };
-assert_struct_size(rct_scenario_info, 0x198);
+assert_struct_size(rct_s6_info, 0x198);
 
-// This is the scenario struct for my custom RCT2 scenario variant - SC7.
-struct rct_scenario_data
+enum SCENARIO_SOURCE
+{
+    SCENARIO_SOURCE_RCT1,
+    SCENARIO_SOURCE_RCT1_AA,
+    SCENARIO_SOURCE_RCT1_LL,
+    SCENARIO_SOURCE_RCT2,
+    SCENARIO_SOURCE_RCT2_WW,
+    SCENARIO_SOURCE_RCT2_TT,
+    SCENARIO_SOURCE_REAL,
+    SCENARIO_SOURCE_OTHER,
+};
+
+struct rct_stex_entry
+{
+    rct_string_id scenario_name; // 0x00
+    rct_string_id park_name;     // 0x02
+    rct_string_id details;       // 0x04
+    uint8_t var_06;
+};
+assert_struct_size(rct_stex_entry, 7);
+
+// This will be useful for backwards compatibility
+struct rct_s6_data
 {
     // SC6[0]
-    rct_scenario_header header;
+    rct_s6_header header;
 
     // SC6[1]
-    rct_scenario_info info;
+    rct_s6_info info;
 
     // SC6[2]
     // packed objects
@@ -259,56 +296,89 @@ struct rct_scenario_data
     uint16_t wide_path_tile_loop_y;
     uint8_t pad_13CE778[434];
 };
-assert_struct_size(rct_scenario_data, 0x46b44a);
+assert_struct_size(rct_s6_data, 0x46b44a);
 #pragma pack(pop)
 
 enum
 {
-    S7_TYPE_SAVEDGAME,
-    S7_TYPE_SCENARIO
+    SCENARIO_FLAGS_VISIBLE = (1 << 0),
+    SCENARIO_FLAGS_COMPLETED = (1 << 1),
+    SCENARIO_FLAGS_SIXFLAGS = (1 << 2)
 };
-
-
-#define S7_VERSION 120002
-#define S7_MAGIC_NUMBER 0x00031144
 
 enum
 {
-    // RCT2 categories (keep order)
-    SCENARIO_CATEGORY_BEGINNER,
-    SCENARIO_CATEGORY_CHALLENGING,
-    SCENARIO_CATEGORY_EXPERT,
-    SCENARIO_CATEGORY_REAL,
-    SCENARIO_CATEGORY_OTHER,
-
-    // OpenRCT2 categories
-    SCENARIO_CATEGORY_DLC,
-    SCENARIO_CATEGORY_BUILD_YOUR_OWN,
-
-    SCENARIO_CATEGORY_COUNT
+    S6_TYPE_SAVEDGAME,
+    S6_TYPE_SCENARIO
 };
-
-extern const rct_string_id ScenarioCategoryStringIds[SCENARIO_CATEGORY_COUNT];
 
 enum
 {
-    OBJECTIVE_NONE,
-    OBJECTIVE_GUESTS_BY,
-    OBJECTIVE_PARK_VALUE_BY,
-    OBJECTIVE_HAVE_FUN,
-    OBJECTIVE_BUILD_THE_BEST,
-    OBJECTIVE_10_ROLLERCOASTERS,
-    OBJECTIVE_GUESTS_AND_RATING,
-    OBJECTIVE_MONTHLY_RIDE_INCOME,
-    OBJECTIVE_10_ROLLERCOASTERS_LENGTH,
-    OBJECTIVE_FINISH_5_ROLLERCOASTERS,
-    OBJECTIVE_REPLAY_LOAN_AND_PARK_VALUE,
-    OBJECTIVE_MONTHLY_FOOD_INCOME
+    SCENARIO_SELECT_MODE_DIFFICULTY,
+    SCENARIO_SELECT_MODE_ORIGIN,
 };
 
-extern rct_scenario_info gS7Info;
+enum
+{
+    AUTOSAVE_EVERY_MINUTE,
+    AUTOSAVE_EVERY_5MINUTES,
+    AUTOSAVE_EVERY_15MINUTES,
+    AUTOSAVE_EVERY_30MINUTES,
+    AUTOSAVE_EVERY_HOUR,
+    AUTOSAVE_NEVER
+};
 
-void scenario_remove_trackless_rides(rct_scenario_data* s6);
-void scenario_fix_ghosts(rct_scenario_data* s6);
+#define S6_RCT2_VERSION 120001
+#define S6_MAGIC_NUMBER 0x00031144
+
+#define AUTOSAVE_PAUSE 0
+#define DEFAULT_NUM_AUTOSAVES_TO_KEEP 10
+
+extern uint32_t gScenarioTicks;
+extern random_engine_t gScenarioRand;
+
+extern uint8_t gScenarioObjectiveType;
+extern uint8_t gScenarioObjectiveYear;
+extern uint16_t gScenarioObjectiveNumGuests;
+extern money32 gScenarioObjectiveCurrency;
+
+extern uint16_t gScenarioParkRatingWarningDays;
+extern money32 gScenarioCompletedCompanyValue;
+extern money32 gScenarioCompanyValueRecord;
+
+extern std::string gScenarioName;
+extern std::string gScenarioDetails;
+extern std::string gScenarioCompletedBy;
+extern std::string gScenarioSavePath;
+extern char gScenarioExpansionPacks[3256];
+extern bool gFirstTimeSaving;
+extern uint16_t gSavedAge;
+extern uint32_t gLastAutoSaveUpdate;
+
+extern char gScenarioFileName[260];
+
+void load_from_sc6(const char* path);
+void scenario_begin();
+void scenario_update();
+
+const random_engine_t::state_type& scenario_rand_state();
+void scenario_rand_seed(random_engine_t::result_type s0, random_engine_t::result_type s1);
+#ifdef DEBUG_DESYNC
+uint32_t dbg_scenario_rand(const char* file, const char* function, const uint32_t line, const void* data);
+#    define scenario_rand() dbg_scenario_rand(__FILE__, __FUNCTION__, __LINE__, NULL)
+#    define scenario_rand_data(data) dbg_scenario_rand(__FILE__, __FUNCTION__, __LINE__, data)
+void dbg_report_desync(uint32_t tick, uint32_t srand0, uint32_t server_srand0, const char* clientHash, const char* serverHash);
+#else
+random_engine_t::result_type scenario_rand();
+#endif
+
+uint32_t scenario_rand_max(uint32_t max);
+
+bool scenario_prepare_for_save();
+int32_t scenario_save(const utf8* path, int32_t flags);
+void scenario_failure();
+void scenario_success();
+void scenario_success_submit_name(const char* name);
+void scenario_autosave_check();
 
 #endif
