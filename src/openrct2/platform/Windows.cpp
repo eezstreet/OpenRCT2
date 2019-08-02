@@ -660,6 +660,7 @@ void platform_setup_file_associations()
     // Setup file extensions
     windows_setup_file_association(".sc4", "RCT1 Scenario (.sc4)", "Play", "\"%1\"", 0);
     windows_setup_file_association(".sc6", "RCT2 Scenario (.sc6)", "Play", "\"%1\"", 0);
+    windows_setup_file_association(".sc7", "RCT2 Modified Scenario (.sc7)", "Play", "\"%1\"", 0);
     windows_setup_file_association(".sv4", "RCT1 Saved Game (.sc4)", "Play", "\"%1\"", 0);
     windows_setup_file_association(".sv6", "RCT2 Saved Game (.sv6)", "Play", "\"%1\"", 0);
     windows_setup_file_association(".sv7", "RCT Modified Saved Game (.sv7)", "Play", "\"%1\"", 0);
@@ -675,6 +676,7 @@ void platform_remove_file_associations()
     // Remove file extensions
     windows_remove_file_association(".sc4");
     windows_remove_file_association(".sc6");
+    windows_remove_file_association(".sc7");
     windows_remove_file_association(".sv4");
     windows_remove_file_association(".sv6");
     windows_remove_file_association(".sv7");

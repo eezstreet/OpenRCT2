@@ -68,6 +68,11 @@ int32_t date_get_total_months(int32_t month, int32_t year)
     return (year - 1) * date_get_months_in_year() + (month - gS7Info.starting_month);
 }
 
+int32_t date_get_total_months(int32_t starting_month, int32_t current_month, int32_t year)
+{
+    return (year - 1) * (current_month - starting_month + 1) + (current_month - starting_month);
+}
+
 /**
  *
  *  rct2: 0x006C4494

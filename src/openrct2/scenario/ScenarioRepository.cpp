@@ -128,7 +128,7 @@ class ScenarioFileIndex final : public FileIndex<scenario_index_entry>
 private:
     static constexpr uint32_t MAGIC_NUMBER = 0x58444953; // SIDX
     static constexpr uint16_t VERSION = 3;
-    static constexpr auto PATTERN = "*.sc4;*.sc6";
+    static constexpr auto PATTERN = "*.sc4;*.sc6;*.sc7";
 
 public:
     explicit ScenarioFileIndex(const IPlatformEnvironment& env)
@@ -171,6 +171,8 @@ protected:
         stream->WriteValue(item.objective_arg_1);
         stream->WriteValue(item.objective_arg_2);
         stream->WriteValue(item.objective_arg_3);
+        stream->WriteValue(item.starting_month);
+        stream->WriteValue(item.ending_month);
 
         stream->Write(item.internal_name, sizeof(item.internal_name));
         stream->Write(item.name, sizeof(item.name));
@@ -193,6 +195,8 @@ protected:
         item.objective_arg_1 = stream->ReadValue<uint8_t>();
         item.objective_arg_2 = stream->ReadValue<int32_t>();
         item.objective_arg_3 = stream->ReadValue<int16_t>();
+        item.starting_month = stream->ReadValue<int8_t>();
+        item.ending_month = stream->ReadValue<int8_t>();
         item.highscore = nullptr;
 
         stream->Read(item.internal_name, sizeof(item.internal_name));
@@ -232,9 +236,9 @@ private:
                 }
                 return result;
             }
-            else
+            else if (String::Equals(extension, ".sc6", true))
             {
-                // RCT2 scenario
+                // mod scenario
                 auto fs = FileStream(path, FILE_MODE_OPEN);
                 auto chunkReader = SawyerChunkReader(&fs);
 
@@ -242,6 +246,35 @@ private:
                 if (header.type == S6_TYPE_SCENARIO)
                 {
                     rct_s6_info info = chunkReader.ReadChunkAs<rct_s6_info>();
+                    // If the name or the details contain a colour code, they might be in UTF-8 already.
+                    // This is caused by a bug that was in OpenRCT2 for 3 years.
+                    if (!String::ContainsColourCode(info.name) && !String::ContainsColourCode(info.details))
+                    {
+                        rct2_to_utf8_self(info.name, sizeof(info.name));
+                        rct2_to_utf8_self(info.details, sizeof(info.details));
+                    }
+
+                    rct_scenario_info scenarioInfo;
+                    memcpy(&scenarioInfo, &info, sizeof(scenarioInfo));
+                    scenarioInfo.ending_month = MONTH_OCTOBER;
+                    *entry = CreateNewScenarioEntry(path, timestamp, &scenarioInfo);
+                    return true;
+                }
+                else
+                {
+                    log_verbose("%s is not a scenario", path.c_str());
+                }
+            }
+            else
+            {
+                // mod scenario
+                auto fs = FileStream(path, FILE_MODE_OPEN);
+                auto chunkReader = SawyerChunkReader(&fs);
+
+                rct_scenario_header header = chunkReader.ReadChunkAs<rct_scenario_header>();
+                if (header.type == S6_TYPE_SCENARIO)
+                {
+                    rct_scenario_info info = chunkReader.ReadChunkAs<rct_scenario_info>();
                     // If the name or the details contain a colour code, they might be in UTF-8 already.
                     // This is caused by a bug that was in OpenRCT2 for 3 years.
                     if (!String::ContainsColourCode(info.name) && !String::ContainsColourCode(info.details))
@@ -266,7 +299,7 @@ private:
         return false;
     }
 
-    static scenario_index_entry CreateNewScenarioEntry(const std::string& path, uint64_t timestamp, rct_s6_info* s6Info)
+    static scenario_index_entry CreateNewScenarioEntry(const std::string& path, uint64_t timestamp, rct_scenario_info* s6Info)
     {
         scenario_index_entry entry = {};
 
@@ -278,6 +311,8 @@ private:
         entry.objective_arg_1 = s6Info->objective_arg_1;
         entry.objective_arg_2 = s6Info->objective_arg_2;
         entry.objective_arg_3 = s6Info->objective_arg_3;
+        entry.starting_month = s6Info->starting_month;
+        entry.ending_month = s6Info->ending_month;
         entry.highscore = nullptr;
         if (String::IsNullOrEmpty(s6Info->name))
         {

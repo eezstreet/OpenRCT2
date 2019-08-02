@@ -932,12 +932,12 @@ static void limit_autosave_count(const size_t numberOfFilesToKeep, bool processL
 void game_autosave()
 {
     const char* subDirectory = "save";
-    const char* fileExtension = ".sv6";
+    const char* fileExtension = ".sv7";
     uint32_t saveFlags = 0x80000000;
     if (gScreenFlags & SCREEN_FLAGS_EDITOR)
     {
         subDirectory = "landscape";
-        fileExtension = ".sc6";
+        fileExtension = ".sc7";
         saveFlags |= 2;
     }
 

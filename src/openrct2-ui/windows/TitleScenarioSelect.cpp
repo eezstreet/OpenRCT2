@@ -504,11 +504,19 @@ static void window_scenarioselect_paint(rct_window* w, rct_drawpixelinfo* dpi)
     y += gfx_draw_string_left_wrapped(dpi, gCommonFormatArgs, x, y, 170, STR_BLACK_STRING, COLOUR_BLACK) + 5;
 
     // Scenario objective
+    // enormous fucking hack here
+    uint8_t starting_month_saved = gS7Info.starting_month;
+    uint8_t ending_month_saved = gS7Info.ending_month;
+
+    gS7Info.starting_month = scenario->starting_month;
+    gS7Info.ending_month = scenario->ending_month;
     set_format_arg(0, rct_string_id, ObjectiveNames[scenario->objective_type]);
     set_format_arg(2, int16_t, scenario->objective_arg_3);
-    set_format_arg(4, int16_t, date_get_total_months(MONTH_OCTOBER, scenario->objective_arg_1));
+    set_format_arg(4, int16_t, date_get_total_months(scenario->starting_month, scenario->ending_month, scenario->objective_arg_1));
     set_format_arg(6, int32_t, scenario->objective_arg_2);
     y += gfx_draw_string_left_wrapped(dpi, gCommonFormatArgs, x, y, 170, STR_OBJECTIVE, COLOUR_BLACK) + 5;
+    gS7Info.starting_month = starting_month_saved;
+    gS7Info.ending_month = ending_month_saved;
 
     // Scenario score
     if (scenario->highscore != nullptr)

@@ -232,6 +232,8 @@ public:
         else
             dst->objective_arg_2 = _s4.scenario_objective_currency;
         dst->objective_arg_3 = _s4.scenario_objective_num_guests;
+        dst->starting_month = MONTH_MARCH;
+        dst->ending_month = MONTH_OCTOBER;
 
         auto name = rct2_to_utf8(_s4.scenario_name, RCT2_LANGUAGE_ID_ENGLISH_UK);
         std::string details;
