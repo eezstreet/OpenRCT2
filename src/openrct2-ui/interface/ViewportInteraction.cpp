@@ -57,9 +57,15 @@ int32_t viewport_interaction_get_item_left(int32_t x, int32_t y, viewport_intera
     rct_sprite* sprite;
     rct_vehicle* vehicle;
 
-    // No click input for title screen or scenario editor or track manager
-    if (gScreenFlags & (SCREEN_FLAGS_TITLE_DEMO | SCREEN_FLAGS_SCENARIO_EDITOR | SCREEN_FLAGS_TRACK_MANAGER))
+    // No click input for title screen or track manager
+    if (gScreenFlags & (SCREEN_FLAGS_TITLE_DEMO /*| SCREEN_FLAGS_SCENARIO_EDITOR*/ | SCREEN_FLAGS_TRACK_MANAGER))
         return info->type = VIEWPORT_INTERACTION_ITEM_NONE;
+
+    // No click input for scenario editor when we aren't editing the landscape
+    if (gScreenFlags & (SCREEN_FLAGS_SCENARIO_EDITOR) && gS7Info.editor_step != EDITOR_STEP_LANDSCAPE_EDITOR)
+    {
+        return info->type = VIEWPORT_INTERACTION_ITEM_NONE;
+    }
 
     //
     if ((gScreenFlags & SCREEN_FLAGS_TRACK_DESIGNER) && gS7Info.editor_step != EDITOR_STEP_ROLLERCOASTER_DESIGNER)
