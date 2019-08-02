@@ -65,8 +65,10 @@ int32_t date_get_month(int32_t months);
 // returns the real year based on the number of months passed
 int32_t date_get_year(int32_t months);
 
-
 int32_t date_get_total_months(int32_t month, int32_t year);
+
+// variant of date_get_total_months with starting and ending month explicitly stated
+int32_t date_get_total_months(int32_t starting_month, int32_t current_month, int32_t year);
 void date_reset();
 void date_update();
 void date_set(int32_t year, int32_t month, int32_t day);

@@ -1432,8 +1432,11 @@ void tool_cancel()
 
 void window_event_close_call(rct_window* w)
 {
-    if (w->event_handlers->close != nullptr)
+    if (w->event_handlers && w->event_handlers->close != nullptr)
+    {
         w->event_handlers->close(w);
+    }
+        
 }
 
 void window_event_mouse_up_call(rct_window* w, rct_widgetindex widgetIndex)

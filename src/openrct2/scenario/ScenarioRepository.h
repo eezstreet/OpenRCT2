@@ -39,6 +39,8 @@ struct scenario_index_entry
     uint8_t objective_arg_1;
     int32_t objective_arg_2;
     int16_t objective_arg_3;
+    int8_t starting_month;
+    int8_t ending_month;
     scenario_highscore_entry* highscore;
 
     utf8 internal_name[64]; // Untranslated name
