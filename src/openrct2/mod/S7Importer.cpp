@@ -161,6 +161,9 @@ public:
         }
         else
         {
+            // MOD change: read chunk
+            chunkReader.ReadChunk(&_s7.info, sizeof(_s7.info));
+            // end MOD change
             chunkReader.ReadChunk(&_s7.objects, sizeof(_s7.objects));
             chunkReader.ReadChunk(&_s7.elapsed_months, 16);
             chunkReader.ReadChunk(&_s7.tile_elements, sizeof(_s7.tile_elements));

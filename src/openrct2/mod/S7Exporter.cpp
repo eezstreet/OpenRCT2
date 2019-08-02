@@ -92,11 +92,11 @@ void S7Exporter::Save(IStream* stream, bool isScenario)
     // 0: Write header chunk
     chunkWriter.WriteChunk(&_s7.header, SAWYER_ENCODING::ROTATE);
 
-    // 1: Write scenario info chunk
-    if (_s7.header.type == S7_TYPE_SCENARIO)
-    {
+    // 1: Write scenario info chunk (S6 only has the chunk if it's a scenario, S7 always has it for compatibility reasons)
+    //if (_s7.header.type == S7_TYPE_SCENARIO)
+    //{
         chunkWriter.WriteChunk(&_s7.info, SAWYER_ENCODING::ROTATE);
-    }
+    //}
 
     // 2: Write packed objects
     if (_s7.header.num_packed_objects > 0)

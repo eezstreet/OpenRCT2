@@ -19,11 +19,13 @@
 #include <openrct2/OpenRCT2.h>
 #include <openrct2/actions/ClimateSetAction.hpp>
 #include <openrct2/actions/ScenarioSetSettingAction.hpp>
+#include <openrct2/actions/ParkSetMonthsOpenAction.hpp>
 #include <openrct2/drawing/Drawing.h>
 #include <openrct2/interface/Colour.h>
 #include <openrct2/localisation/StringIds.h>
 #include <openrct2/management/Finance.h>
 #include <openrct2/peep/Peep.h>
+#include <openrct2/scenario/Scenario.h>
 #include <openrct2/sprites.h>
 #include <openrct2/world/Climate.h>
 #include <openrct2/world/Park.h>
@@ -101,6 +103,10 @@ enum {
     WIDX_ENTRY_PRICE_DECREASE,
     WIDX_CLIMATE,
     WIDX_CLIMATE_DROPDOWN,
+    WIDX_STARTING_MONTH,
+    WIDX_STARTING_MONTH_DROPDOWN,
+    WIDX_ENDING_MONTH,
+    WIDX_ENDING_MONTH_DROPDOWN,
     WIDX_FORBID_TREE_REMOVAL,
     WIDX_FORBID_LANDSCAPE_CHANGES,
     WIDX_FORBID_HIGH_CONSTRUCTION,
@@ -145,7 +151,7 @@ static rct_widget window_editor_scenario_options_guests_widgets[] = {
 };
 
 static rct_widget window_editor_scenario_options_park_widgets[] = {
-    { WWT_FRAME,            0,  0,      279,    0,      148,    STR_NONE,                               STR_NONE                                    },
+    { WWT_FRAME,            0,  0,      279,    0,      206,    STR_NONE,                               STR_NONE                                    },
     { WWT_CAPTION,          0,  1,      278,    1,      14,     STR_SCENARIO_OPTIONS_PARK,              STR_WINDOW_TITLE_TIP                        },
     { WWT_CLOSEBOX,         0,  267,    277,    2,      13,     STR_CLOSE_X,                            STR_CLOSE_WINDOW_TIP                        },
     { WWT_RESIZE,           1,  0,      279,    43,     148,    STR_NONE,                               STR_NONE                                    },
@@ -158,13 +164,18 @@ static rct_widget window_editor_scenario_options_park_widgets[] = {
     { WWT_DROPDOWN,         1,  8,      217,    82,     93,     STR_NONE,                               STR_PAY_FOR_PARK_PAY_FOR_RIDES_TIP          },
     { WWT_BUTTON,           1,  206,    216,    83,     92,     STR_DROPDOWN_GLYPH,                     STR_PAY_FOR_PARK_PAY_FOR_RIDES_TIP          },
       SPINNER_WIDGETS      (1,  328,    394,    82,     93,     STR_NONE,                               STR_NONE                                    ), // NB: 3 widgets
-    { WWT_DROPDOWN,         1,  188,    394,    99,     110,    STR_NONE,                               STR_SELECT_CLIMATE_TIP                      },
-    { WWT_BUTTON,           1,  383,    393,    100,    109,    STR_DROPDOWN_GLYPH,                     STR_SELECT_CLIMATE_TIP                      },
-    { WWT_CHECKBOX,         1,  8,      391,    116,    127,    STR_FORBID_TREE_REMOVAL,                STR_FORBID_TREE_REMOVAL_TIP                 },
-    { WWT_CHECKBOX,         1,  8,      391,    133,    144,    STR_FORBID_LANDSCAPE_CHANGES,           STR_FORBID_LANDSCAPE_CHANGES_TIP            },
-    { WWT_CHECKBOX,         1,  8,      391,    150,    161,    STR_FORBID_HIGH_CONSTRUCTION,           STR_FORBID_HIGH_CONSTRUCTION_TIP            },
-    { WWT_CHECKBOX,         1,  8,      391,    167,    178,    STR_HARD_PARK_RATING,                   STR_HARD_PARK_RATING_TIP                    },
-    { WWT_CHECKBOX,         1,  8,      391,    184,    195,    STR_HARD_GUEST_GENERATION,              STR_HARD_GUEST_GENERATION_TIP               },
+
+    { WWT_DROPDOWN,         1,  188,    394,    99,     110,    STR_NONE,                               STR_SELECT_CLIMATE_TIP                      },  // climate
+    { WWT_BUTTON,           1,  383,    393,    100,    109,    STR_DROPDOWN_GLYPH,                     STR_SELECT_CLIMATE_TIP                      },  // climate dropdown
+    { WWT_DROPDOWN,         1,  188,    394,    116,    127,    STR_NONE,                               STR_SELECT_CLIMATE_TIP                      },  // starting month
+    { WWT_BUTTON,           1,  383,    393,    117,    126,    STR_DROPDOWN_GLYPH,                     STR_SELECT_CLIMATE_TIP                      },  // starting month dropdown
+    { WWT_DROPDOWN,         1,  188,    394,    133,    144,    STR_NONE,                               STR_SELECT_CLIMATE_TIP                      },  // ending month
+    { WWT_BUTTON,           1,  383,    393,    134,    143,    STR_DROPDOWN_GLYPH,                     STR_SELECT_CLIMATE_TIP                      },  // ending month dropdown
+    { WWT_CHECKBOX,         1,  8,      391,    150,    161,    STR_FORBID_TREE_REMOVAL,                STR_FORBID_TREE_REMOVAL_TIP                 },
+    { WWT_CHECKBOX,         1,  8,      391,    167,    178,    STR_FORBID_LANDSCAPE_CHANGES,           STR_FORBID_LANDSCAPE_CHANGES_TIP            },
+    { WWT_CHECKBOX,         1,  8,      391,    184,    195,    STR_FORBID_HIGH_CONSTRUCTION,           STR_FORBID_HIGH_CONSTRUCTION_TIP            },
+    { WWT_CHECKBOX,         1,  8,      391,    201,    209,    STR_HARD_PARK_RATING,                   STR_HARD_PARK_RATING_TIP                    },
+    { WWT_CHECKBOX,         1,  8,      391,    215,    223,    STR_HARD_GUEST_GENERATION,              STR_HARD_GUEST_GENERATION_TIP               },
     { WIDGETS_END }
 };
 
@@ -346,6 +357,10 @@ static uint64_t window_editor_scenario_options_page_enabled_widgets[] = {
         (1ULL << WIDX_ENTRY_PRICE_DECREASE) |
         (1ULL << WIDX_CLIMATE) |
         (1ULL << WIDX_CLIMATE_DROPDOWN) |
+        (1ULL << WIDX_STARTING_MONTH) |
+        (1ULL << WIDX_STARTING_MONTH_DROPDOWN) |
+        (1ULL << WIDX_ENDING_MONTH) |
+        (1ULL << WIDX_ENDING_MONTH_DROPDOWN) |
         (1ULL << WIDX_FORBID_TREE_REMOVAL) |
         (1ULL << WIDX_FORBID_LANDSCAPE_CHANGES) |
         (1ULL << WIDX_FORBID_HIGH_CONSTRUCTION) |
@@ -550,6 +565,42 @@ static void window_editor_scenario_options_show_climate_dropdown(rct_window* w)
         w->x + dropdownWidget->left, w->y + dropdownWidget->top, dropdownWidget->bottom - dropdownWidget->top + 1,
         w->colours[1], 0, DROPDOWN_FLAG_STAY_OPEN, CLIMATE_COUNT, dropdownWidget->right - dropdownWidget->left - 3);
     dropdown_set_checked(gClimate, true);
+}
+
+static void window_editor_scenario_options_show_starting_month_dropdown(rct_window* w)
+{
+    int32_t i;
+    rct_widget* dropdownWidget;
+
+    dropdownWidget = &w->widgets[WIDX_STARTING_MONTH];
+
+    for (i = 0; i < MONTH_COUNT; i++)
+    {
+        gDropdownItemsFormat[i] = STR_DROPDOWN_MENU_LABEL;
+        gDropdownItemsArgs[i] = DateGameMonthNames[i];
+    }
+    window_dropdown_show_text_custom_width(
+        w->x + dropdownWidget->left, w->y + dropdownWidget->top, dropdownWidget->bottom - dropdownWidget->top + 1,
+        w->colours[1], 0, DROPDOWN_FLAG_STAY_OPEN, MONTH_COUNT, dropdownWidget->right - dropdownWidget->left - 3);
+    dropdown_set_checked(gS7Info.starting_month, true);
+}
+
+static void window_editor_scenario_options_show_ending_month_dropdown(rct_window* w)
+{
+    int32_t i;
+    rct_widget* dropdownWidget;
+
+    dropdownWidget = &w->widgets[WIDX_ENDING_MONTH];
+
+    for (i = 0; i < MONTH_COUNT; i++)
+    {
+        gDropdownItemsFormat[i] = STR_DROPDOWN_MENU_LABEL;
+        gDropdownItemsArgs[i] = DateGameMonthNames[i];
+    }
+    window_dropdown_show_text_custom_width(
+        w->x + dropdownWidget->left, w->y + dropdownWidget->top, dropdownWidget->bottom - dropdownWidget->top + 1,
+        w->colours[1], 0, DROPDOWN_FLAG_STAY_OPEN, MONTH_COUNT, dropdownWidget->right - dropdownWidget->left - 3);
+    dropdown_set_checked(gS7Info.ending_month, true);
 }
 
 /**
@@ -1143,7 +1194,7 @@ static void window_editor_scenario_options_park_mouseup(rct_window* w, rct_widge
  */
 static void window_editor_scenario_options_park_resize(rct_window* w)
 {
-    window_set_resize(w, 400, 200, 400, 200);
+    window_set_resize(w, 400, 240, 400, 240);
 }
 
 /**
@@ -1259,6 +1310,12 @@ static void window_editor_scenario_options_park_mousedown(rct_window* w, rct_wid
         case WIDX_CLIMATE_DROPDOWN:
             window_editor_scenario_options_show_climate_dropdown(w);
             break;
+        case WIDX_STARTING_MONTH_DROPDOWN:
+            window_editor_scenario_options_show_starting_month_dropdown(w);
+            break;
+        case WIDX_ENDING_MONTH_DROPDOWN:
+            window_editor_scenario_options_show_ending_month_dropdown(w);
+            break;
     }
 }
 
@@ -1287,6 +1344,22 @@ static void window_editor_scenario_options_park_dropdown(rct_window* w, rct_widg
             {
                 auto gameAction = ClimateSetAction(dropdownIndex);
                 GameActions::Execute(&gameAction);
+            }
+            break;
+        case WIDX_STARTING_MONTH_DROPDOWN:
+            if (gS7Info.starting_month != (uint8_t)dropdownIndex)
+            {
+                auto gameAction = ParkSetMonthsOpenAction(dropdownIndex, gS7Info.ending_month);
+                GameActions::Execute(&gameAction);
+                window_invalidate(w);
+            }
+            break;
+        case WIDX_ENDING_MONTH_DROPDOWN:
+            if (gS7Info.ending_month != (uint8_t)dropdownIndex)
+            {
+                auto gameAction = ParkSetMonthsOpenAction(gS7Info.starting_month, dropdownIndex);
+                GameActions::Execute(&gameAction);
+                window_invalidate(w);
             }
             break;
     }
@@ -1454,10 +1527,32 @@ static void window_editor_scenario_options_park_paint(rct_window* w, rct_drawpix
     y = w->y + w->widgets[WIDX_CLIMATE].top;
     gfx_draw_string_left(dpi, STR_CLIMATE_LABEL, nullptr, COLOUR_BLACK, x, y);
 
+    // Starting Month
+    x = w->x + 8;
+    y = w->y + w->widgets[WIDX_STARTING_MONTH].top;
+    gfx_draw_string_left(dpi, STR_CLIMATE_LABEL, nullptr, COLOUR_BLACK, x, y);
+
+    // Ending Month
+    x = w->x + 8;
+    y = w->y + w->widgets[WIDX_ENDING_MONTH].top;
+    gfx_draw_string_left(dpi, STR_CLIMATE_LABEL, nullptr, COLOUR_BLACK, x, y);
+
     // Climate value
     x = w->x + w->widgets[WIDX_CLIMATE].left + 1;
     y = w->y + w->widgets[WIDX_CLIMATE].top;
     stringId = ClimateNames[gClimate];
+    gfx_draw_string_left(dpi, STR_WINDOW_COLOUR_2_STRINGID, &stringId, COLOUR_BLACK, x, y);
+
+    // Starting Month value
+    x = w->x + w->widgets[WIDX_STARTING_MONTH].left + 1;
+    y = w->y + w->widgets[WIDX_STARTING_MONTH].top;
+    stringId = DateGameMonthNames[gS7Info.starting_month];
+    gfx_draw_string_left(dpi, STR_WINDOW_COLOUR_2_STRINGID, &stringId, COLOUR_BLACK, x, y);
+
+    // Ending Month value
+    x = w->x + w->widgets[WIDX_ENDING_MONTH].left + 1;
+    y = w->y + w->widgets[WIDX_ENDING_MONTH].top;
+    stringId = DateGameMonthNames[gS7Info.ending_month];
     gfx_draw_string_left(dpi, STR_WINDOW_COLOUR_2_STRINGID, &stringId, COLOUR_BLACK, x, y);
 }
 
