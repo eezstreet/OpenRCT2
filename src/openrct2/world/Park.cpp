@@ -310,6 +310,7 @@ void Park::Update(const Date& date)
     // Every ~13 seconds
     if (gCurrentTicks % 512 == 0)
     {
+        // Important new calculations!
         gParkRating = CalculateParkRating();
         gParkValue = CalculateParkValue();
         gCompanyValue = CalculateCompanyValue();

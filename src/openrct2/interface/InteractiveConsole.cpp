@@ -68,6 +68,23 @@ static constexpr const char* ClimateNames[] = {
     "warm",
     "hot_and_dry",
     "cold",
+    "arid_warm",
+    "arid_cold",
+    "semi_arid",
+    "mediterranean",
+    "temperate",
+    "tropical",
+    "tropical_savannah",
+    "island",
+    "taiga",
+    "tundra",
+    "arid_cold_s",
+    "mediterranean_s",
+    "temperate_s",
+    "tropical_savannah_s",
+    "taiga_s",
+    "hell",
+    "mars"
 };
 
 static int32_t console_parse_int(const std::string& src, bool* valid);

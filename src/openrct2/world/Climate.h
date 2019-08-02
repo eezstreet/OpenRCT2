@@ -20,29 +20,31 @@ enum CLIMATE
     CLIMATE_WARM,
     CLIMATE_HOT_AND_DRY,
     CLIMATE_COLD,
-    CLIMATE_COUNT,
 
     // earth-like climates
-    // CLIMATE_ARID_WARM,            // arid (little rainfall) and it is always warm.
-    // CLIMATE_ARID_COLD,            // arid (little rainfall) and cold winters, warm otherwise.
-    // CLIMATE_SEMI_ARID,            // semi-arid (some rainfall) and it is always warm
-    // CLIMATE_MEDITERRANEAN,        // warm and hot. rainy winters and dry summers
-    // CLIMATE_TEMPERATE,            // warm, wet summers, and cold, snowy winters
-    // CLIMATE_TROPICAL,             // a lot of rain, little temperature variance (always warm).
-    // CLIMATE_TROPICAL_SAVANNAH,    // like tropical, but it has wet and dry seasons with some temperature variance.
-    // CLIMATE_ISLAND,               // similar to tropical, but the rainfall is inconsistent. when it does rain, it storms for
-    // a long time. CLIMATE_TAIGA,                // cool summers, cold winters, most of the rainfall is during the summer
-    // CLIMATE_TUNDRA,               // arid (little snow) and it is always cold
+    CLIMATE_ARID_WARM,            // arid (little rainfall) and it is always warm.
+    CLIMATE_ARID_COLD,            // arid (little rainfall) and cold winters, warm otherwise.
+    CLIMATE_SEMI_ARID,            // semi-arid (some rainfall) and it is always warm
+    CLIMATE_MEDITERRANEAN,        // warm and hot. rainy winters and dry summers
+    CLIMATE_TEMPERATE,            // warm, wet summers, and cold, snowy winters
+    CLIMATE_TROPICAL,             // a lot of rain, little temperature variance (always warm).
+    CLIMATE_TROPICAL_SAVANNAH,    // like tropical, but it has wet and dry seasons with some temperature variance.
+    CLIMATE_ISLAND,               // similar to tropical, but the rainfall is inconsistent. when it does rain, it storms for
+    // a long time.
+    CLIMATE_TAIGA,                // cool summers, cold winters, most of the rainfall is during the summer
+    CLIMATE_TUNDRA,               // arid (little snow) and it is always cold
 
-    // CLIMATE_ARID_COLD_S,          // arid_cold but with southern hemisphere distribution
-    // CLIMATE_MEDITERRANEAN_S,      // mediterreanean but with southern hemisphere distribution
-    // CLIMATE_TEMPERATE_S,          // temperate but with southern hemisphere distribution
-    // CLIMATE_TROPICAL_SAVANNAH_S,  // tropical savannah but with southern hemisphere distribution
-    // CLIMATE_TAIGA_S,              // taiga but with southern hemisphere distribution
+    CLIMATE_ARID_COLD_S,          // arid_cold but with southern hemisphere distribution
+    CLIMATE_MEDITERRANEAN_S,      // mediterreanean but with southern hemisphere distribution
+    CLIMATE_TEMPERATE_S,          // temperate but with southern hemisphere distribution
+    CLIMATE_TROPICAL_SAVANNAH_S,  // tropical savannah but with southern hemisphere distribution
+    CLIMATE_TAIGA_S,              // taiga but with southern hemisphere distribution
 
     // fantasy climates
-    // CLIMATE_HELL,                 // it is always sunny, it never rains, and it is always hot
-    // CLIMATE_MARS,                 // it is always sunny, it never rains, and the temperatures have normal variance
+    CLIMATE_HELL,                 // it is always sunny, it never rains, and it is always hot
+    CLIMATE_MARS,                 // it is always sunny, it never rains, and the temperatures have normal variance
+
+    CLIMATE_COUNT,
 };
 
 enum WEATHER
@@ -53,7 +55,7 @@ enum WEATHER
     WEATHER_RAIN,
     WEATHER_HEAVY_RAIN,
     WEATHER_THUNDER,
-    // WEATHER_SNOW,
+    WEATHER_SNOW,
 };
 
 enum WEATHER_EFFECT
@@ -61,7 +63,7 @@ enum WEATHER_EFFECT
     WEATHER_EFFECT_NONE,
     WEATHER_EFFECT_RAIN,
     WEATHER_EFFECT_STORM,
-    // WEATHER_EFFECT_SNOW,
+    WEATHER_EFFECT_SNOW,
 };
 
 enum RAIN_LEVEL

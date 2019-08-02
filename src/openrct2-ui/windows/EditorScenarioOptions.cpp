@@ -41,10 +41,31 @@ enum {
 };
 
 static constexpr const rct_string_id ClimateNames[] = {
+    // vanilla rct
     STR_CLIMATE_COOL_AND_WET,
     STR_CLIMATE_WARM,
     STR_CLIMATE_HOT_AND_DRY,
     STR_CLIMATE_COLD,
+    // earth climates
+    STR_CLIMATE_ARID_WARM,
+    STR_CLIMATE_ARID_COLD,
+    STR_CLIMATE_SEMI_ARID,
+    STR_CLIMATE_MEDITERRANEAN,
+    STR_CLIMATE_TEMPERATE,
+    STR_CLIMATE_TROPICAL,
+    STR_CLIMATE_TROPICAL_SAVANNAH,
+    STR_CLIMATE_ISLAND,
+    STR_CLIMATE_TAIGA,
+    STR_CLIMATE_TUNDRA,
+    // southern hemisphere climates
+    STR_CLIMATE_ARID_COLD_S,
+    STR_CLIMATE_MEDITERRANEAN_S,
+    STR_CLIMATE_TEMPERATE_S,
+    STR_CLIMATE_TROPICAL_SAVANNAH_S,
+    STR_CLIMATE_TAIGA_S,
+    // fantasy climates
+    STR_CLIMATE_HELL,
+    STR_CLIMATE_MARS,
 };
 
 enum {
@@ -167,10 +188,10 @@ static rct_widget window_editor_scenario_options_park_widgets[] = {
 
     { WWT_DROPDOWN,         1,  188,    394,    99,     110,    STR_NONE,                               STR_SELECT_CLIMATE_TIP                      },  // climate
     { WWT_BUTTON,           1,  383,    393,    100,    109,    STR_DROPDOWN_GLYPH,                     STR_SELECT_CLIMATE_TIP                      },  // climate dropdown
-    { WWT_DROPDOWN,         1,  188,    394,    116,    127,    STR_NONE,                               STR_SELECT_CLIMATE_TIP                      },  // starting month
-    { WWT_BUTTON,           1,  383,    393,    117,    126,    STR_DROPDOWN_GLYPH,                     STR_SELECT_CLIMATE_TIP                      },  // starting month dropdown
-    { WWT_DROPDOWN,         1,  188,    394,    133,    144,    STR_NONE,                               STR_SELECT_CLIMATE_TIP                      },  // ending month
-    { WWT_BUTTON,           1,  383,    393,    134,    143,    STR_DROPDOWN_GLYPH,                     STR_SELECT_CLIMATE_TIP                      },  // ending month dropdown
+    { WWT_DROPDOWN,         1,  188,    394,    116,    127,    STR_NONE,                               STR_STARTING_MONTH_TIP                      },  // starting month
+    { WWT_BUTTON,           1,  383,    393,    117,    126,    STR_DROPDOWN_GLYPH,                     STR_STARTING_MONTH_TIP                      },  // starting month dropdown
+    { WWT_DROPDOWN,         1,  188,    394,    133,    144,    STR_NONE,                               STR_ENDING_MONTH_TIP                        },  // ending month
+    { WWT_BUTTON,           1,  383,    393,    134,    143,    STR_DROPDOWN_GLYPH,                     STR_ENDING_MONTH_TIP                        },  // ending month dropdown
     { WWT_CHECKBOX,         1,  8,      391,    150,    161,    STR_FORBID_TREE_REMOVAL,                STR_FORBID_TREE_REMOVAL_TIP                 },
     { WWT_CHECKBOX,         1,  8,      391,    167,    178,    STR_FORBID_LANDSCAPE_CHANGES,           STR_FORBID_LANDSCAPE_CHANGES_TIP            },
     { WWT_CHECKBOX,         1,  8,      391,    184,    195,    STR_FORBID_HIGH_CONSTRUCTION,           STR_FORBID_HIGH_CONSTRUCTION_TIP            },
@@ -1530,12 +1551,12 @@ static void window_editor_scenario_options_park_paint(rct_window* w, rct_drawpix
     // Starting Month
     x = w->x + 8;
     y = w->y + w->widgets[WIDX_STARTING_MONTH].top;
-    gfx_draw_string_left(dpi, STR_CLIMATE_LABEL, nullptr, COLOUR_BLACK, x, y);
+    gfx_draw_string_left(dpi, STR_STARTING_MONTH, nullptr, COLOUR_BLACK, x, y);
 
     // Ending Month
     x = w->x + 8;
     y = w->y + w->widgets[WIDX_ENDING_MONTH].top;
-    gfx_draw_string_left(dpi, STR_CLIMATE_LABEL, nullptr, COLOUR_BLACK, x, y);
+    gfx_draw_string_left(dpi, STR_ENDING_MONTH, nullptr, COLOUR_BLACK, x, y);
 
     // Climate value
     x = w->x + w->widgets[WIDX_CLIMATE].left + 1;
