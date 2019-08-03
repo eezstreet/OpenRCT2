@@ -4000,6 +4000,15 @@ enum
 
     // new guest temperature feature
     STR_GUEST_STAT_HEAT_LABEL = 6358,
+    STR_PEEP_THOUGHT_TYPE_FREEZING = 6359,
+    STR_PEEP_THOUGHT_TYPE_COLD = 6360,
+    STR_PEEP_THOUGHT_TYPE_HOT = 6361,
+    STR_PEEP_THOUGHT_TYPE_TOO_COLD = 6362,
+    STR_PEEP_THOUGHT_TYPE_ICE_CREAM_TOO_COLD = 6363,
+    STR_PEEP_THOUGHT_TYPE_COFFEE_TOO_HOT = 6364,
+    STR_PEEP_THOUGHT_TYPE_HOT_CHOCOLATE_TOO_HOT = 6365,
+    STR_PEEPS_HOT = 6366,
+    STR_PEEPS_COLD = 6367,
 
     // Have to include resource strings (from scenarios and objects) for the time being now that language is partially working
     STR_COUNT = 32768

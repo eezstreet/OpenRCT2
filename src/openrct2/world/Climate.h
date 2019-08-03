@@ -91,11 +91,19 @@ struct ClimateState
     uint8_t RainLevel;
 };
 
+struct ClimateHeatBounds
+{
+    int8_t MinimumToFreeze; // anything below this will set peep target heat to 0
+    int8_t MinimumToHeat; // anything above this will set peep target heat to 255
+};
+
 extern uint8_t gClimate;
 extern ClimateState gClimateCurrent;
 extern ClimateState gClimateNext;
 extern uint16_t gClimateUpdateTimer;
 extern uint16_t gClimateLightningFlash;
+
+extern const ClimateHeatBounds gClimateHeatBounds[CLIMATE_COUNT];
 
 int32_t climate_celsius_to_fahrenheit(int32_t celsius);
 void climate_reset(int32_t climate);

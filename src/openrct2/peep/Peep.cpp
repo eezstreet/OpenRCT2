@@ -1207,7 +1207,7 @@ void peep_problem_warnings_update()
     uint16_t spriteIndex;
     uint16_t guests_in_park = gNumGuestsInPark;
     int32_t hunger_counter = 0, lost_counter = 0, noexit_counter = 0, thirst_counter = 0, litter_counter = 0,
-            disgust_counter = 0, bathroom_counter = 0, vandalism_counter = 0;
+            disgust_counter = 0, bathroom_counter = 0, vandalism_counter = 0, hot_counter = 0, cold_counter = 0, freezing_counter = 0;
     uint8_t* warning_throttle = gPeepWarningThrottle;
 
     gRideCount = ride_get_count(); // refactor this to somewhere else
@@ -1267,6 +1267,15 @@ void peep_problem_warnings_update()
                 break;
             case PEEP_THOUGHT_TYPE_VANDALISM: // 0x21
                 vandalism_counter++;
+                break;
+            case PEEP_THOUGHT_TYPE_FREEZING:
+                freezing_counter++;
+                break;
+            case PEEP_THOUGHT_TYPE_COLD:
+                cold_counter++;
+                break;
+            case PEEP_THOUGHT_TYPE_HOT:
+                hot_counter++;
                 break;
             default:
                 break;
@@ -1357,6 +1366,34 @@ void peep_problem_warnings_update()
             news_item_add_to_queue(NEWS_ITEM_PEEPS, STR_PEEPS_GETTING_LOST_OR_STUCK, 16);
         }
     }
+
+    if (warning_throttle[7])
+        --warning_throttle[7];
+    else if (freezing_counter >= PEEP_COLD_WARNING_THRESHOLD && freezing_counter >= guests_in_park / 16)
+    {
+        warning_throttle[7] = 4;
+        if (gConfigNotifications.guest_warnings)
+        {
+            news_item_add_to_queue(NEWS_ITEM_PEEPS, STR_PEEPS_COLD, PEEP_THOUGHT_TYPE_FREEZING);
+        }
+    }
+    else if (cold_counter >= PEEP_COLD_WARNING_THRESHOLD && cold_counter >= guests_in_park / 16)
+    {
+        warning_throttle[7] = 4;
+        if (gConfigNotifications.guest_warnings)
+        {
+            news_item_add_to_queue(NEWS_ITEM_PEEPS, STR_PEEPS_COLD, PEEP_THOUGHT_TYPE_COLD);
+        }
+    }
+    else if (hot_counter >= PEEP_HOT_WARNING_THRESHOLD && hot_counter >= guests_in_park / 16)
+    {
+        warning_throttle[7] = 4;
+        if (gConfigNotifications.guest_warnings)
+        {
+            news_item_add_to_queue(NEWS_ITEM_PEEPS, STR_PEEPS_HOT, PEEP_THOUGHT_TYPE_HOT);
+        }
+    }
+
 }
 
 void peep_stop_crowd_noise()
@@ -1722,6 +1759,7 @@ Peep* Peep::Generate(const CoordsXYZ coords)
     /* Adjust by the delta, clamping at min=0 and max=255. */
     peep->happiness = std::clamp(peep->happiness + happinessDelta, 0, PEEP_MAX_HAPPINESS);
     peep->happiness_target = peep->happiness;
+    peep->heat = peep->heat_target = 128;
     peep->nausea = 0;
     peep->nausea_target = 0;
 
@@ -3534,4 +3572,14 @@ void Peep::RemoveFromRide()
         RemoveFromQueue();
     }
     StateReset();
+}
+
+bool Peep::IsHot()
+{
+    return heat > 200;
+}
+
+bool Peep::IsCold()
+{
+    return heat < 100;
 }

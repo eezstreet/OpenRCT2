@@ -7563,6 +7563,51 @@ bool Ride::IsWaterRide() const
     return false;
 }
 
+bool Ride::IsCoolingRide() const
+{
+    if (IsWaterRide())
+    { // water rides cool people off
+        return true;
+    }
+
+    rct_ride_entry* ride_type = get_ride_entry(subtype);
+    if (!ride_type)
+    {
+        return false;
+    }
+
+    switch (ride_type->shop_item)
+    { // the following shops count as means of cooling down:
+        case SHOP_ITEM_DRINK:
+        case SHOP_ITEM_ICE_CREAM:
+        case SHOP_ITEM_LEMONADE:
+        case SHOP_ITEM_ICED_TEA:
+        case SHOP_ITEM_FRUIT_JUICE:
+        case SHOP_ITEM_SUJEONGGWA:
+            return true;
+    }
+
+    return sheltered_eighths > 3;
+}
+
+bool Ride::IsWarmingRide() const
+{
+    rct_ride_entry* ride_type = get_ride_entry(subtype);
+    if (ride_type)
+    {
+        return false;
+    }
+
+    switch (ride_type->shop_item)
+    {
+        case SHOP_ITEM_COFFEE:
+        case SHOP_ITEM_CHOCOLATE:
+            return true;
+    }
+
+    return sheltered_eighths > 3;
+}
+
 money16 ride_get_price(const Ride* ride)
 {
     if (gParkFlags & PARK_FLAGS_NO_MONEY)

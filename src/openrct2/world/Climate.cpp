@@ -838,4 +838,28 @@ const WeatherTransition* ClimateTransitions[] = {
     ClimateTransitionsMars,
 };
 
+const ClimateHeatBounds gClimateHeatBounds[CLIMATE_COUNT] = {
+    { 5, 25 },  // cool and wet
+    { 5, 30 },  // warm
+    { 5, 25 },  // hot and dry
+    { 5, 25 },  // cold
+    { 10, 30 }, // arid/warm
+    { 5, 25 },  // arid/cold
+    { 10, 30 }, // semi-arid
+    { 10, 25 }, // mediterranean
+    { 5, 30 },  // temperate
+    { 20, 32 }, // tropical
+    { 20, 30 }, // tropical savannah
+    { 20, 32 }, // island
+    { 5, 25 },  // taiga
+    { 0, 20 },  // tundra
+    { 5, 25 },  // arid/cold
+    { 10, 25 }, // mediterranean
+    { 5, 30 },  // temperate
+    { 20, 30 }, // tropical savannah
+    { 5, 25 },  // taiga
+    { 25, 30 }, // hell
+    { 5, 25 },  // mars
+};
+
 #pragma endregion

@@ -775,6 +775,10 @@ static void initialise_list_items(rct_window* w)
                     if ((it + 1) == _listItems.end() || (it + 1)->type == LIST_ITEM_TYPE::HEADING)
                     {
                         it = _listItems.erase(it);
+                        if (_listItems.size() <= 0)
+                        {
+                            break;
+                        }
                         it--;
                     }
                 }

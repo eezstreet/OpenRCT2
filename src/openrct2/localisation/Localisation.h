@@ -86,7 +86,7 @@ extern const rct_string_id ObjectiveNames[12];
 extern const rct_string_id ResearchFundingLevelNames[4];
 extern const rct_string_id MarketingCampaignNames[ADVERTISING_CAMPAIGN_COUNT][3];
 extern const rct_string_id RideInspectionIntervalNames[];
-extern const rct_string_id PeepThoughts[174];
+extern const rct_string_id PeepThoughts[181];
 extern const rct_string_id DateDayNames[31];
 extern const rct_string_id DateGameMonthNames[MONTH_COUNT];
 extern const rct_string_id DateGameShortMonthNames[MONTH_COUNT];

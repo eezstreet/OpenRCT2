@@ -394,6 +394,8 @@ static void peep_decide_whether_to_leave_park(Peep* peep);
 static void peep_leave_park(Peep* peep);
 static void peep_head_for_nearest_ride_type(Guest* peep, int32_t rideType);
 static void peep_head_for_nearest_ride_with_flags(Guest* peep, int32_t rideTypeFlags);
+static void peep_head_for_warm_ride(Guest* peep);
+static void peep_head_for_cold_ride(Guest* peep);
 bool loc_690FD0(Peep* peep, uint8_t* rideToView, uint8_t* rideSeatToView, TileElement* tileElement);
 
 bool Guest::GuestHasValidXY() const
@@ -747,6 +749,42 @@ void Guest::Tick128UpdateGuest(int32_t index)
                 nausea = 130;
         }
 
+        if (state == PEEP_STATE_ON_RIDE)
+        {
+            Ride* ride = get_ride(current_ride);
+            if (ride->IsCoolingRide() || ride->IsWarmingRide())
+            {
+                heat_target = 128;
+            }
+        }
+        else if (
+            HasItem(PEEP_ITEM_COFFEE) || HasItem(PEEP_ITEM_CHOCOLATE) || HasItem(PEEP_ITEM_DRINK)
+            || HasItem(PEEP_ITEM_FRUIT_JUICE) || HasItem(PEEP_ITEM_ICED_TEA) || HasItem(PEEP_ITEM_ICE_CREAM)
+            || HasItem(PEEP_ITEM_LEMONADE) || HasItem(PEEP_ITEM_SOYBEAN_MILK) || HasItem(PEEP_ITEM_SU_JONGKWA))
+        {
+            heat_target = 128;
+        }
+        else if (gClimateCurrent.Temperature > gClimateHeatBounds[gClimate].MinimumToHeat)
+        {
+            heat_target = std::min(heat_target + 4, 255);
+            if (IsHot() || IsCold())
+            {
+                happiness_target = std::max(happiness_target - 2, 255);
+            }
+        }
+        else if (gClimateCurrent.Temperature < gClimateHeatBounds[gClimate].MinimumToFreeze)
+        {
+            heat_target = std::max(heat_target - 4, 0);
+            if (IsHot() || IsCold())
+            {
+                happiness_target = std::max(happiness_target - 2, 255);
+            }
+        }
+        else
+        {
+            heat_target = 128;
+        }
+
         if (angriness != 0)
             angriness--;
 
@@ -861,6 +899,22 @@ void Guest::Tick128UpdateGuest(int32_t index)
                         possible_thoughts[num_thoughts++] = PEEP_THOUGHT_TYPE_BATHROOM;
                     }
 
+                    if (IsCold())
+                    {
+                        if (heat < 30)
+                        {
+                            possible_thoughts[num_thoughts++] = PEEP_THOUGHT_TYPE_FREEZING;
+                        }
+                        else
+                        {
+                            possible_thoughts[num_thoughts++] = PEEP_THOUGHT_TYPE_COLD;
+                        }
+                    }
+                    else if (IsHot())
+                    {
+                        possible_thoughts[num_thoughts++] = PEEP_THOUGHT_TYPE_HOT;
+                    }
+
                     if (!(gParkFlags & PARK_FLAGS_NO_MONEY) && cash_in_pocket <= MONEY(9, 00) && happiness >= 105
                         && energy >= 70)
                     {
@@ -894,6 +948,13 @@ void Guest::Tick128UpdateGuest(int32_t index)
                             break;
                         case PEEP_THOUGHT_TYPE_RUNNING_OUT:
                             peep_head_for_nearest_ride_type(this, RIDE_TYPE_CASH_MACHINE);
+                            break;
+                        case PEEP_THOUGHT_TYPE_FREEZING:
+                        case PEEP_THOUGHT_TYPE_COLD:
+                            peep_head_for_warm_ride(this);
+                            break;
+                        case PEEP_THOUGHT_TYPE_HOT:
+                            peep_head_for_cold_ride(this);
                             break;
                         default:
                             break;
@@ -1178,6 +1239,27 @@ void Guest::Tick128UpdateGuest(int32_t index)
     if (newNausea != nausea)
     {
         nausea = newNausea;
+        window_invalidate_flags |= PEEP_INVALIDATE_PEEP_2;
+    }
+
+    uint8_t newHeat = heat;
+    uint8_t newHeatGrowth = heat_target;
+    if (newHeat >= newHeatGrowth)
+    {
+        newHeat = std::max(newHeat - 4, 0);
+        if (newHeat < newHeatGrowth)
+            newHeat = newHeatGrowth;
+    }
+    else
+    {
+        newHeat = std::min(255, newHeat + 4);
+        if (newHeat > newHeatGrowth)
+            newHeat = newHeatGrowth;
+    }
+
+    if (newHeat != heat)
+    {
+        heat = newHeat;
         window_invalidate_flags |= PEEP_INVALIDATE_PEEP_2;
     }
 }
@@ -1512,29 +1594,58 @@ bool Guest::DecideAndBuyItem(Ride* ride, int32_t shopItem, money32 price)
             return false;
     }
 
-    if ((shopItem == SHOP_ITEM_BALLOON) || (shopItem == SHOP_ITEM_ICE_CREAM) || (shopItem == SHOP_ITEM_CANDYFLOSS)
-        || (shopItem == SHOP_ITEM_SUNGLASSES))
+    if (shopItem == SHOP_ITEM_BALLOON || shopItem == SHOP_ITEM_ICE_CREAM || shopItem == SHOP_ITEM_CANDYFLOSS)
     {
         if (climate_is_raining())
             return false;
     }
 
-    if ((shopItem == SHOP_ITEM_SUNGLASSES) || (shopItem == SHOP_ITEM_ICE_CREAM))
+    // don't buy sunglasses if it isn't sunny outside
+    if (shopItem == SHOP_ITEM_SUNGLASSES && gClimateCurrent.Weather != WEATHER_SUNNY
+        && gClimateCurrent.Weather != WEATHER_PARTIALLY_CLOUDY)
+    {
+        return false;
+    }
+
+    if (shopItem == SHOP_ITEM_ICE_CREAM && heat < 100)
+    {
+        InsertNewThought(PEEP_THOUGHT_TYPE_ICE_CREAM_TOO_COLD, ride->id);
+        return false;
+    }
+
+    if (heat > 150)
+    {
+        if (shopItem == SHOP_ITEM_COFFEE)
+        {
+            InsertNewThought(PEEP_THOUGHT_TYPE_COFFEE_TOO_HOT, ride->id);
+            return false;
+        }
+        else if (shopItem == SHOP_ITEM_CHOCOLATE)
+        {
+            InsertNewThought(PEEP_THOUGHT_TYPE_HOT_CHOCOLATE_TOO_HOT, ride->id);
+            return false;
+        }
+    }
+
+    if (shopItem == SHOP_ITEM_SUNGLASSES)
     {
         if (gClimateCurrent.Temperature < 12)
             return false;
     }
 
-    if (shop_item_is_food(shopItem) && (hunger > 75))
-    {
-        InsertNewThought(PEEP_THOUGHT_TYPE_NOT_HUNGRY, PEEP_THOUGHT_ITEM_NONE);
-        return false;
-    }
+    if (!(IsHot() && ride->IsCoolingRide()) && !(IsCold() && ride->IsWarmingRide()))
+    { // allow us to purchase temperature-altering stuff when we're hot or cold
+        if (shop_item_is_food(shopItem) && (hunger > 75))
+        {
+            InsertNewThought(PEEP_THOUGHT_TYPE_NOT_HUNGRY, PEEP_THOUGHT_ITEM_NONE);
+            return false;
+        }
 
-    if (shop_item_is_drink(shopItem) && (thirst > 75))
-    {
-        InsertNewThought(PEEP_THOUGHT_TYPE_NOT_THIRSTY, PEEP_THOUGHT_ITEM_NONE);
-        return false;
+        if (shop_item_is_drink(shopItem) && (thirst > 75))
+        {
+            InsertNewThought(PEEP_THOUGHT_TYPE_NOT_THIRSTY, PEEP_THOUGHT_ITEM_NONE);
+            return false;
+        }
     }
 
     if (shopItem == SHOP_ITEM_UMBRELLA && climate_is_raining())
@@ -1775,6 +1886,11 @@ void Guest::OnEnterRide(ride_id_t rideIndex)
     peep_update_favourite_ride(this, ride);
     happiness_target = std::clamp(happiness_target + satisfaction, 0, PEEP_MAX_HAPPINESS);
     peep_update_ride_nausea_growth(this, ride);
+
+    if (ride->IsCoolingRide() || ride->IsWarmingRide())
+    {
+        heat_target = 128;
+    }
 }
 
 /**
@@ -1884,14 +2000,27 @@ Ride* Guest::FindBestRideToGoOn()
         if (rideConsideration[i])
         {
             auto ride = get_ride(i);
-            if (!(ride->lifecycle_flags & RIDE_LIFECYCLE_QUEUE_FULL))
+            if (ride->lifecycle_flags & RIDE_LIFECYCLE_QUEUE_FULL)
+            { // don't consider rides whose queue is full
+                continue;
+            }
+
+            if (ShouldGoOnRide(ride, 0, false, true) && ride_has_ratings(ride))
             {
-                if (ShouldGoOnRide(ride, 0, false, true) && ride_has_ratings(ride))
+                if (mostExcitingRide == nullptr)
                 {
-                    if (mostExcitingRide == nullptr || ride->excitement > mostExcitingRide->excitement)
-                    {
-                        mostExcitingRide = ride;
-                    }
+                    mostExcitingRide = ride;
+                    continue;
+                }
+
+                if (IsHot() && !(ride->IsWaterRide() || ride->sheltered_eighths < 3))
+                { // if a guest is hot, then we prefer sheltered or water rides
+                    continue;
+                }
+
+                if (ride_has_ratings(ride) && ride->excitement > mostExcitingRide->excitement)
+                {
+                    mostExcitingRide = ride;
                 }
             }
         }
@@ -1980,7 +2109,17 @@ bool Guest::ShouldGoOnRide(Ride* ride, int32_t entranceNum, bool atQueue, bool t
     }
 
     if (ride->lifecycle_flags & RIDE_LIFECYCLE_BROKEN_DOWN)
-    {   // don't go for broken down rides
+    { // don't go for broken down rides
+        ChoseNotToGoOnRide(ride, peepAtRide, false);
+        return false;
+    }
+
+    if (ride->IsWaterRide() && IsCold())
+    {   // don't go for water rides when it's cold
+        if (peepAtRide)
+        {
+            InsertNewThought(PEEP_THOUGHT_TYPE_TOO_COLD, ride->id);
+        }
         ChoseNotToGoOnRide(ride, peepAtRide, false);
         return false;
     }
@@ -3211,6 +3350,230 @@ static void peep_head_for_nearest_ride_type(Guest* peep, int32_t rideType)
                         ride_id_t rideIndex = tileElement->AsTrack()->GetRideIndex();
                         ride = get_ride(rideIndex);
                         if (ride->type == rideType)
+                        {
+                            rideConsideration[rideIndex >> 5] |= (1u << (rideIndex & 0x1F));
+                        }
+                    } while (!(tileElement++)->IsLastForTile());
+                }
+            }
+        }
+    }
+
+    // Filter the considered rides
+    uint8_t potentialRides[256];
+    uint8_t* nextPotentialRide = &potentialRides[0];
+    int32_t numPotentialRides = 0;
+    for (int32_t i = 0; i < MAX_RIDES; i++)
+    {
+        if (!(rideConsideration[i >> 5] & (1u << (i & 0x1F))))
+            continue;
+
+        ride = get_ride(i);
+        if (!(ride->lifecycle_flags & RIDE_LIFECYCLE_QUEUE_FULL))
+        {
+            if (peep->ShouldGoOnRide(ride, 0, false, true))
+            {
+                *nextPotentialRide++ = i;
+                numPotentialRides++;
+            }
+        }
+    }
+
+    // Pick the closest ride
+    ride_id_t closestRideIndex = RIDE_ID_NULL;
+    int32_t closestRideDistance = std::numeric_limits<int32_t>::max();
+    for (int32_t i = 0; i < numPotentialRides; i++)
+    {
+        ride = get_ride(potentialRides[i]);
+        int32_t rideX = ride->stations[0].Start.x * 32;
+        int32_t rideY = ride->stations[0].Start.y * 32;
+        int32_t distance = abs(rideX - peep->x) + abs(rideY - peep->y);
+        if (distance < closestRideDistance)
+        {
+            closestRideIndex = potentialRides[i];
+            closestRideDistance = distance;
+        }
+    }
+    if (closestRideIndex == RIDE_ID_NULL)
+        return;
+
+    // Head to that ride
+    peep->guest_heading_to_ride_id = closestRideIndex;
+    peep->peep_is_lost_countdown = 200;
+    peep_reset_pathfind_goal(peep);
+    peep->window_invalidate_flags |= PEEP_INVALIDATE_PEEP_ACTION;
+
+    peep->time_lost = 0;
+}
+
+static void peep_head_for_cold_ride(Guest* peep)
+{
+    Ride* ride;
+
+    if (peep->state != PEEP_STATE_SITTING && peep->state != PEEP_STATE_WATCHING && peep->state != PEEP_STATE_WALKING)
+    {
+        return;
+    }
+    if (peep->peep_flags & PEEP_FLAGS_LEAVING_PARK)
+        return;
+    if (peep->x == LOCATION_NULL)
+        return;
+    if (peep->guest_heading_to_ride_id != RIDE_ID_NULL)
+    {
+        ride = get_ride(peep->guest_heading_to_ride_id);
+        if (ride->IsCoolingRide())
+        {
+            return;
+        }
+    }
+
+    uint32_t rideConsideration[8]{};
+
+    // FIX Originally checked for a toy,.likely a mistake and should be a map
+    if (peep->item_standard_flags & PEEP_ITEM_MAP)
+    {
+        // Consider all rides in the park
+        int32_t i;
+        FOR_ALL_RIDES (i, ride)
+        {
+            if (ride->IsCoolingRide())
+            {
+                rideConsideration[i >> 5] |= (1u << (i & 0x1F));
+            }
+        }
+    }
+    else
+    {
+        // Take nearby rides into consideration
+        int32_t cx = floor2(peep->x, 32);
+        int32_t cy = floor2(peep->y, 32);
+        for (int32_t x = cx - 320; x <= cx + 320; x += 32)
+        {
+            for (int32_t y = cy - 320; y <= cy + 320; y += 32)
+            {
+                if (x >= 0 && y >= 0 && x < (256 * 32) && y < (256 * 32))
+                {
+                    TileElement* tileElement = map_get_first_element_at(x >> 5, y >> 5);
+                    do
+                    {
+                        if (tileElement->GetType() != TILE_ELEMENT_TYPE_TRACK)
+                            continue;
+
+                        ride_id_t rideIndex = tileElement->AsTrack()->GetRideIndex();
+                        ride = get_ride(rideIndex);
+                        if (ride->IsCoolingRide())
+                        {
+                            rideConsideration[rideIndex >> 5] |= (1u << (rideIndex & 0x1F));
+                        }
+                    } while (!(tileElement++)->IsLastForTile());
+                }
+            }
+        }
+    }
+
+    // Filter the considered rides
+    uint8_t potentialRides[256];
+    uint8_t* nextPotentialRide = &potentialRides[0];
+    int32_t numPotentialRides = 0;
+    for (int32_t i = 0; i < MAX_RIDES; i++)
+    {
+        if (!(rideConsideration[i >> 5] & (1u << (i & 0x1F))))
+            continue;
+
+        ride = get_ride(i);
+        if (!(ride->lifecycle_flags & RIDE_LIFECYCLE_QUEUE_FULL))
+        {
+            if (peep->ShouldGoOnRide(ride, 0, false, true))
+            {
+                *nextPotentialRide++ = i;
+                numPotentialRides++;
+            }
+        }
+    }
+
+    // Pick the closest ride
+    ride_id_t closestRideIndex = RIDE_ID_NULL;
+    int32_t closestRideDistance = std::numeric_limits<int32_t>::max();
+    for (int32_t i = 0; i < numPotentialRides; i++)
+    {
+        ride = get_ride(potentialRides[i]);
+        int32_t rideX = ride->stations[0].Start.x * 32;
+        int32_t rideY = ride->stations[0].Start.y * 32;
+        int32_t distance = abs(rideX - peep->x) + abs(rideY - peep->y);
+        if (distance < closestRideDistance)
+        {
+            closestRideIndex = potentialRides[i];
+            closestRideDistance = distance;
+        }
+    }
+    if (closestRideIndex == RIDE_ID_NULL)
+        return;
+
+    // Head to that ride
+    peep->guest_heading_to_ride_id = closestRideIndex;
+    peep->peep_is_lost_countdown = 200;
+    peep_reset_pathfind_goal(peep);
+    peep->window_invalidate_flags |= PEEP_INVALIDATE_PEEP_ACTION;
+
+    peep->time_lost = 0;
+}
+
+static void peep_head_for_warm_ride(Guest* peep)
+{
+    Ride* ride;
+
+    if (peep->state != PEEP_STATE_SITTING && peep->state != PEEP_STATE_WATCHING && peep->state != PEEP_STATE_WALKING)
+    {
+        return;
+    }
+    if (peep->peep_flags & PEEP_FLAGS_LEAVING_PARK)
+        return;
+    if (peep->x == LOCATION_NULL)
+        return;
+    if (peep->guest_heading_to_ride_id != RIDE_ID_NULL)
+    {
+        ride = get_ride(peep->guest_heading_to_ride_id);
+        if (ride->IsWarmingRide())
+        {
+            return;
+        }
+    }
+
+    uint32_t rideConsideration[8]{};
+
+    // FIX Originally checked for a toy,.likely a mistake and should be a map
+    if (peep->item_standard_flags & PEEP_ITEM_MAP)
+    {
+        // Consider all rides in the park
+        int32_t i;
+        FOR_ALL_RIDES (i, ride)
+        {
+            if (ride->IsWarmingRide())
+            {
+                rideConsideration[i >> 5] |= (1u << (i & 0x1F));
+            }
+        }
+    }
+    else
+    {
+        // Take nearby rides into consideration
+        int32_t cx = floor2(peep->x, 32);
+        int32_t cy = floor2(peep->y, 32);
+        for (int32_t x = cx - 320; x <= cx + 320; x += 32)
+        {
+            for (int32_t y = cy - 320; y <= cy + 320; y += 32)
+            {
+                if (x >= 0 && y >= 0 && x < (256 * 32) && y < (256 * 32))
+                {
+                    TileElement* tileElement = map_get_first_element_at(x >> 5, y >> 5);
+                    do
+                    {
+                        if (tileElement->GetType() != TILE_ELEMENT_TYPE_TRACK)
+                            continue;
+
+                        ride_id_t rideIndex = tileElement->AsTrack()->GetRideIndex();
+                        ride = get_ride(rideIndex);
+                        if (ride->IsWarmingRide())
                         {
                             rideConsideration[rideIndex >> 5] |= (1u << (rideIndex & 0x1F));
                         }

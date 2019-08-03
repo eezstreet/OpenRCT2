@@ -399,6 +399,8 @@ public:
     bool IsTrackedRide() const;
     bool IsRollerCoaster() const;
     bool IsWaterRide() const;
+    bool IsCoolingRide() const;
+    bool IsWarmingRide() const;
 
     bool IsPoweredLaunched() const;
     bool IsBlockSectioned() const;

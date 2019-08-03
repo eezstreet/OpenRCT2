@@ -30,6 +30,8 @@
 #define PEEP_VANDALISM_WARNING_THRESHOLD 15
 #define PEEP_NOEXIT_WARNING_THRESHOLD 8
 #define PEEP_LOST_WARNING_THRESHOLD 8
+#define PEEP_COLD_WARNING_THRESHOLD 40
+#define PEEP_HOT_WARNING_THRESHOLD 40
 
 #define PEEP_MAX_HAPPINESS 255
 #define PEEP_MIN_ENERGY 32
@@ -196,7 +198,10 @@ enum PeepThoughtType : uint8_t
     PEEP_THOUGHT_TYPE_FREEZING = 174,             // "I'm freezing"
     PEEP_THOUGHT_TYPE_COLD = 175,                 // "I'm cold"
     PEEP_THOUGHT_TYPE_HOT = 176,                  // "I'm hot"
-    PEEP_THOUGHT_TYPE_TOO_COLD = 177,             // "It's too cold to ride X"
+    PEEP_THOUGHT_TYPE_TOO_COLD = 177,             // "I'm too cold to ride X"
+    PEEP_THOUGHT_TYPE_ICE_CREAM_TOO_COLD = 178,   // "I'm too cold to buy Ice Cream"
+    PEEP_THOUGHT_TYPE_COFFEE_TOO_HOT = 179,       // "I'm too hot to buy Coffee"
+    PEEP_THOUGHT_TYPE_HOT_CHOCOLATE_TOO_HOT = 180,// "I'm too hot to buy Hot Chocolate"
 
     PEEP_THOUGHT_TYPE_NONE = 255
 };
@@ -736,6 +741,8 @@ public: // Peep
     void SwitchNextActionSpriteType();
     PeepActionSpriteType GetActionSpriteType();
 
+    bool IsHot();
+    bool IsCold();
 private:
     void UpdateFalling();
     void Update1();
