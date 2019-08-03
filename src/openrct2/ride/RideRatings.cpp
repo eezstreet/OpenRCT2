@@ -898,9 +898,13 @@ static uint16_t ride_compute_upkeep(Ride* ride)
     {
         upkeep += 160;
     }
-    else if (ride->mode == RIDE_MODE_LIM_POWERED_LAUNCH)
+    else if (ride->mode == RIDE_MODE_POWERED_LAUNCH)
     {
         upkeep += 320;
+    }
+    else if (ride->mode == RIDE_MODE_LIM_POWERED_LAUNCH)
+    {
+       upkeep += 320;
     }
     else if (ride->mode == RIDE_MODE_POWERED_LAUNCH || ride->mode == RIDE_MODE_POWERED_LAUNCH_BLOCK_SECTIONED)
     {
