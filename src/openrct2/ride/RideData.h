@@ -113,7 +113,7 @@ enum
 };
 
 extern const bool hasRunningTrack[RIDE_TYPE_COUNT];
-extern const uint8_t initialUpkeepCosts[RIDE_TYPE_COUNT];
+extern const uint32_t initialUpkeepCosts[RIDE_TYPE_COUNT];
 extern const uint8_t costPerTrackPiece[RIDE_TYPE_COUNT];
 
 extern const uint8_t costPerVehicle[RIDE_TYPE_COUNT];

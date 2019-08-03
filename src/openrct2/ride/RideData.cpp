@@ -131,7 +131,7 @@ const bool hasRunningTrack[RIDE_TYPE_COUNT] = {
  *
  * data generation script: https://gist.github.com/kevinburke/6bcf4a8fcc95faad7bac
  */
-const uint8_t initialUpkeepCosts[RIDE_TYPE_COUNT] = {
+const uint32_t initialUpkeepCosts[RIDE_TYPE_COUNT] = {
     400, // 00 Spiral Roller coaster
     700, // 01 Stand Up Coaster
     500, // 02 Suspended Swinging
