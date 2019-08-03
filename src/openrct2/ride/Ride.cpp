@@ -2089,7 +2089,7 @@ void Ride::UpdateAll()
     // Remove all rides if scenario editor
     if (gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR)
     {
-        //if (gS7Info.editor_step <= EDITOR_STEP_INVENTIONS_LIST_SET_UP)
+        // if (gS7Info.editor_step <= EDITOR_STEP_INVENTIONS_LIST_SET_UP)
         //    FOR_ALL_RIDES (i, ride)
         //        ride->Delete();
         return;
@@ -7434,6 +7434,133 @@ bool Ride::IsRide() const
         default:
             return true;
     }
+}
+
+bool Ride::IsTrackedRide() const
+{
+    switch (type)
+    {
+        case RIDE_TYPE_SPIRAL_ROLLER_COASTER:
+        case RIDE_TYPE_STAND_UP_ROLLER_COASTER:
+        case RIDE_TYPE_SUSPENDED_SWINGING_COASTER:
+        case RIDE_TYPE_INVERTED_ROLLER_COASTER:
+        case RIDE_TYPE_JUNIOR_ROLLER_COASTER:
+        case RIDE_TYPE_MINIATURE_RAILWAY:
+        case RIDE_TYPE_MONORAIL:
+        case RIDE_TYPE_MINI_SUSPENDED_COASTER:
+        case RIDE_TYPE_BOAT_HIRE:
+        case RIDE_TYPE_WOODEN_WILD_MOUSE:
+        case RIDE_TYPE_STEEPLECHASE:
+        case RIDE_TYPE_CAR_RIDE:
+        case RIDE_TYPE_LAUNCHED_FREEFALL:
+        case RIDE_TYPE_BOBSLEIGH_COASTER:
+        case RIDE_TYPE_OBSERVATION_TOWER:
+        case RIDE_TYPE_LOOPING_ROLLER_COASTER:
+        case RIDE_TYPE_DINGHY_SLIDE:
+        case RIDE_TYPE_MINE_TRAIN_COASTER:
+        case RIDE_TYPE_CHAIRLIFT:
+        case RIDE_TYPE_CORKSCREW_ROLLER_COASTER:
+        case RIDE_TYPE_GO_KARTS:
+        case RIDE_TYPE_LOG_FLUME:
+        case RIDE_TYPE_RIVER_RAPIDS:
+        case RIDE_TYPE_REVERSE_FREEFALL_COASTER:
+        case RIDE_TYPE_LIFT:
+        case RIDE_TYPE_VERTICAL_DROP_ROLLER_COASTER:
+        case RIDE_TYPE_GHOST_TRAIN:
+        case RIDE_TYPE_TWISTER_ROLLER_COASTER:
+        case RIDE_TYPE_WOODEN_ROLLER_COASTER:
+        case RIDE_TYPE_SIDE_FRICTION_ROLLER_COASTER:
+        case RIDE_TYPE_STEEL_WILD_MOUSE:
+        case RIDE_TYPE_MULTI_DIMENSION_ROLLER_COASTER:
+        case RIDE_TYPE_MULTI_DIMENSION_ROLLER_COASTER_ALT:
+        case RIDE_TYPE_FLYING_ROLLER_COASTER:
+        case RIDE_TYPE_FLYING_ROLLER_COASTER_ALT:
+        case RIDE_TYPE_VIRGINIA_REEL:
+        case RIDE_TYPE_SPLASH_BOATS:
+        case RIDE_TYPE_MINI_HELICOPTERS:
+        case RIDE_TYPE_LAY_DOWN_ROLLER_COASTER:
+        case RIDE_TYPE_SUSPENDED_MONORAIL:
+        case RIDE_TYPE_LAY_DOWN_ROLLER_COASTER_ALT:
+        case RIDE_TYPE_REVERSER_ROLLER_COASTER:
+        case RIDE_TYPE_HEARTLINE_TWISTER_COASTER:
+        case RIDE_TYPE_MINI_GOLF:
+        case RIDE_TYPE_GIGA_COASTER:
+        case RIDE_TYPE_ROTO_DROP:
+        case RIDE_TYPE_MONORAIL_CYCLES:
+        case RIDE_TYPE_COMPACT_INVERTED_COASTER:
+        case RIDE_TYPE_WATER_COASTER:
+        case RIDE_TYPE_AIR_POWERED_VERTICAL_COASTER:
+        case RIDE_TYPE_INVERTED_HAIRPIN_COASTER:
+        case RIDE_TYPE_SUBMARINE_RIDE:
+        case RIDE_TYPE_RIVER_RAFTS:
+        case RIDE_TYPE_INVERTED_IMPULSE_COASTER:
+        case RIDE_TYPE_MINI_ROLLER_COASTER:
+        case RIDE_TYPE_MINE_RIDE:
+        case RIDE_TYPE_LIM_LAUNCHED_ROLLER_COASTER:
+            return true;
+    }
+    return false;
+}
+
+bool Ride::IsRollerCoaster() const
+{
+    switch (type)
+    {
+        case RIDE_TYPE_SPIRAL_ROLLER_COASTER:
+        case RIDE_TYPE_STAND_UP_ROLLER_COASTER:
+        case RIDE_TYPE_SUSPENDED_SWINGING_COASTER:
+        case RIDE_TYPE_INVERTED_ROLLER_COASTER:
+        case RIDE_TYPE_JUNIOR_ROLLER_COASTER:
+        case RIDE_TYPE_MINI_SUSPENDED_COASTER:
+        case RIDE_TYPE_WOODEN_WILD_MOUSE:
+        case RIDE_TYPE_STEEPLECHASE:
+        case RIDE_TYPE_BOBSLEIGH_COASTER:
+        case RIDE_TYPE_LOOPING_ROLLER_COASTER:
+        case RIDE_TYPE_CORKSCREW_ROLLER_COASTER:
+        case RIDE_TYPE_REVERSE_FREEFALL_COASTER:
+        case RIDE_TYPE_VERTICAL_DROP_ROLLER_COASTER:
+        case RIDE_TYPE_TWISTER_ROLLER_COASTER:
+        case RIDE_TYPE_WOODEN_ROLLER_COASTER:
+        case RIDE_TYPE_SIDE_FRICTION_ROLLER_COASTER:
+        case RIDE_TYPE_STEEL_WILD_MOUSE:
+        case RIDE_TYPE_MULTI_DIMENSION_ROLLER_COASTER:
+        case RIDE_TYPE_MULTI_DIMENSION_ROLLER_COASTER_ALT:
+        case RIDE_TYPE_FLYING_ROLLER_COASTER:
+        case RIDE_TYPE_FLYING_ROLLER_COASTER_ALT:
+        case RIDE_TYPE_VIRGINIA_REEL:
+        case RIDE_TYPE_LAY_DOWN_ROLLER_COASTER:
+        case RIDE_TYPE_LAY_DOWN_ROLLER_COASTER_ALT:
+        case RIDE_TYPE_REVERSER_ROLLER_COASTER:
+        case RIDE_TYPE_HEARTLINE_TWISTER_COASTER:
+        case RIDE_TYPE_GIGA_COASTER:
+        case RIDE_TYPE_COMPACT_INVERTED_COASTER:
+        case RIDE_TYPE_WATER_COASTER:
+        case RIDE_TYPE_AIR_POWERED_VERTICAL_COASTER:
+        case RIDE_TYPE_INVERTED_HAIRPIN_COASTER:
+        case RIDE_TYPE_INVERTED_IMPULSE_COASTER:
+        case RIDE_TYPE_MINI_ROLLER_COASTER:
+        case RIDE_TYPE_MINE_RIDE:
+        case RIDE_TYPE_LIM_LAUNCHED_ROLLER_COASTER:
+            return true;
+    }
+    return false;
+}
+
+bool Ride::IsWaterRide() const
+{
+    switch (type)
+    {
+        case RIDE_TYPE_BOAT_HIRE:
+        case RIDE_TYPE_DINGHY_SLIDE:
+        case RIDE_TYPE_LOG_FLUME:
+        case RIDE_TYPE_RIVER_RAPIDS:
+        case RIDE_TYPE_SPLASH_BOATS:
+        case RIDE_TYPE_WATER_COASTER:
+        case RIDE_TYPE_SUBMARINE_RIDE:
+        case RIDE_TYPE_RIVER_RAFTS:
+            return true;
+    }
+    return false;
 }
 
 money16 ride_get_price(const Ride* ride)

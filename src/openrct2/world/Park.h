@@ -103,6 +103,8 @@ extern money32 gParkValue;
 extern money32 gCompanyValue;
 
 extern int16_t gParkRatingCasualtyPenalty;
+extern int8_t gGuestGenerationAlgorithm;
+extern int8_t gAdvertisementGenerationAlgorithm;
 extern uint8_t gParkRatingHistory[32];
 extern uint8_t gGuestsInParkHistory[32];
 extern int32_t _guestGenerationProbability;

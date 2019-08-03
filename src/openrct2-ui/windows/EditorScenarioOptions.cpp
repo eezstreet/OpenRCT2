@@ -20,6 +20,7 @@
 #include <openrct2/actions/ClimateSetAction.hpp>
 #include <openrct2/actions/ScenarioSetSettingAction.hpp>
 #include <openrct2/actions/ParkSetMonthsOpenAction.hpp>
+#include <openrct2/actions/ParkSetGenerationAlgorithmsAction.hpp>
 #include <openrct2/drawing/Drawing.h>
 #include <openrct2/interface/Colour.h>
 #include <openrct2/localisation/StringIds.h>
@@ -68,6 +69,15 @@ static constexpr const rct_string_id ClimateNames[] = {
     STR_CLIMATE_MARS,
 };
 
+static constexpr rct_string_id GuestGenerationAlgorithmNames[] = {
+    STR_GUESTGEN_VANILLA,
+    STR_GUESTGEN_SCALED,
+};
+
+static constexpr rct_string_id AdvertisementGenerationAlgorithmNames[] = {
+    STR_ADVERTISEGEN_VANILLA,
+};
+
 enum {
     WIDX_BACKGROUND,
     WIDX_TITLE,
@@ -109,6 +119,10 @@ enum {
     WIDX_GUEST_INITIAL_THIRST_DECREASE,
     WIDX_GUEST_PREFER_LESS_INTENSE_RIDES,
     WIDX_GUEST_PREFER_MORE_INTENSE_RIDES,
+    WIDX_GUEST_GENERATION_ALGORITHM,
+    WIDX_GUEST_GENERATION_ALGORITHM_DROPDOWN,
+    WIDX_ADVERTISEMENT_GENERATION_ALGORITHM,
+    WIDX_ADVERTISEMENT_GENERATION_ALGORITHM_DROPDOWN,
 
     // Park tab
     WIDX_LAND_COST = WIDX_PAGE_START,
@@ -168,6 +182,10 @@ static rct_widget window_editor_scenario_options_guests_widgets[] = {
       SPINNER_WIDGETS      (1,  268,    337,    99,     110,    STR_NONE,                               STR_NONE                                    ), // NB: 3 widgets
     { WWT_CHECKBOX,         1,  8,      371,    116,    127,    STR_GUESTS_PREFER_LESS_INTENSE_RIDES,   STR_GUESTS_PREFER_LESS_INTENSE_RIDES_TIP    },
     { WWT_CHECKBOX,         1,  8,      371,    133,    144,    STR_GUESTS_PREFER_MORE_INTENSE_RIDES,   STR_GUESTS_PREFER_MORE_INTENSE_RIDES_TIP    },
+    { WWT_DROPDOWN,         1,  188,    331,    150,    161,    STR_NONE,                               STR_GUEST_GENERATION_ALGORITHM_TIP          },  // guest generation
+    { WWT_BUTTON,           1,  320,    330,    151,    160,    STR_DROPDOWN_GLYPH,                     STR_GUEST_GENERATION_ALGORITHM_TIP          },  // guest generation dropdown
+    { WWT_DROPDOWN,         1,  188,    331,    168,    178,    STR_NONE,                               STR_ADVERTISEMENT_GENERATION_ALGORITHM_TIP  },  // marketing generation
+    { WWT_BUTTON,           1,  320,    330,    169,    177,    STR_DROPDOWN_GLYPH,                     STR_ADVERTISEMENT_GENERATION_ALGORITHM_TIP  },  // marketing generation dropdown
     { WIDGETS_END }
 };
 
@@ -223,6 +241,7 @@ static void window_editor_scenario_options_guests_mousedown(rct_window *w, rct_w
 static void window_editor_scenario_options_guests_update(rct_window *w);
 static void window_editor_scenario_options_guests_invalidate(rct_window *w);
 static void window_editor_scenario_options_guests_paint(rct_window *w, rct_drawpixelinfo *dpi);
+static void window_editor_scenario_options_guests_dropdown(rct_window* w, rct_widgetindex widgetIndex, int32_t dropdownIndex);
 
 static void window_editor_scenario_options_park_mouseup(rct_window *w, rct_widgetindex widgetIndex);
 static void window_editor_scenario_options_park_resize(rct_window *w);
@@ -270,7 +289,7 @@ static rct_window_event_list window_scenario_options_guests_events = {
     window_editor_scenario_options_guests_mouseup,
     window_editor_scenario_options_guests_resize,
     window_editor_scenario_options_guests_mousedown,
-    nullptr,
+    window_editor_scenario_options_guests_dropdown,
     nullptr,
     window_editor_scenario_options_guests_update,
     nullptr,
@@ -366,7 +385,11 @@ static uint64_t window_editor_scenario_options_page_enabled_widgets[] = {
         (1ULL << WIDX_GUEST_INITIAL_THIRST_INCREASE) |
         (1ULL << WIDX_GUEST_INITIAL_THIRST_DECREASE) |
         (1ULL << WIDX_GUEST_PREFER_LESS_INTENSE_RIDES) |
-        (1ULL << WIDX_GUEST_PREFER_MORE_INTENSE_RIDES),
+        (1ULL << WIDX_GUEST_PREFER_MORE_INTENSE_RIDES) |
+        (1ULL << WIDX_GUEST_GENERATION_ALGORITHM) |
+        (1ULL << WIDX_GUEST_GENERATION_ALGORITHM_DROPDOWN) |
+        (1ULL << WIDX_ADVERTISEMENT_GENERATION_ALGORITHM) |
+        (1ULL << WIDX_ADVERTISEMENT_GENERATION_ALGORITHM_DROPDOWN),
     ALWAYS_ENABLED_WIDGETS |
         (1ULL << WIDX_LAND_COST_INCREASE) |
         (1ULL << WIDX_LAND_COST_DECREASE) |
@@ -568,6 +591,42 @@ static void window_editor_scenario_options_financial_mouseup(rct_window* w, rct_
 static void window_editor_scenario_options_financial_resize(rct_window* w)
 {
     window_set_resize(w, 280, 149, 280, 149);
+}
+
+static void window_editor_scenario_options_show_guest_generation_dropdown(rct_window* w)
+{
+    int32_t i;
+    rct_widget* dropdownWidget;
+
+    dropdownWidget = &w->widgets[WIDX_GUEST_GENERATION_ALGORITHM];
+
+    for (i = 0; i < GUESTGEN_COUNT; i++)
+    {
+        gDropdownItemsFormat[i] = STR_DROPDOWN_MENU_LABEL;
+        gDropdownItemsArgs[i] = GuestGenerationAlgorithmNames[i];
+    }
+    window_dropdown_show_text_custom_width(
+        w->x + dropdownWidget->left, w->y + dropdownWidget->top, dropdownWidget->bottom - dropdownWidget->top + 1,
+        w->colours[1], 0, DROPDOWN_FLAG_STAY_OPEN, GUESTGEN_COUNT, dropdownWidget->right - dropdownWidget->left - 3);
+    dropdown_set_checked(gGuestGenerationAlgorithm, true);
+}
+
+static void window_editor_scenario_options_show_advertisement_generation_dropdown(rct_window* w)
+{
+    int32_t i;
+    rct_widget* dropdownWidget;
+
+    dropdownWidget = &w->widgets[WIDX_ADVERTISEMENT_GENERATION_ALGORITHM];
+
+    for (i = 0; i < ADVERTISEGEN_COUNT; i++)
+    {
+        gDropdownItemsFormat[i] = STR_DROPDOWN_MENU_LABEL;
+        gDropdownItemsArgs[i] = AdvertisementGenerationAlgorithmNames[i];
+    }
+    window_dropdown_show_text_custom_width(
+        w->x + dropdownWidget->left, w->y + dropdownWidget->top, dropdownWidget->bottom - dropdownWidget->top + 1,
+        w->colours[1], 0, DROPDOWN_FLAG_STAY_OPEN, ADVERTISEGEN_COUNT, dropdownWidget->right - dropdownWidget->left - 3);
+    dropdown_set_checked(gAdvertisementGenerationAlgorithm, true);
 }
 
 static void window_editor_scenario_options_show_climate_dropdown(rct_window* w)
@@ -909,7 +968,7 @@ static void window_editor_scenario_options_guests_mouseup(rct_window* w, rct_wid
  */
 static void window_editor_scenario_options_guests_resize(rct_window* w)
 {
-    window_set_resize(w, 380, 149, 380, 149);
+    window_set_resize(w, 380, 190, 380, 190);
 }
 
 /**
@@ -1024,6 +1083,40 @@ static void window_editor_scenario_options_guests_mousedown(rct_window* w, rct_w
             }
             window_invalidate(w);
             break;
+        case WIDX_GUEST_GENERATION_ALGORITHM_DROPDOWN:
+            window_editor_scenario_options_show_guest_generation_dropdown(w);
+            break;
+        case WIDX_ADVERTISEMENT_GENERATION_ALGORITHM_DROPDOWN:
+            window_editor_scenario_options_show_advertisement_generation_dropdown(w);
+            break;
+    }
+}
+
+static void window_editor_scenario_options_guests_dropdown(rct_window* w, rct_widgetindex widgetIndex, int32_t dropdownIndex)
+{
+    if (dropdownIndex == -1)
+    {
+        return;
+    }
+
+    switch (widgetIndex)
+    {
+        case WIDX_GUEST_GENERATION_ALGORITHM_DROPDOWN:
+            if (gGuestGenerationAlgorithm != (uint8_t)dropdownIndex)
+            {
+                auto gameAction = ParkSetGenerationAlgorithmsAction(dropdownIndex, gAdvertisementGenerationAlgorithm);
+                GameActions::Execute(&gameAction);
+                window_invalidate(w);
+            }
+            break;
+        case WIDX_ADVERTISEMENT_GENERATION_ALGORITHM_DROPDOWN:
+            if (gAdvertisementGenerationAlgorithm != (uint8_t)dropdownIndex)
+            {
+                auto gameAction = ParkSetGenerationAlgorithmsAction(gGuestGenerationAlgorithm, dropdownIndex);
+                GameActions::Execute(&gameAction);
+                window_invalidate(w);
+            }
+            break;
     }
 }
 
@@ -1093,6 +1186,7 @@ static void window_editor_scenario_options_guests_invalidate(rct_window* w)
 static void window_editor_scenario_options_guests_paint(rct_window* w, rct_drawpixelinfo* dpi)
 {
     int32_t x, y, arg;
+    rct_string_id stringId;
 
     window_draw_widgets(w, dpi);
     window_editor_scenario_options_draw_tab_images(w, dpi);
@@ -1143,6 +1237,30 @@ static void window_editor_scenario_options_guests_paint(rct_window* w, rct_drawp
     y = w->y + w->widgets[WIDX_GUEST_INITIAL_THIRST].top;
     arg = ((255 - gGuestInitialThirst) * 100) / 255;
     gfx_draw_string_left(dpi, STR_PERCENT_FORMAT_LABEL, &arg, COLOUR_BLACK, x, y);
+
+    // Guest Generation
+    x = w->x + 8;
+    y = w->y + w->widgets[WIDX_GUEST_GENERATION_ALGORITHM].top;
+    stringId = STR_GUEST_GENERATION_ALGORITHM;
+    gfx_draw_string_left(dpi, STR_WINDOW_COLOUR_2_STRINGID, &stringId, COLOUR_BLACK, x, y);
+
+    // Marketing Generation
+    x = w->x + 8;
+    y = w->y + w->widgets[WIDX_ADVERTISEMENT_GENERATION_ALGORITHM].top;
+    stringId = STR_ADVERTISEMENT_GENERATION_ALGORITHM;
+    gfx_draw_string_left(dpi, STR_WINDOW_COLOUR_2_STRINGID, &stringId, COLOUR_BLACK, x, y);
+
+    // Guest Generation value
+    x = w->x + w->widgets[WIDX_GUEST_GENERATION_ALGORITHM].left + 1;
+    y = w->y + w->widgets[WIDX_GUEST_GENERATION_ALGORITHM].top;
+    stringId = GuestGenerationAlgorithmNames[gGuestGenerationAlgorithm];
+    gfx_draw_string_left(dpi, STR_WINDOW_COLOUR_2_STRINGID, &stringId, COLOUR_BLACK, x, y);
+
+    // Marketing Generation Value
+    x = w->x + w->widgets[WIDX_ADVERTISEMENT_GENERATION_ALGORITHM].left + 1;
+    y = w->y + w->widgets[WIDX_ADVERTISEMENT_GENERATION_ALGORITHM].top;
+    stringId = AdvertisementGenerationAlgorithmNames[gAdvertisementGenerationAlgorithm];
+    gfx_draw_string_left(dpi, STR_WINDOW_COLOUR_2_STRINGID, &stringId, COLOUR_BLACK, x, y);
 }
 
 #pragma endregion
@@ -1379,6 +1497,22 @@ static void window_editor_scenario_options_park_dropdown(rct_window* w, rct_widg
             if (gS7Info.ending_month != (uint8_t)dropdownIndex)
             {
                 auto gameAction = ParkSetMonthsOpenAction(gS7Info.starting_month, dropdownIndex);
+                GameActions::Execute(&gameAction);
+                window_invalidate(w);
+            }
+            break;
+        case WIDX_GUEST_GENERATION_ALGORITHM_DROPDOWN:
+            if (gGuestGenerationAlgorithm != (uint8_t)dropdownIndex)
+            {
+                auto gameAction = ParkSetGenerationAlgorithmsAction(dropdownIndex, gAdvertisementGenerationAlgorithm);
+                GameActions::Execute(&gameAction);
+                window_invalidate(w);
+            }
+            break;
+        case WIDX_ADVERTISEMENT_GENERATION_ALGORITHM_DROPDOWN:
+            if (gAdvertisementGenerationAlgorithm != (uint8_t)dropdownIndex)
+            {
+                auto gameAction = ParkSetGenerationAlgorithmsAction(gGuestGenerationAlgorithm, dropdownIndex);
                 GameActions::Execute(&gameAction);
                 window_invalidate(w);
             }

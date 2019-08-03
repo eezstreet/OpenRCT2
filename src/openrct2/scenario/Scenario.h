@@ -177,7 +177,8 @@ struct rct_scenario_data
     money16 land_price;
     money16 construction_rights_price;
     uint16_t word_01358774;
-    uint8_t pad_01358776[2];
+    uint8_t guest_generation_algorithm;
+    uint8_t advertisement_generation_algorithm;
     uint32_t cd_key;
     uint8_t pad_0135877C[64];
     uint32_t game_version_number;
@@ -268,6 +269,18 @@ enum
     S7_TYPE_SCENARIO
 };
 
+enum
+{
+    GUESTGEN_VANILLA,       // vanilla guest generation
+    GUESTGEN_SCALED,        // scale guest generation based on excitement rating (7.5), excluding flat rides and stalls which obey their normal amounts
+    GUESTGEN_COUNT,
+};
+
+enum
+{
+    ADVERTISEGEN_VANILLA,   // vanilla advertisement generation
+    ADVERTISEGEN_COUNT,
+};
 
 #define S7_VERSION 120002
 #define S7_MAGIC_NUMBER 0x00031144

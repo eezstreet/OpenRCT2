@@ -58,6 +58,8 @@ money32 gParkValue;
 money32 gCompanyValue;
 
 int16_t gParkRatingCasualtyPenalty;
+int8_t gGuestGenerationAlgorithm;
+int8_t gAdvertisementGenerationAlgorithm;
 uint8_t gParkRatingHistory[32];
 uint8_t gGuestsInParkHistory[32];
 
@@ -568,7 +570,30 @@ uint32_t Park::CalculateSuggestedMaxGuests() const
             continue;
 
         // Add guest score for ride type
-        suggestedMaxGuests += rideBonusValue[ride->type];
+        if (gGuestGenerationAlgorithm == GUESTGEN_SCALED)
+        {
+            uint32_t scaledAmount = rideBonusValue[ride->type];
+            if (ride->IsRollerCoaster())
+            {
+                if (gParkFlags & PARK_FLAGS_PREF_MORE_INTENSE_RIDES)
+                {
+                    if (ride->intensity < 9)
+                    {
+                        scaledAmount *= ride->intensity / 7.5f;
+                    }
+                }
+                else
+                {
+                    scaledAmount *= ride->excitement / 7.5f;
+                }
+                
+            }
+            suggestedMaxGuests += scaledAmount;
+        }
+        else if (gGuestGenerationAlgorithm == GUESTGEN_VANILLA)
+        {
+            suggestedMaxGuests += rideBonusValue[ride->type];
+        }
     }
 
     // If difficult guest generation, extra guests are available for good rides

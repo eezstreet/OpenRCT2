@@ -331,6 +331,8 @@ public:
         gScenarioCompletedBy = std::string_view(_s7.scenario_completed_name, sizeof(_s7.scenario_completed_name));
         gCash = DECRYPT_MONEY(_s7.cash);
         // pad_013587FC
+        gGuestGenerationAlgorithm = _s7.guest_generation_algorithm;
+        gAdvertisementGenerationAlgorithm = _s7.advertisement_generation_algorithm;
         gParkRatingCasualtyPenalty = _s7.park_rating_casualty_penalty;
         gMapSizeUnits = _s7.map_size_units;
         gMapSizeMinus2 = _s7.map_size_minus_2;

@@ -309,6 +309,8 @@ void S7Exporter::Export()
     String::Set(_s7.scenario_completed_name, sizeof(_s7.scenario_completed_name), gScenarioCompletedBy.c_str());
     _s7.cash = ENCRYPT_MONEY(gCash);
     // pad_013587FC
+    _s7.guest_generation_algorithm = gGuestGenerationAlgorithm;
+    _s7.advertisement_generation_algorithm = gAdvertisementGenerationAlgorithm;
     _s7.park_rating_casualty_penalty = gParkRatingCasualtyPenalty;
     _s7.map_size_units = gMapSizeUnits;
     _s7.map_size_minus_2 = gMapSizeMinus2;

@@ -396,6 +396,9 @@ public:
     bool HasLogReverser() const;
     bool HasWaterfall() const;
     bool HasWhirlpool() const;
+    bool IsTrackedRide() const;
+    bool IsRollerCoaster() const;
+    bool IsWaterRide() const;
 
     bool IsPoweredLaunched() const;
     bool IsBlockSectioned() const;
