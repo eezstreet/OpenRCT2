@@ -1973,115 +1973,155 @@ bool Guest::ShouldGoOnRide(Ride* ride, int32_t entranceNum, bool atQueue, bool t
     // Indicates whether a peep is physically at the ride, or is just thinking about going on the ride.
     bool peepAtRide = !thinking;
 
-    if (ride->status == RIDE_STATUS_OPEN && !(ride->lifecycle_flags & RIDE_LIFECYCLE_BROKEN_DOWN))
+    if (ride->status != RIDE_STATUS_OPEN)
+    { // don't go for closed or testing rides
+        ChoseNotToGoOnRide(ride, peepAtRide, false);
+        return false;
+    }
+
+    if (ride->lifecycle_flags & RIDE_LIFECYCLE_BROKEN_DOWN)
+    {   // don't go for broken down rides
+        ChoseNotToGoOnRide(ride, peepAtRide, false);
+        return false;
+    }
+
+    // Peeps that are leaving the park will refuse to go on any rides, with the exception of free transport rides.
+    assert(ride->type < std::size(RideData4));
+    if (!(RideData4[ride->type].flags & RIDE_TYPE_FLAG4_TRANSPORT_RIDE) || ride->value == RIDE_VALUE_UNDEFINED
+        || ride_get_price(ride) != 0)
     {
-        // Peeps that are leaving the park will refuse to go on any rides, with the exception of free transport rides.
-        assert(ride->type < std::size(RideData4));
-        if (!(RideData4[ride->type].flags & RIDE_TYPE_FLAG4_TRANSPORT_RIDE) || ride->value == RIDE_VALUE_UNDEFINED
-            || ride_get_price(ride) != 0)
+        if (peep_flags & PEEP_FLAGS_LEAVING_PARK)
         {
-            if (peep_flags & PEEP_FLAGS_LEAVING_PARK)
-            {
-                ChoseNotToGoOnRide(ride, peepAtRide, false);
-                return false;
-            }
+            ChoseNotToGoOnRide(ride, peepAtRide, false);
+            return false;
+        }
+    }
+
+    if (ride_type_has_flag(ride->type, RIDE_TYPE_FLAG_IS_SHOP))
+    {
+        return ShouldGoToShop(ride, peepAtRide);
+    }
+
+    // This used to check !(flags & 2), but the function is only ever called with flags = 0, 1 or 6.
+    // This means we can use the existing !(flags & 4) check.
+    if (peepAtRide)
+    {
+        // Peeps won't join a queue that has 1000 peeps already in it.
+        if (ride->stations[entranceNum].QueueLength >= 1000)
+        {
+            peep_tried_to_enter_full_queue(this, ride);
+            return false;
         }
 
-        if (ride_type_has_flag(ride->type, RIDE_TYPE_FLAG_IS_SHOP))
+        // Rides without queues can only have one peep waiting at a time.
+        if (!atQueue)
         {
-            return ShouldGoToShop(ride, peepAtRide);
-        }
-
-        // This used to check !(flags & 2), but the function is only ever called with flags = 0, 1 or 6.
-        // This means we can use the existing !(flags & 4) check.
-        if (peepAtRide)
-        {
-            // Peeps won't join a queue that has 1000 peeps already in it.
-            if (ride->stations[entranceNum].QueueLength >= 1000)
+            if (ride->stations[entranceNum].LastPeepInQueue != SPRITE_INDEX_NULL)
             {
                 peep_tried_to_enter_full_queue(this, ride);
                 return false;
             }
+        }
+        else
+        {
+            // Check if there's room in the queue for the peep to enter.
+            if (ride->stations[entranceNum].LastPeepInQueue != SPRITE_INDEX_NULL)
+            {
+                Peep* lastPeepInQueue = GET_PEEP(ride->stations[entranceNum].LastPeepInQueue);
+                if (abs(lastPeepInQueue->z - z) <= 6)
+                {
+                    int32_t dx = abs(lastPeepInQueue->x - x);
+                    int32_t dy = abs(lastPeepInQueue->y - y);
+                    int32_t maxD = std::max(dx, dy);
 
-            // Rides without queues can only have one peep waiting at a time.
-            if (!atQueue)
-            {
-                if (ride->stations[entranceNum].LastPeepInQueue != SPRITE_INDEX_NULL)
-                {
-                    peep_tried_to_enter_full_queue(this, ride);
-                    return false;
-                }
-            }
-            else
-            {
-                // Check if there's room in the queue for the peep to enter.
-                if (ride->stations[entranceNum].LastPeepInQueue != SPRITE_INDEX_NULL)
-                {
-                    Peep* lastPeepInQueue = GET_PEEP(ride->stations[entranceNum].LastPeepInQueue);
-                    if (abs(lastPeepInQueue->z - z) <= 6)
+                    // Unlike normal paths, peeps cannot overlap when queueing for a ride.
+                    // This check enforces a minimum distance between peeps entering the queue.
+                    if (maxD < 8)
                     {
-                        int32_t dx = abs(lastPeepInQueue->x - x);
-                        int32_t dy = abs(lastPeepInQueue->y - y);
-                        int32_t maxD = std::max(dx, dy);
+                        peep_tried_to_enter_full_queue(this, ride);
+                        return false;
+                    }
 
-                        // Unlike normal paths, peeps cannot overlap when queueing for a ride.
-                        // This check enforces a minimum distance between peeps entering the queue.
-                        if (maxD < 8)
-                        {
-                            peep_tried_to_enter_full_queue(this, ride);
-                            return false;
-                        }
-
-                        // This checks if there's a peep standing still at the very end of the queue.
-                        if (maxD <= 13 && lastPeepInQueue->time_in_queue > 10)
-                        {
-                            peep_tried_to_enter_full_queue(this, ride);
-                            return false;
-                        }
+                    // This checks if there's a peep standing still at the very end of the queue.
+                    if (maxD <= 13 && lastPeepInQueue->time_in_queue > 10)
+                    {
+                        peep_tried_to_enter_full_queue(this, ride);
+                        return false;
                     }
                 }
             }
         }
+    }
 
-        // Assuming the queue conditions are met, peeps will always go on free transport rides.
-        // Ride ratings, recent crashes and weather will all be ignored.
-        money16 ridePrice = ride_get_price(ride);
-        if (!(RideData4[ride->type].flags & RIDE_TYPE_FLAG4_TRANSPORT_RIDE) || ride->value == RIDE_VALUE_UNDEFINED
-            || ridePrice != 0)
+    // Assuming the queue conditions are met, peeps will always go on free transport rides.
+    // Ride ratings, recent crashes and weather will all be ignored.
+    money16 ridePrice = ride_get_price(ride);
+    if (!(RideData4[ride->type].flags & RIDE_TYPE_FLAG4_TRANSPORT_RIDE) || ride->value == RIDE_VALUE_UNDEFINED
+        || ridePrice != 0)
+    {
+        if (previous_ride == ride->id)
         {
-            if (previous_ride == ride->id)
+            ChoseNotToGoOnRide(ride, peepAtRide, false);
+            return false;
+        }
+
+        // Basic price checks
+        if (ridePrice != 0 && !peep_has_voucher_for_free_ride(this, ride))
+        {
+            if (ridePrice > cash_in_pocket)
             {
-                ChoseNotToGoOnRide(ride, peepAtRide, false);
+                if (peepAtRide)
+                {
+                    if (cash_in_pocket <= 0)
+                    {
+                        InsertNewThought(PEEP_THOUGHT_TYPE_SPENT_MONEY, PEEP_THOUGHT_ITEM_NONE);
+                    }
+                    else
+                    {
+                        InsertNewThought(PEEP_THOUGHT_TYPE_CANT_AFFORD_0, ride->id);
+                    }
+                }
+                ChoseNotToGoOnRide(ride, peepAtRide, true);
                 return false;
             }
+        }
 
-            // Basic price checks
-            if (ridePrice != 0 && !peep_has_voucher_for_free_ride(this, ride))
+        // If happy enough, peeps will ignore the fact that a ride has recently crashed.
+        if (ride->last_crash_type != RIDE_CRASH_TYPE_NONE && happiness < 225)
+        {
+            if (peepAtRide)
             {
-                if (ridePrice > cash_in_pocket)
+                InsertNewThought(PEEP_THOUGHT_TYPE_NOT_SAFE, ride->id);
+                if (happiness_target >= 64)
                 {
-                    if (peepAtRide)
-                    {
-                        if (cash_in_pocket <= 0)
-                        {
-                            InsertNewThought(PEEP_THOUGHT_TYPE_SPENT_MONEY, PEEP_THOUGHT_ITEM_NONE);
-                        }
-                        else
-                        {
-                            InsertNewThought(PEEP_THOUGHT_TYPE_CANT_AFFORD_0, ride->id);
-                        }
-                    }
-                    ChoseNotToGoOnRide(ride, peepAtRide, true);
+                    happiness_target -= 8;
+                }
+                ride_update_popularity(ride, 0);
+            }
+            ChoseNotToGoOnRide(ride, peepAtRide, true);
+            return false;
+        }
+
+        if (ride_has_ratings(ride))
+        {
+            // If a peep has already decided that they're going to go on a ride, they'll skip the weather and
+            // excitement check and will only do a basic intensity check when they arrive at the ride itself.
+            if (ride->id == guest_heading_to_ride_id)
+            {
+                if (ride->intensity > RIDE_RATING(10, 00) && !gCheatsIgnoreRideIntensity)
+                {
+                    peep_ride_is_too_intense(this, ride, peepAtRide);
                     return false;
                 }
             }
 
-            // If happy enough, peeps will ignore the fact that a ride has recently crashed.
-            if (ride->last_crash_type != RIDE_CRASH_TYPE_NONE && happiness < 225)
+            // Peeps won't go on rides that aren't sufficiently undercover while it's raining.
+            // The threshold is fairly low and only requires about 10-15% of the ride to be undercover.
+            if (climate_is_raining() && (ride->sheltered_eighths) < 3)
             {
                 if (peepAtRide)
                 {
-                    InsertNewThought(PEEP_THOUGHT_TYPE_NOT_SAFE, ride->id);
+                    InsertNewThought(PEEP_THOUGHT_TYPE_NOT_WHILE_RAINING, ride->id);
                     if (happiness_target >= 64)
                     {
                         happiness_target -= 8;
@@ -2092,26 +2132,41 @@ bool Guest::ShouldGoOnRide(Ride* ride, int32_t entranceNum, bool atQueue, bool t
                 return false;
             }
 
-            if (ride_has_ratings(ride))
+            if (!gCheatsIgnoreRideIntensity)
             {
-                // If a peep has already decided that they're going to go on a ride, they'll skip the weather and
-                // excitement check and will only do a basic intensity check when they arrive at the ride itself.
-                if (ride->id == guest_heading_to_ride_id)
-                {
-                    if (ride->intensity > RIDE_RATING(10, 00) && !gCheatsIgnoreRideIntensity)
-                    {
-                        peep_ride_is_too_intense(this, ride, peepAtRide);
-                        return false;
-                    }
-                }
-
-                // Peeps won't go on rides that aren't sufficiently undercover while it's raining.
-                // The threshold is fairly low and only requires about 10-15% of the ride to be undercover.
-                if (climate_is_raining() && (ride->sheltered_eighths) < 3)
+                // Intensity calculations. Even though the max intensity can go up to 15, it's capped
+                // at 10.0 (before happiness calculations). A full happiness bar will increase the max
+                // intensity and decrease the min intensity by about 2.5.
+                ride_rating maxIntensity = std::min((intensity >> 4) * 100, 1000) + happiness;
+                ride_rating minIntensity = ((intensity & 0x0F) * 100) - happiness;
+                if (ride->intensity < minIntensity)
                 {
                     if (peepAtRide)
                     {
-                        InsertNewThought(PEEP_THOUGHT_TYPE_NOT_WHILE_RAINING, ride->id);
+                        InsertNewThought(PEEP_THOUGHT_TYPE_MORE_THRILLING, ride->id);
+                        if (happiness_target >= 64)
+                        {
+                            happiness_target -= 8;
+                        }
+                        ride_update_popularity(ride, 0);
+                    }
+                    ChoseNotToGoOnRide(ride, peepAtRide, true);
+                    return false;
+                }
+                if (ride->intensity > maxIntensity)
+                {
+                    peep_ride_is_too_intense(this, ride, peepAtRide);
+                    return false;
+                }
+
+                // Nausea calculations.
+                ride_rating maxNausea = NauseaMaximumThresholds[(nausea_tolerance & 3)] + happiness;
+
+                if (ride->nausea > maxNausea)
+                {
+                    if (peepAtRide)
+                    {
+                        InsertNewThought(PEEP_THOUGHT_TYPE_SICKENING, ride->id);
                         if (happiness_target >= 64)
                         {
                             happiness_target -= 8;
@@ -2122,138 +2177,89 @@ bool Guest::ShouldGoOnRide(Ride* ride, int32_t entranceNum, bool atQueue, bool t
                     return false;
                 }
 
-                if (!gCheatsIgnoreRideIntensity)
-                {
-                    // Intensity calculations. Even though the max intensity can go up to 15, it's capped
-                    // at 10.0 (before happiness calculations). A full happiness bar will increase the max
-                    // intensity and decrease the min intensity by about 2.5.
-                    ride_rating maxIntensity = std::min((intensity >> 4) * 100, 1000) + happiness;
-                    ride_rating minIntensity = ((intensity & 0x0F) * 100) - happiness;
-                    if (ride->intensity < minIntensity)
-                    {
-                        if (peepAtRide)
-                        {
-                            InsertNewThought(PEEP_THOUGHT_TYPE_MORE_THRILLING, ride->id);
-                            if (happiness_target >= 64)
-                            {
-                                happiness_target -= 8;
-                            }
-                            ride_update_popularity(ride, 0);
-                        }
-                        ChoseNotToGoOnRide(ride, peepAtRide, true);
-                        return false;
-                    }
-                    if (ride->intensity > maxIntensity)
-                    {
-                        peep_ride_is_too_intense(this, ride, peepAtRide);
-                        return false;
-                    }
-
-                    // Nausea calculations.
-                    ride_rating maxNausea = NauseaMaximumThresholds[(nausea_tolerance & 3)] + happiness;
-
-                    if (ride->nausea > maxNausea)
-                    {
-                        if (peepAtRide)
-                        {
-                            InsertNewThought(PEEP_THOUGHT_TYPE_SICKENING, ride->id);
-                            if (happiness_target >= 64)
-                            {
-                                happiness_target -= 8;
-                            }
-                            ride_update_popularity(ride, 0);
-                        }
-                        ChoseNotToGoOnRide(ride, peepAtRide, true);
-                        return false;
-                    }
-
-                    // Very nauseous peeps will only go on very gentle rides.
-                    if (ride->nausea >= FIXED_2DP(1, 40) && nausea > 160)
-                    {
-                        ChoseNotToGoOnRide(ride, peepAtRide, false);
-                        return false;
-                    }
-                }
-            }
-
-            // If the ride has not yet been rated and is capable of having g-forces,
-            // there's a 90% chance that the peep will ignore it.
-            if (!ride_has_ratings(ride) && (RideData4[ride->type].flags & RIDE_TYPE_FLAG4_PEEP_CHECK_GFORCES))
-            {
-                if ((scenario_rand() & 0xFFFF) > 0x1999U)
+                // Very nauseous peeps will only go on very gentle rides.
+                if (ride->nausea >= FIXED_2DP(1, 40) && nausea > 160)
                 {
                     ChoseNotToGoOnRide(ride, peepAtRide, false);
                     return false;
                 }
+            }
+        }
 
-                if (!gCheatsIgnoreRideIntensity)
-                {
-                    if (ride->max_positive_vertical_g > FIXED_2DP(5, 00) || ride->max_negative_vertical_g < FIXED_2DP(-4, 00)
-                        || ride->max_lateral_g > FIXED_2DP(4, 00))
-                    {
-                        ChoseNotToGoOnRide(ride, peepAtRide, false);
-                        return false;
-                    }
-                }
+        // If the ride has not yet been rated and is capable of having g-forces,
+        // there's a 90% chance that the peep will ignore it.
+        if (!ride_has_ratings(ride) && (RideData4[ride->type].flags & RIDE_TYPE_FLAG4_PEEP_CHECK_GFORCES))
+        {
+            if ((scenario_rand() & 0xFFFF) > 0x1999U)
+            {
+                ChoseNotToGoOnRide(ride, peepAtRide, false);
+                return false;
             }
 
-            uint32_t value = ride->value;
-
-            // If the value of the ride hasn't yet been calculated, peeps will be willing to pay any amount for the ride.
-            if (value != 0xFFFF && !peep_has_voucher_for_free_ride(this, ride) && !(gParkFlags & PARK_FLAGS_NO_MONEY))
+            if (!gCheatsIgnoreRideIntensity)
             {
-                // The amount peeps are willing to pay is decreased by 75% if they had to pay to enter the park.
-                if (peep_flags & PEEP_FLAGS_HAS_PAID_FOR_PARK_ENTRY)
-                    value /= 4;
-
-                // Peeps won't pay more than twice the value of the ride.
-                ridePrice = ride_get_price(ride);
-                if (ridePrice > (money16)(value * 2))
+                if (ride->max_positive_vertical_g > FIXED_2DP(5, 00) || ride->max_negative_vertical_g < FIXED_2DP(-4, 00)
+                    || ride->max_lateral_g > FIXED_2DP(4, 00))
                 {
-                    if (peepAtRide)
-                    {
-                        InsertNewThought(PEEP_THOUGHT_TYPE_BAD_VALUE, ride->id);
-                        if (happiness_target >= 60)
-                        {
-                            happiness_target -= 16;
-                        }
-                        ride_update_popularity(ride, 0);
-                    }
-                    ChoseNotToGoOnRide(ride, peepAtRide, true);
+                    ChoseNotToGoOnRide(ride, peepAtRide, false);
                     return false;
                 }
+            }
+        }
 
-                // A ride is good value if the price is 50% or less of the ride value and the peep didn't pay to enter the park.
-                if (ridePrice <= (money16)(value / 2) && peepAtRide)
+        uint32_t value = ride->value;
+
+        // If the value of the ride hasn't yet been calculated, peeps will be willing to pay any amount for the ride.
+        if (value != 0xFFFF && !peep_has_voucher_for_free_ride(this, ride) && !(gParkFlags & PARK_FLAGS_NO_MONEY))
+        {
+            // The amount peeps are willing to pay is decreased by 75% if they had to pay to enter the park.
+            if (peep_flags & PEEP_FLAGS_HAS_PAID_FOR_PARK_ENTRY)
+                value /= 4;
+
+            // Peeps won't pay more than twice the value of the ride.
+            ridePrice = ride_get_price(ride);
+            if (ridePrice > (money16)(value * 2))
+            {
+                if (peepAtRide)
                 {
-                    if (!(gParkFlags & PARK_FLAGS_NO_MONEY))
+                    InsertNewThought(PEEP_THOUGHT_TYPE_BAD_VALUE, ride->id);
+                    if (happiness_target >= 60)
                     {
-                        if (!(peep_flags & PEEP_FLAGS_HAS_PAID_FOR_PARK_ENTRY))
-                        {
-                            InsertNewThought(PEEP_THOUGHT_TYPE_GOOD_VALUE, ride->id);
-                        }
+                        happiness_target -= 16;
+                    }
+                    ride_update_popularity(ride, 0);
+                }
+                ChoseNotToGoOnRide(ride, peepAtRide, true);
+                return false;
+            }
+
+            // A ride is good value if the price is 50% or less of the ride value and the peep didn't pay to enter the park.
+            if (ridePrice <= (money16)(value / 2) && peepAtRide)
+            {
+                if (!(gParkFlags & PARK_FLAGS_NO_MONEY))
+                {
+                    if (!(peep_flags & PEEP_FLAGS_HAS_PAID_FOR_PARK_ENTRY))
+                    {
+                        InsertNewThought(PEEP_THOUGHT_TYPE_GOOD_VALUE, ride->id);
                     }
                 }
             }
         }
-
-        // At this point, the peep has decided to go on the ride.
-        if (peepAtRide)
-        {
-            ride_update_popularity(ride, 1);
-        }
-
-        if (ride->id == guest_heading_to_ride_id)
-        {
-            peep_reset_ride_heading(this);
-        }
-
-        ride->lifecycle_flags &= ~RIDE_LIFECYCLE_QUEUE_FULL;
-        return true;
     }
 
-    ChoseNotToGoOnRide(ride, peepAtRide, false);
-    return false;
+    // At this point, the peep has decided to go on the ride.
+    if (peepAtRide)
+    {
+        ride_update_popularity(ride, 1);
+    }
+
+    if (ride->id == guest_heading_to_ride_id)
+    {
+        peep_reset_ride_heading(this);
+    }
+
+    ride->lifecycle_flags &= ~RIDE_LIFECYCLE_QUEUE_FULL;
+    return true;
 }
 
 bool Guest::ShouldGoToShop(Ride* ride, bool peepAtShop)
@@ -2261,6 +2267,24 @@ bool Guest::ShouldGoToShop(Ride* ride, bool peepAtShop)
     // Peeps won't go to the same shop twice in a row.
     if (ride->id == previous_ride)
     {
+        ChoseNotToGoOnRide(ride, peepAtShop, true);
+        return false;
+    }
+
+    // Basic price checks
+    if (ride->price != 0 && ride->price > cash_in_pocket)
+    {
+        if (peepAtShop)
+        {
+            if (cash_in_pocket <= 0)
+            {
+                InsertNewThought(PEEP_THOUGHT_TYPE_SPENT_MONEY, PEEP_THOUGHT_ITEM_NONE);
+            }
+            else
+            {
+                InsertNewThought(PEEP_THOUGHT_TYPE_CANT_AFFORD_0, ride->id);
+            }
+        }
         ChoseNotToGoOnRide(ride, peepAtShop, true);
         return false;
     }
@@ -2298,24 +2322,6 @@ bool Guest::ShouldGoToShop(Ride* ride, bool peepAtShop)
             ChoseNotToGoOnRide(ride, peepAtShop, true);
             return false;
         }
-    }
-
-    // Basic price checks
-    if (ride->price != 0 && ride->price > cash_in_pocket)
-    {
-        if (peepAtShop)
-        {
-            if (cash_in_pocket <= 0)
-            {
-                InsertNewThought(PEEP_THOUGHT_TYPE_SPENT_MONEY, PEEP_THOUGHT_ITEM_NONE);
-            }
-            else
-            {
-                InsertNewThought(PEEP_THOUGHT_TYPE_CANT_AFFORD_0, ride->id);
-            }
-        }
-        ChoseNotToGoOnRide(ride, peepAtShop, true);
-        return false;
     }
 
     if (peepAtShop)

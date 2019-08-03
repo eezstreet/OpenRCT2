@@ -3998,6 +3998,9 @@ enum
     STR_ADVERTISEGEN_VANILLA = 6356,
     STR_ADVERTISEGEN_DIMINISHING = 6357,
 
+    // new guest temperature feature
+    STR_GUEST_STAT_HEAT_LABEL = 6358,
+
     // Have to include resource strings (from scenarios and objects) for the time being now that language is partially working
     STR_COUNT = 32768
 };

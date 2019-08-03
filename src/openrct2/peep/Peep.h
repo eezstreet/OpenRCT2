@@ -39,6 +39,7 @@
 #define PEEP_MAX_BATHROOM 255
 #define PEEP_MAX_NAUSEA 255
 #define PEEP_MAX_THIRST 255
+#define PEEP_MAX_HEAT 255
 
 struct TileElement;
 struct Ride;
@@ -191,6 +192,11 @@ enum PeepThoughtType : uint8_t
     PEEP_THOUGHT_TYPE_NICE_RIDE_DEPRECATED = 171, // "Nice ride! But not as good as the Phoenix..."
     PEEP_THOUGHT_TYPE_EXCITED_DEPRECATED = 172,   // "I'm so excited - It's an Intamin ride!"
     PEEP_THOUGHT_TYPE_HERE_WE_ARE = 173,          // "...and here we are on X!"
+
+    PEEP_THOUGHT_TYPE_FREEZING = 174,             // "I'm freezing"
+    PEEP_THOUGHT_TYPE_COLD = 175,                 // "I'm cold"
+    PEEP_THOUGHT_TYPE_HOT = 176,                  // "I'm hot"
+    PEEP_THOUGHT_TYPE_TOO_COLD = 177,             // "It's too cold to ride X"
 
     PEEP_THOUGHT_TYPE_NONE = 255
 };
@@ -565,6 +571,8 @@ struct Peep : rct_sprite_common
     uint8_t happiness_target; // 0x3B
     uint8_t nausea;           // 0x3C
     uint8_t nausea_target;    // 0x3D
+    uint8_t heat;
+    uint8_t heat_target;
     uint8_t hunger;           // 0x3E
     uint8_t thirst;           // 0x3F
     uint8_t toilet;           // 0x40

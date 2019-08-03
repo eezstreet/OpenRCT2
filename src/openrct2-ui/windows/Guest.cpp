@@ -483,7 +483,7 @@ static constexpr const uint32_t window_guest_page_enabled_widgets[] = {
 
 static constexpr const rct_size16 window_guest_page_sizes[][2] = {
     { 192, 159, 500, 450 },     // WINDOW_GUEST_OVERVIEW
-    { 192, 180, 192, 180 },     // WINDOW_GUEST_STATS
+    { 192, 192, 192, 192 },     // WINDOW_GUEST_STATS
     { 192, 180, 500, 400 },     // WINDOW_GUEST_RIDES
     { 210, 148, 210, 148 },     // WINDOW_GUEST_FINANCE
     { 192, 159, 500, 450 },     // WINDOW_GUEST_THOUGHTS
@@ -1515,6 +1515,35 @@ void window_guest_stats_paint(rct_window* w, rct_drawpixelinfo* dpi)
         ebp |= BAR_BLINK;
     }
     window_guest_stats_bars_paint(toilet, x, y, w, dpi, ebp);
+
+    // Heat
+    y += LIST_ROW_HEIGHT;
+    gfx_draw_string_left(dpi, STR_GUEST_STAT_HEAT_LABEL, gCommonFormatArgs, COLOUR_BLACK, x, y);
+
+    int32_t heat = peep->heat;
+    if (heat < 85)
+    {
+        ebp = COLOUR_DARK_BLUE;
+    }
+    else if (heat > 170)
+    {
+        ebp = COLOUR_BRIGHT_RED;
+    }
+    else
+    {
+        ebp = COLOUR_BRIGHT_GREEN;
+    }
+    if (heat < 50)
+    {
+        ebp |= BAR_BLINK;
+    }
+    else if (heat > 205)
+    {
+        ebp |= BAR_BLINK;
+    }
+    if (heat < 10)
+        heat = 10;
+    window_guest_stats_bars_paint(heat, x, y, w, dpi, ebp);
 
     // Time in park
     y += LIST_ROW_HEIGHT + 1;
