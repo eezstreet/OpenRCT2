@@ -262,6 +262,13 @@ static struct
     { PEEP_ACTION_NONE_2, 0 },
     { PEEP_ACTION_NONE_2, 0 },
     { PEEP_ACTION_JOY, 0 },
+    { PEEP_ACTION_NONE_2, 0 },
+    { PEEP_ACTION_NONE_2, 0 },
+    { PEEP_ACTION_NONE_2, 0 },
+    { PEEP_ACTION_NONE_2, 1 },
+    { PEEP_ACTION_NONE_2, 1 },
+    { PEEP_ACTION_NONE_2, 1 },
+    { PEEP_ACTION_NONE_2, 1 },
     { PEEP_ACTION_NONE_2, 1 },
 };
 

@@ -1521,11 +1521,11 @@ void window_guest_stats_paint(rct_window* w, rct_drawpixelinfo* dpi)
     gfx_draw_string_left(dpi, STR_GUEST_STAT_HEAT_LABEL, gCommonFormatArgs, COLOUR_BLACK, x, y);
 
     int32_t heat = peep->heat;
-    if (heat < 85)
+    if (heat < 100)
     {
         ebp = COLOUR_DARK_BLUE;
     }
-    else if (heat > 170)
+    else if (heat > 200)
     {
         ebp = COLOUR_BRIGHT_RED;
     }
