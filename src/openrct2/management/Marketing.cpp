@@ -18,6 +18,7 @@
 #include "../ride/RideData.h"
 #include "../ride/ShopItem.h"
 #include "../world/Park.h"
+#include "../scenario/Scenario.h"
 #include "Finance.h"
 #include "NewsItem.h"
 
@@ -30,8 +31,24 @@ const money16 AdvertisingCampaignPricePerWeek[] = {
     MONEY(200, 00), // RIDE
 };
 
-static constexpr const uint16_t AdvertisingCampaignGuestGenerationProbabilities[] = {
+static constexpr const uint16_t AdvertisingCampaignGuestGenerationProbabilities_Vanilla[] = {
     400, 300, 200, 200, 250, 200,
+};
+
+static uint16_t AdvertisingCampaignGuestGenerationProbabilities_DiminishingReturns[] = {
+    400, 300, 200, 200, 250, 200,
+};
+
+static constexpr const uint16_t AdvertisingCampaignGuestGenerationProbabilities_DiminishingReturns_FullPower[] = {
+    400, 300, 200, 200, 250, 200,
+};
+
+static constexpr const uint16_t AdvertisingCampaignGuestGenerationProbabilities_DiminishingReturns_CostPerWeek[] = {
+    20, 15, 10, 10, 15, 10,
+};
+
+static constexpr const uint16_t AdvertisingCampaignGuestGenerationProbabilities_DiminishingReturns_WeeklyBonus[] = {
+    5, 8, 3, 3, 3, 3,
 };
 
 std::vector<MarketingCampaign> gMarketingCampaigns;
@@ -42,8 +59,22 @@ uint16_t marketing_get_campaign_guest_generation_probability(int32_t campaignTyp
     if (campaign == nullptr)
         return 0;
 
+    uint16_t probability = 0;
+
+    if (gAdvertisementGenerationAlgorithm == ADVERTISEGEN_VANILLA)
+    {
+        probability = AdvertisingCampaignGuestGenerationProbabilities_Vanilla[campaign->Type];
+    }
+    else if (gAdvertisementGenerationAlgorithm == ADVERTISEGEN_DIMINISHINGRETURN)
+    {
+        probability = AdvertisingCampaignGuestGenerationProbabilities_DiminishingReturns[campaign->Type];
+        if (probability < 0)
+        {
+            probability = 0;
+        }
+    }
+
     // Lower probability of guest generation if price was already low
-    auto probability = AdvertisingCampaignGuestGenerationProbabilities[campaign->Type];
     switch (campaign->Type)
     {
         case ADVERTISING_CAMPAIGN_PARK_ENTRY_FREE:
@@ -117,6 +148,22 @@ void marketing_update()
         else
         {
             ++it;
+        }
+    }
+
+    // If the advertisement generation method is Diminishing Returns, we need to improve the diminishing returns over time
+    if (gAdvertisementGenerationAlgorithm == ADVERTISEGEN_DIMINISHINGRETURN)
+    {
+        for (uint8_t i = 0; i < ADVERTISING_CAMPAIGN_COUNT; i++)
+        {
+            AdvertisingCampaignGuestGenerationProbabilities_DiminishingReturns[i]
+                += AdvertisingCampaignGuestGenerationProbabilities_DiminishingReturns_WeeklyBonus[i];
+            if (AdvertisingCampaignGuestGenerationProbabilities_DiminishingReturns[i]
+                > AdvertisingCampaignGuestGenerationProbabilities_DiminishingReturns_FullPower[i])
+            {
+                AdvertisingCampaignGuestGenerationProbabilities_DiminishingReturns[i]
+                    = AdvertisingCampaignGuestGenerationProbabilities_DiminishingReturns_FullPower[i];
+            }
         }
     }
 
@@ -235,5 +282,12 @@ void marketing_new_campaign(const MarketingCampaign& campaign)
     else
     {
         gMarketingCampaigns.push_back(campaign);
+    }
+
+    if (gAdvertisementGenerationAlgorithm == ADVERTISEGEN_DIMINISHINGRETURN)
+    { // if we're using Diminishing Returns then we adjust how much the probabilities are
+        AdvertisingCampaignGuestGenerationProbabilities_DiminishingReturns[campaign.Type]
+            -= AdvertisingCampaignGuestGenerationProbabilities_DiminishingReturns_CostPerWeek[campaign.Type]
+            * campaign.WeeksLeft;
     }
 }

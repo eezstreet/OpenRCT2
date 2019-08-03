@@ -3996,6 +3996,7 @@ enum
     STR_GUESTGEN_VANILLA = 6354,
     STR_GUESTGEN_SCALED = 6355,
     STR_ADVERTISEGEN_VANILLA = 6356,
+    STR_ADVERTISEGEN_DIMINISHING = 6357,
 
     // Have to include resource strings (from scenarios and objects) for the time being now that language is partially working
     STR_COUNT = 32768

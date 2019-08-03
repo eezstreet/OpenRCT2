@@ -76,6 +76,7 @@ static constexpr rct_string_id GuestGenerationAlgorithmNames[] = {
 
 static constexpr rct_string_id AdvertisementGenerationAlgorithmNames[] = {
     STR_ADVERTISEGEN_VANILLA,
+    STR_ADVERTISEGEN_DIMINISHING,
 };
 
 enum {

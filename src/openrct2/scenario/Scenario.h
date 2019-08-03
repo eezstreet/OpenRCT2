@@ -278,7 +278,8 @@ enum
 
 enum
 {
-    ADVERTISEGEN_VANILLA,   // vanilla advertisement generation
+    ADVERTISEGEN_VANILLA,           // vanilla advertisement generation
+    ADVERTISEGEN_DIMINISHINGRETURN, // repeatedly spamming advertising diminishes its power
     ADVERTISEGEN_COUNT,
 };
 
