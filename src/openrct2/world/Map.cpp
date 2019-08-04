@@ -345,7 +345,7 @@ void map_init(int32_t size)
         tile_element->clearance_height = 14;
         tile_element->AsSurface()->SetWaterHeight(0);
         tile_element->AsSurface()->SetSlope(TILE_ELEMENT_SLOPE_FLAT);
-        tile_element->AsSurface()->SetGrassLength(GRASS_LENGTH_CLEAR_0);
+        tile_element->AsSurface()->SetGrassLength(GRASS_LENGTH_CLEAR_0, true, false);
         tile_element->AsSurface()->SetOwnership(OWNERSHIP_UNOWNED);
         tile_element->AsSurface()->SetParkFences(0);
         tile_element->AsSurface()->SetSurfaceStyle(TERRAIN_GRASS);
@@ -1634,7 +1634,7 @@ void map_extend_boundary_surface()
         newTileElement = map_get_surface_element_at(x, y)->AsSurface();
         newTileElement->SetSurfaceStyle(existingTileElement->GetSurfaceStyle());
         newTileElement->SetEdgeStyle(existingTileElement->GetEdgeStyle());
-        newTileElement->SetGrassLength(existingTileElement->GetGrassLength());
+        newTileElement->SetGrassLength(existingTileElement->GetGrassLength(), true, false);
         newTileElement->SetOwnership(OWNERSHIP_UNOWNED);
         newTileElement->SetWaterHeight(existingTileElement->GetWaterHeight());
 
@@ -1677,7 +1677,7 @@ void map_extend_boundary_surface()
 
         newTileElement->SetSurfaceStyle(existingTileElement->GetSurfaceStyle());
         newTileElement->SetEdgeStyle(existingTileElement->GetEdgeStyle());
-        newTileElement->SetGrassLength(existingTileElement->GetGrassLength());
+        newTileElement->SetGrassLength(existingTileElement->GetGrassLength(), true, false);
         newTileElement->SetOwnership(OWNERSHIP_UNOWNED);
         newTileElement->SetWaterHeight(existingTileElement->GetWaterHeight());
 
@@ -1728,7 +1728,7 @@ static void clear_element_at(int32_t x, int32_t y, TileElement** elementPtr)
             element->AsSurface()->SetSlope(TILE_ELEMENT_SLOPE_FLAT);
             element->AsSurface()->SetSurfaceStyle(TERRAIN_GRASS);
             element->AsSurface()->SetEdgeStyle(TERRAIN_EDGE_ROCK);
-            element->AsSurface()->SetGrassLength(GRASS_LENGTH_CLEAR_0);
+            element->AsSurface()->SetGrassLength(GRASS_LENGTH_CLEAR_0, true, false);
             element->AsSurface()->SetOwnership(OWNERSHIP_UNOWNED);
             element->AsSurface()->SetParkFences(0);
             element->AsSurface()->SetWaterHeight(0);

@@ -149,7 +149,8 @@ public:
 
     bool CanGrassGrow() const;
     uint8_t GetGrassLength() const;
-    void SetGrassLength(uint8_t newLength);
+    bool SnowPresent() const;
+    void SetGrassLength(uint8_t newLength, bool meltExistingSnow, bool addSnow);
     void SetGrassLengthAndInvalidate(uint8_t newLength, CoordsXY coords);
     void UpdateGrassLength(CoordsXY coords);
 

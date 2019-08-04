@@ -14,11 +14,17 @@
 #include "../object/TerrainSurfaceObject.h"
 #include "../scenario/Scenario.h"
 #include "Location.hpp"
+#include "Climate.h"
 #include "Map.h"
 
 uint32_t SurfaceElement::GetSurfaceStyle() const
 {
-    uint32_t retVal = (terrain >> 5) & 7;
+    uint8_t desired_terrain = terrain;
+    if (grass_length & SNOW_FLAG)
+    {
+        desired_terrain = (TERRAIN_ICE << 5);
+    }
+    uint32_t retVal = (desired_terrain >> 5) & 7;
     if (type & 1)
         retVal |= (1 << 3);
     return retVal;
@@ -70,6 +76,11 @@ void SurfaceElement::SetWaterHeight(uint32_t newWaterHeight)
     terrain |= newWaterHeight;
 }
 
+bool SurfaceElement::SnowPresent() const
+{
+    return grass_length & SNOW_FLAG;
+}
+
 bool SurfaceElement::CanGrassGrow() const
 {
     auto surfaceStyle = GetSurfaceStyle();
@@ -80,6 +91,10 @@ bool SurfaceElement::CanGrassGrow() const
         auto surfaceObject = static_cast<TerrainSurfaceObject*>(obj);
         if (surfaceObject->Flags & TERRAIN_SURFACE_FLAGS::CAN_GROW)
         {
+            if (grass_length & SNOW_FLAG)
+            {
+                return false;   // grass doesn't grow when snow is on it
+            }
             return true;
         }
     }
@@ -91,9 +106,24 @@ uint8_t SurfaceElement::GetGrassLength() const
     return grass_length;
 }
 
-void SurfaceElement::SetGrassLength(uint8_t newLength)
+void SurfaceElement::SetGrassLength(uint8_t newLength, bool meltExistingSnow, bool addSnow)
 {
+    bool hadSnow = (grass_length & SNOW_FLAG) != 0;
+    if (addSnow)
+    {
+        // add snow flag
+        newLength |= SNOW_FLAG;
+    }
+
     grass_length = newLength;
+    if (!addSnow)
+    {
+        if (hadSnow && !meltExistingSnow)
+        {
+            grass_length |= SNOW_FLAG;
+        }
+    }
+    
 }
 
 void SurfaceElement::SetGrassLengthAndInvalidate(uint8_t length, CoordsXY coords)
@@ -126,6 +156,26 @@ void SurfaceElement::SetGrassLengthAndInvalidate(uint8_t length, CoordsXY coords
  */
 void SurfaceElement::UpdateGrassLength(CoordsXY coords)
 {
+    uint32_t waterHeight = GetWaterHeight() * 2;
+    if (waterHeight <= base_height)
+    {
+        int32_t z = base_height * 8;
+
+        // either add or remove snow from this tile
+        if (gClimateCurrent.RainLevel == RAIN_LEVEL_SNOW)
+        {
+            grass_length |= SNOW_FLAG;
+            map_invalidate_tile(coords.x, coords.y, z, z + 16);
+            return;
+        }
+        else if (gClimateCurrent.Temperature > 0)
+        {
+            grass_length &= ~SNOW_FLAG;
+            map_invalidate_tile(coords.x, coords.y, z, z + 16);
+            return;
+        }
+    }
+
     // Check if tile is grass
     if (!CanGrassGrow())
         return;
@@ -133,7 +183,6 @@ void SurfaceElement::UpdateGrassLength(CoordsXY coords)
     uint8_t grassLengthTmp = grass_length & 7;
 
     // Check if grass is underwater or outside park
-    uint32_t waterHeight = GetWaterHeight() * 2;
     if (waterHeight > base_height || !map_is_location_in_park(coords))
     {
         if (grassLengthTmp != GRASS_LENGTH_CLEAR_0)

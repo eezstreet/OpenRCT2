@@ -64,6 +64,7 @@ namespace OpenRCT2::Drawing
         virtual void PaintWindows() abstract;
         virtual void UpdateWindows() abstract;
         virtual void PaintRain() abstract;
+        virtual void PaintSnow() abstract;
         virtual void CopyRect(int32_t x, int32_t y, int32_t width, int32_t height, int32_t dx, int32_t dy) abstract;
         virtual std::string Screenshot() abstract;
 
@@ -87,6 +88,14 @@ namespace OpenRCT2::Drawing
     interface IRainDrawer
     {
         virtual ~IRainDrawer()
+        {
+        }
+        virtual void Draw(int32_t x, int32_t y, int32_t width, int32_t height, int32_t xStart, int32_t yStart) abstract;
+    };
+
+    interface ISnowDrawer
+    {
+        virtual ~ISnowDrawer()
         {
         }
         virtual void Draw(int32_t x, int32_t y, int32_t width, int32_t height, int32_t xStart, int32_t yStart) abstract;

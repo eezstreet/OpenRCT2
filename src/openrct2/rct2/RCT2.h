@@ -440,8 +440,6 @@ struct RCT2SpritePeep : RCT12SpriteBase
     uint16_t destination_y;        // 0x34
     uint8_t destination_tolerance; // 0x36
     uint8_t var_37;
-    uint8_t heat;
-    uint8_t heat_target;
     uint8_t energy;                  // 0x38
     uint8_t energy_target;           // 0x39
     uint8_t happiness;               // 0x3A
@@ -503,8 +501,10 @@ struct RCT2SpritePeep : RCT12SpriteBase
     uint16_t time_in_queue;                             // 0x7A
     uint8_t rides_been_on[32];                          // 0x7C
     uint32_t id;                                        // 0x9C
-    money32 cash_in_pocket;                             // 0xA0
-    money32 cash_spent;                                 // 0xA4
+    money16 cash_in_pocket;                             // 0xA0
+    money32 cash_spent;                                 // 0xA2
+    uint8_t heat;
+    uint8_t heat_target;
     int32_t time_in_park;                               // 0xA8
     int8_t rejoin_queue_timeout;                        // 0xAC
     uint8_t previous_ride;                              // 0xAD

@@ -948,7 +948,7 @@ public:
                 dst2->SetSlope(src2->GetSlope());
                 dst2->SetSurfaceStyle(src2->GetSurfaceStyle());
                 dst2->SetEdgeStyle(src2->GetEdgeStyle());
-                dst2->SetGrassLength(src2->GetGrassLength());
+                dst2->SetGrassLength(src2->GetGrassLength(), false, false);
                 dst2->SetOwnership(src2->GetOwnership());
                 dst2->SetParkFences(src2->GetParkFences());
                 dst2->SetWaterHeight(src2->GetWaterHeight());

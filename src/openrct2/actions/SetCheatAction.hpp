@@ -364,7 +364,7 @@ private:
                 if (surfaceElement != nullptr && (surfaceElement->GetOwnership() & OWNERSHIP_OWNED)
                     && surfaceElement->GetWaterHeight() == 0 && surfaceElement->CanGrassGrow())
                 {
-                    surfaceElement->SetGrassLength(length);
+                    surfaceElement->SetGrassLength(length, false, false);
                 }
             }
         }

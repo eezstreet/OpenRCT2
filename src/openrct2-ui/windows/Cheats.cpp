@@ -60,6 +60,7 @@ static constexpr const rct_string_id WeatherTypes[] =
     STR_RAIN,
     STR_HEAVY_RAIN,
     STR_THUNDERSTORM,
+    STR_SNOW,
 };
 
 enum WINDOW_CHEATS_WIDGET_IDX
@@ -722,14 +723,14 @@ static void window_cheats_misc_mousedown(rct_window* w, rct_widgetindex widgetIn
 
             dropdownWidget = widget - 1;
 
-            for (i = 0; i < 6; i++)
+            for (i = 0; i < 7; i++)
             {
                 gDropdownItemsFormat[i] = STR_DROPDOWN_MENU_LABEL;
                 gDropdownItemsArgs[i] = WeatherTypes[i];
             }
             window_dropdown_show_text_custom_width(
                 w->x + dropdownWidget->left, w->y + dropdownWidget->top, dropdownWidget->bottom - dropdownWidget->top + 1,
-                w->colours[1], 0, DROPDOWN_FLAG_STAY_OPEN, 6, dropdownWidget->right - dropdownWidget->left - 3);
+                w->colours[1], 0, DROPDOWN_FLAG_STAY_OPEN, 7, dropdownWidget->right - dropdownWidget->left - 3);
 
             currentWeather = gClimateCurrent.Weather;
             dropdown_set_checked(currentWeather, true);

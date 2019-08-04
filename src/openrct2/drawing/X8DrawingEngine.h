@@ -59,6 +59,30 @@ namespace OpenRCT2
             void Restore();
         };
 
+        class X8SnowDrawer final : public ISnowDrawer
+        {
+        private:
+            struct SnowPixel
+            {
+                uint32_t Position;
+                uint8_t Colour;
+            };
+
+            static constexpr uint32_t MaxSnowPixels = 0xFFFE;
+
+            size_t _snowPixelsCapacity = MaxSnowPixels;
+            uint32_t _snowPixelsCount = 0;
+            SnowPixel* _snowPixels = nullptr;
+            rct_drawpixelinfo* _screenDPI = nullptr;
+
+        public:
+            X8SnowDrawer();
+            ~X8SnowDrawer();
+            void SetDPI(rct_drawpixelinfo* dpi);
+            void Draw(int32_t x, int32_t y, int32_t width, int32_t height, int32_t xStart, int32_t yStart) override;
+            void Restore();
+        };
+
 #ifdef __WARN_SUGGEST_FINAL_TYPES__
 #    pragma GCC diagnostic push
 #    pragma GCC diagnostic ignored "-Wsuggest-final-types"
@@ -81,6 +105,7 @@ namespace OpenRCT2
 #endif
 
             X8RainDrawer _rainDrawer;
+            X8SnowDrawer _snowDrawer;
             X8DrawingContext* _drawingContext;
 
         public:
@@ -97,6 +122,7 @@ namespace OpenRCT2
             void PaintWindows() override;
             void UpdateWindows() override;
             void PaintRain() override;
+            void PaintSnow() override;
             void CopyRect(int32_t x, int32_t y, int32_t width, int32_t height, int32_t dx, int32_t dy) override;
             std::string Screenshot() override;
             IDrawingContext* GetDrawingContext(rct_drawpixelinfo* dpi) override;

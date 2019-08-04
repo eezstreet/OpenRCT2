@@ -71,6 +71,7 @@ enum RAIN_LEVEL
     RAIN_LEVEL_NONE,
     RAIN_LEVEL_LIGHT,
     RAIN_LEVEL_HEAVY,
+    RAIN_LEVEL_SNOW,
 };
 
 struct WeatherState

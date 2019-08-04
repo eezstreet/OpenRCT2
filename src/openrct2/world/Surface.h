@@ -57,15 +57,16 @@ enum
     TERRAIN_EDGE_COUNT
 };
 
+#define SNOW_FLAG   0x08    // If a tile's GrassLength is flagged with this, it appears as though it has snow on top of it
 enum
 {
-    GRASS_LENGTH_MOWED,
-    GRASS_LENGTH_CLEAR_0,
-    GRASS_LENGTH_CLEAR_1,
-    GRASS_LENGTH_CLEAR_2,
-    GRASS_LENGTH_CLUMPS_0,
-    GRASS_LENGTH_CLUMPS_1,
-    GRASS_LENGTH_CLUMPS_2
+    GRASS_LENGTH_MOWED,     // 0000
+    GRASS_LENGTH_CLEAR_0,   // 0001
+    GRASS_LENGTH_CLEAR_1,   // 0010
+    GRASS_LENGTH_CLEAR_2,   // 0011
+    GRASS_LENGTH_CLUMPS_0,  // 0100
+    GRASS_LENGTH_CLUMPS_1,  // 0101
+    GRASS_LENGTH_CLUMPS_2   // 0110
 };
 
 enum

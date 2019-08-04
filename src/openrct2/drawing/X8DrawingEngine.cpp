@@ -22,6 +22,7 @@
 #include "IDrawingEngine.h"
 #include "LightFX.h"
 #include "Rain.h"
+#include "Snow.h"
 
 #include <algorithm>
 #include <cstring>
@@ -113,6 +114,89 @@ void X8RainDrawer::Restore()
     }
 }
 
+X8SnowDrawer::X8SnowDrawer()
+{
+    _snowPixels = new SnowPixel[_snowPixelsCapacity];
+}
+
+X8SnowDrawer::~X8SnowDrawer()
+{
+    delete[] _snowPixels;
+}
+
+void X8SnowDrawer::SetDPI(rct_drawpixelinfo* dpi)
+{
+    _screenDPI = dpi;
+}
+
+void X8SnowDrawer::Draw(int32_t x, int32_t y, int32_t width, int32_t height, int32_t xStart, int32_t yStart)
+{
+    const uint8_t* pattern = SnowPattern;
+    uint8_t patternXSpace = *pattern++;
+    uint8_t patternYSpace = *pattern++;
+
+    uint8_t patternStartXOffset = xStart % patternXSpace;
+    uint8_t patternStartYOffset = yStart % patternYSpace;
+
+    uint32_t pixelOffset = (_screenDPI->pitch + _screenDPI->width) * y + x;
+    uint8_t patternYPos = patternStartYOffset % patternYSpace;
+
+    uint8_t* screenBits = _screenDPI->bits;
+
+    // Stores the colours of changed pixels
+    SnowPixel* newPixels = &_snowPixels[_snowPixelsCount];
+    for (; height != 0; height--)
+    {
+        uint8_t patternX = pattern[patternYPos * 2];
+        if (patternX != 0xFF)
+        {
+            if (_snowPixelsCount < (_snowPixelsCapacity - (uint32_t)width))
+            {
+                uint32_t finalPixelOffset = width + pixelOffset;
+
+                uint32_t xPixelOffset = pixelOffset;
+                xPixelOffset += ((uint8_t)(patternX - patternStartXOffset)) % patternXSpace;
+
+                uint8_t patternPixel = pattern[patternYPos * 2 + 1];
+                for (; xPixelOffset < finalPixelOffset; xPixelOffset += patternXSpace)
+                {
+                    uint8_t current_pixel = screenBits[xPixelOffset];
+                    screenBits[xPixelOffset] = patternPixel;
+                    _snowPixelsCount++;
+
+                    // Store colour and position
+                    *newPixels++ = { xPixelOffset, current_pixel };
+                }
+            }
+        }
+
+        pixelOffset += _screenDPI->pitch + _screenDPI->width;
+        patternYPos++;
+        patternYPos %= patternYSpace;
+    }
+}
+
+void X8SnowDrawer::Restore()
+{
+    if (_snowPixelsCount > 0)
+    {
+        uint32_t numPixels = (_screenDPI->width + _screenDPI->pitch) * _screenDPI->height;
+        uint8_t* bits = _screenDPI->bits;
+        for (uint32_t i = 0; i < _snowPixelsCount; i++)
+        {
+            SnowPixel snowPixel = _snowPixels[i];
+            if (snowPixel.Position >= numPixels)
+            {
+                // Pixel out of bounds, bail
+                break;
+            }
+
+            bits[snowPixel.Position] = snowPixel.Colour;
+        }
+        _snowPixelsCount = 0;
+    }
+}
+
 #ifdef __WARN_SUGGEST_FINAL_METHODS__
 #    pragma GCC diagnostic push
 #    pragma GCC diagnostic ignored "-Wsuggest-final-methods"
@@ -199,6 +283,8 @@ void X8DrawingEngine::BeginDraw()
 #endif
         _rainDrawer.SetDPI(&_bitsDPI);
         _rainDrawer.Restore();
+        _snowDrawer.SetDPI(&_bitsDPI);
+        _snowDrawer.Restore();
     }
 }
 
@@ -225,6 +311,11 @@ void X8DrawingEngine::UpdateWindows()
 void X8DrawingEngine::PaintRain()
 {
     DrawRain(&_bitsDPI, &_rainDrawer);
+}
+
+void X8DrawingEngine::PaintSnow()
+{
+    DrawSnow(&_bitsDPI, &_snowDrawer);
 }
 
 void X8DrawingEngine::CopyRect(int32_t x, int32_t y, int32_t width, int32_t height, int32_t dx, int32_t dy)

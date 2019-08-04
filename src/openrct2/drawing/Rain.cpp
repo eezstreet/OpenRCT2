@@ -50,7 +50,7 @@ void DrawRain(rct_drawpixelinfo* dpi, IRainDrawer* rainDrawer)
 
         // Get rain draw function and draw rain
         uint32_t rainType = gClimateCurrent.RainLevel;
-        if (rainType != RAIN_LEVEL_NONE && !gTrackDesignSaveMode && !(viewFlags & VIEWPORT_FLAG_HIGHLIGHT_PATH_ISSUES))
+        if (rainType != RAIN_LEVEL_NONE && rainType != RAIN_LEVEL_SNOW && !gTrackDesignSaveMode && !(viewFlags & VIEWPORT_FLAG_HIGHLIGHT_PATH_ISSUES))
         {
             auto drawFunc = DrawRainFunctions[rainType];
             auto uiContext = GetContext()->GetUiContext();

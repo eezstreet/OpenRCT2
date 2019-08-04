@@ -142,6 +142,21 @@ void climate_update()
                         auto intent = Intent(INTENT_ACTION_UPDATE_CLIMATE);
                         context_broadcast_intent(&intent);
                     }
+                    else if (gClimateCurrent.RainLevel == RAIN_LEVEL_SNOW && gClimateNext.RainLevel != RAIN_LEVEL_SNOW)
+                    {   // transitioning from there being snow to not being any snow
+                        if (gClimateNext.RainLevel > RAIN_LEVEL_NONE)
+                        {
+                            gClimateCurrent.RainLevel = RAIN_LEVEL_LIGHT;
+                        }
+                        else
+                        {
+                            gClimateCurrent.RainLevel = RAIN_LEVEL_NONE;
+                        }
+                    }
+                    else if (gClimateNext.RainLevel == RAIN_LEVEL_SNOW && gClimateCurrent.RainLevel != RAIN_LEVEL_SNOW)
+                    {   // transitioning from there being no snow to there being snow
+                        gClimateCurrent.RainLevel = gClimateNext.RainLevel;
+                    }
                     else if (gClimateNext.RainLevel <= RAIN_LEVEL_HEAVY)
                     {
                         gClimateCurrent.RainLevel = climate_step_weather_level(
@@ -489,7 +504,7 @@ const WeatherState ClimateWeatherData[7] = {
     { -1, WEATHER_EFFECT_RAIN, 1, RAIN_LEVEL_LIGHT, SPR_WEATHER_LIGHT_RAIN }, // Rain
     { -2, WEATHER_EFFECT_RAIN, 2, RAIN_LEVEL_HEAVY, SPR_WEATHER_HEAVY_RAIN }, // Heavy Rain
     { -2, WEATHER_EFFECT_STORM, 3, RAIN_LEVEL_HEAVY, SPR_WEATHER_STORM },      // Thunderstorm
-    { -8, WEATHER_EFFECT_SNOW, 1, RAIN_LEVEL_NONE, SPR_WEATHER_SNOW },        // Snow
+    { -8, WEATHER_EFFECT_SNOW, 1, RAIN_LEVEL_SNOW, SPR_WEATHER_SNOW },        // Snow
 
 };
 

@@ -2064,7 +2064,7 @@ private:
                 dst2->SetSlope(src2->GetSlope());
                 dst2->SetSurfaceStyle(RCT1::GetTerrain(src2->GetSurfaceStyle()));
                 dst2->SetEdgeStyle(RCT1::GetTerrainEdge(src2->GetEdgeStyle()));
-                dst2->SetGrassLength(src2->GetGrassLength());
+                dst2->SetGrassLength(src2->GetGrassLength(), false, false);
                 dst2->SetOwnership(src2->GetOwnership());
                 dst2->SetParkFences(src2->GetParkFences());
                 dst2->SetWaterHeight(src2->GetWaterHeight());
@@ -2729,7 +2729,7 @@ private:
                 nextFreeTileElement->AsSurface()->SetSlope(TILE_ELEMENT_SLOPE_FLAT);
                 nextFreeTileElement->AsSurface()->SetSurfaceStyle(TERRAIN_GRASS);
                 nextFreeTileElement->AsSurface()->SetEdgeStyle(TERRAIN_EDGE_ROCK);
-                nextFreeTileElement->AsSurface()->SetGrassLength(GRASS_LENGTH_CLEAR_0);
+                nextFreeTileElement->AsSurface()->SetGrassLength(GRASS_LENGTH_CLEAR_0, true, false);
                 nextFreeTileElement->AsSurface()->SetOwnership(OWNERSHIP_UNOWNED);
                 *tilePointer++ = nextFreeTileElement++;
             }
@@ -2743,7 +2743,7 @@ private:
             nextFreeTileElement->AsSurface()->SetSlope(TILE_ELEMENT_SLOPE_FLAT);
             nextFreeTileElement->AsSurface()->SetSurfaceStyle(TERRAIN_GRASS);
             nextFreeTileElement->AsSurface()->SetEdgeStyle(TERRAIN_EDGE_ROCK);
-            nextFreeTileElement->AsSurface()->SetGrassLength(GRASS_LENGTH_CLEAR_0);
+            nextFreeTileElement->AsSurface()->SetGrassLength(GRASS_LENGTH_CLEAR_0, true, false);
             nextFreeTileElement->AsSurface()->SetOwnership(OWNERSHIP_UNOWNED);
             *tilePointer++ = nextFreeTileElement++;
         }

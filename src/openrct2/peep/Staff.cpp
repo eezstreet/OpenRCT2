@@ -1212,7 +1212,7 @@ void Staff::UpdateMowing()
         auto surfaceElement = map_get_surface_element_at(next_x / 32, next_y / 32)->AsSurface();
         if (surfaceElement != nullptr && surfaceElement->CanGrassGrow())
         {
-            surfaceElement->SetGrassLength(GRASS_LENGTH_MOWED);
+            surfaceElement->SetGrassLength(GRASS_LENGTH_MOWED, false, false);
             map_invalidate_tile_zoom0(next_x, next_y, surfaceElement->base_height * 8, surfaceElement->base_height * 8 + 16);
         }
         staff_lawns_mown++;

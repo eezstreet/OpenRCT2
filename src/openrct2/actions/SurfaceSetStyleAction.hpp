@@ -237,9 +237,11 @@ public:
                     }
                 }
 
-                if (surfaceElement->CanGrassGrow() && (surfaceElement->GetGrassLength() & 7) != GRASS_LENGTH_CLEAR_0)
+                if (surfaceElement->SnowPresent() ||
+                    (surfaceElement->CanGrassGrow()
+                    && (surfaceElement->GetGrassLength() & 7) != GRASS_LENGTH_CLEAR_0))
                 {
-                    surfaceElement->SetGrassLength(GRASS_LENGTH_CLEAR_0);
+                    surfaceElement->SetGrassLength(GRASS_LENGTH_CLEAR_0, true, false);
                     map_invalidate_tile_full(x, y);
                 }
             }

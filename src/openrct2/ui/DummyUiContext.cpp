@@ -154,6 +154,9 @@ namespace OpenRCT2::Ui
         void DrawRainAnimation(IRainDrawer* rainDrawer, rct_drawpixelinfo* dpi, DrawRainFunc drawFunc) override
         {
         }
+        void DrawSnowAnimation(ISnowDrawer* snowDrawer, rct_drawpixelinfo* dpi, DrawSnowFunc drawFunc) override
+        {
+        }
 
         // Text input
         bool IsTextInputActive() override

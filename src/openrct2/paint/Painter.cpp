@@ -57,6 +57,7 @@ void Painter::Paint(IDrawingEngine& de)
         gfx_invalidate_pickedup_peep();
 
         de.PaintRain();
+        de.PaintSnow();
     }
 
     auto* replayManager = GetContext()->GetReplayManager();

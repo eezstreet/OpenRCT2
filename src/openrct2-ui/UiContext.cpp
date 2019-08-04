@@ -279,6 +279,19 @@ public:
         }
     }
 
+    void DrawSnowAnimation(ISnowDrawer* snowDrawer, rct_drawpixelinfo* dpi, DrawSnowFunc drawFunc) override
+    {
+        int32_t left = dpi->x;
+        int32_t right = left + dpi->width;
+        int32_t top = dpi->y;
+        int32_t bottom = top + dpi->height;
+
+        for (auto& w : g_window_list)
+        {
+            DrawSnowWindow(snowDrawer, w.get(), left, right, top, bottom, drawFunc);
+        }
+    }
+
     // Text input
     bool IsTextInputActive() override
     {
@@ -856,6 +869,87 @@ private:
 
             top = w_bottom;
             DrawRainWindow(rainDrawer, original_w, left, right, top, bottom, drawFunc);
+            return;
+        }
+    }
+
+    static void DrawSnowWindow(
+        ISnowDrawer* snowDrawer, rct_window* original_w, int16_t left, int16_t right, int16_t top, int16_t bottom,
+        DrawSnowFunc drawFunc)
+    {
+        rct_window* w{};
+        auto itStart = window_get_iterator(original_w);
+        for (auto it = std::next(itStart);; it++)
+        {
+            if (it == g_window_list.end())
+            {
+                // Loop ended, draw rain for original_w
+                auto vp = original_w->viewport;
+                if (vp != nullptr)
+                {
+                    left = std::max<int16_t>(left, vp->x);
+                    right = std::min<int16_t>(right, vp->x + vp->width);
+                    top = std::max<int16_t>(top, vp->y);
+                    bottom = std::min<int16_t>(bottom, vp->y + vp->height);
+                    if (left < right && top < bottom)
+                    {
+                        auto width = right - left;
+                        auto height = bottom - top;
+                        drawFunc(snowDrawer, left, top, width, height);
+                    }
+                }
+                return;
+            }
+
+            w = it->get();
+            if (right <= w->x || bottom <= w->y)
+            {
+                continue;
+            }
+
+            if (RCT_WINDOW_RIGHT(w) <= left || RCT_WINDOW_BOTTOM(w) <= top)
+            {
+                continue;
+            }
+
+            if (left >= w->x)
+            {
+                break;
+            }
+
+            DrawSnowWindow(snowDrawer, original_w, left, w->x, top, bottom, drawFunc);
+
+            left = w->x;
+            DrawSnowWindow(snowDrawer, original_w, left, right, top, bottom, drawFunc);
+            return;
+        }
+
+        int16_t w_right = RCT_WINDOW_RIGHT(w);
+        if (right > w_right)
+        {
+            DrawSnowWindow(snowDrawer, original_w, left, w_right, top, bottom, drawFunc);
+
+            left = w_right;
+            DrawSnowWindow(snowDrawer, original_w, left, right, top, bottom, drawFunc);
+            return;
+        }
+
+        if (top < w->y)
+        {
+            DrawSnowWindow(snowDrawer, original_w, left, right, top, w->y, drawFunc);
+
+            top = w->y;
+            DrawSnowWindow(snowDrawer, original_w, left, right, top, bottom, drawFunc);
+            return;
+        }
+
+        int16_t w_bottom = RCT_WINDOW_BOTTOM(w);
+        if (bottom > w_bottom)
+        {
+            DrawSnowWindow(snowDrawer, original_w, left, right, top, w_bottom, drawFunc);
+
+            top = w_bottom;
+            DrawSnowWindow(snowDrawer, original_w, left, right, top, bottom, drawFunc);
             return;
         }
     }

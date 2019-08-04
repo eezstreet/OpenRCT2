@@ -9,33 +9,34 @@
 
 #ifndef DISABLE_OPENGL
 
-#    include "../DrawingEngineFactory.hpp"
-#    include "ApplyPaletteShader.h"
-#    include "DrawCommands.h"
-#    include "DrawLineShader.h"
-#    include "DrawRectShader.h"
-#    include "GLSLTypes.h"
-#    include "OpenGLAPI.h"
-#    include "OpenGLFramebuffer.h"
-#    include "SwapFramebuffer.h"
-#    include "TextureCache.h"
-#    include "TransparencyDepth.h"
+#include "../DrawingEngineFactory.hpp"
+#include "ApplyPaletteShader.h"
+#include "DrawCommands.h"
+#include "DrawLineShader.h"
+#include "DrawRectShader.h"
+#include "GLSLTypes.h"
+#include "OpenGLAPI.h"
+#include "OpenGLFramebuffer.h"
+#include "SwapFramebuffer.h"
+#include "TextureCache.h"
+#include "TransparencyDepth.h"
 
-#    include <SDL.h>
-#    include <algorithm>
-#    include <cmath>
-#    include <openrct2-ui/interface/Window.h>
-#    include <openrct2/Intro.h>
-#    include <openrct2/config/Config.h>
-#    include <openrct2/core/Console.hpp>
-#    include <openrct2/drawing/Drawing.h>
-#    include <openrct2/drawing/IDrawingContext.h>
-#    include <openrct2/drawing/IDrawingEngine.h>
-#    include <openrct2/drawing/LightFX.h>
-#    include <openrct2/drawing/Rain.h>
-#    include <openrct2/interface/Screenshot.h>
-#    include <openrct2/ui/UiContext.h>
-#    include <unordered_map>
+#include <SDL.h>
+#include <algorithm>
+#include <cmath>
+#include <openrct2-ui/interface/Window.h>
+#include <openrct2/Intro.h>
+#include <openrct2/config/Config.h>
+#include <openrct2/core/Console.hpp>
+#include <openrct2/drawing/Drawing.h>
+#include <openrct2/drawing/IDrawingContext.h>
+#include <openrct2/drawing/IDrawingEngine.h>
+#include <openrct2/drawing/LightFX.h>
+#include <openrct2/drawing/Rain.h>
+#include <openrct2/drawing/Snow.h>
+#include <openrct2/interface/Screenshot.h>
+#include <openrct2/ui/UiContext.h>
+#include <unordered_map>
 
 using namespace OpenRCT2;
 using namespace OpenRCT2::Drawing;
@@ -172,6 +173,58 @@ public:
     }
 };
 
+class OpenGLSnowDrawer final : public ISnowDrawer
+{
+    OpenGLDrawingContext* _drawingContext;
+
+public:
+    explicit OpenGLSnowDrawer(OpenGLDrawingContext* drawingContext)
+        : _drawingContext(drawingContext)
+    {
+    }
+
+    virtual void Draw(int32_t x, int32_t y, int32_t width, int32_t height, int32_t xStart, int32_t yStart)
+    {
+        const uint8_t* pattern = SnowPattern;
+
+        uint8_t patternXSpace = *pattern++;
+        uint8_t patternYSpace = *pattern++;
+
+        uint8_t patternStartXOffset = xStart % patternXSpace;
+        uint8_t patternStartYOffset = yStart % patternYSpace;
+
+        const auto* dpi = _drawingContext->GetDPI();
+
+        uint32_t pixelOffset = (dpi->pitch + dpi->width) * y + x;
+        uint8_t patternYPos = patternStartYOffset % patternYSpace;
+
+        for (; height != 0; height--)
+        {
+            uint8_t patternX = pattern[patternYPos * 2];
+            if (patternX != 0xFF)
+            {
+                uint32_t finalPixelOffset = width + pixelOffset;
+
+                uint32_t xPixelOffset = pixelOffset;
+                xPixelOffset += ((uint8_t)(patternX - patternStartXOffset)) % patternXSpace;
+
+                uint8_t patternPixel = pattern[patternYPos * 2 + 1];
+                for (; xPixelOffset < finalPixelOffset; xPixelOffset += patternXSpace)
+                {
+                    int32_t pixelX = xPixelOffset % dpi->width;
+                    int32_t pixelY = (xPixelOffset / dpi->width) % dpi->height;
+
+                    _drawingContext->DrawLine(patternPixel, pixelX, pixelY, pixelX + 1, pixelY + 1);
+                }
+            }
+
+            pixelOffset += dpi->pitch + dpi->width;
+            patternYPos++;
+            patternYPos %= patternYSpace;
+        }
+    }
+};
+
 class OpenGLDrawingEngine : public IDrawingEngine
 {
 private:
@@ -194,6 +247,7 @@ private:
     OpenGLFramebuffer* _scaleFramebuffer = nullptr;
     OpenGLFramebuffer* _smoothScaleFramebuffer = nullptr;
     OpenGLRainDrawer _rainDrawer;
+    OpenGLSnowDrawer _snowDrawer;
 
 public:
     SDL_Color Palette[256];
@@ -203,6 +257,7 @@ public:
         : _uiContext(uiContext)
         , _drawingContext(new OpenGLDrawingContext(this))
         , _rainDrawer(_drawingContext)
+        , _snowDrawer(_drawingContext)
     {
         _window = (SDL_Window*)_uiContext->GetWindow();
         _bitsDPI.DrawingEngine = this;
@@ -343,6 +398,12 @@ public:
     {
         _drawingContext->SetDPI(&_bitsDPI);
         DrawRain(&_bitsDPI, &_rainDrawer);
+    }
+
+    void PaintSnow() override
+    {
+        _drawingContext->SetDPI(&_bitsDPI);
+        DrawSnow(&_bitsDPI, &_snowDrawer);
     }
 
     std::string Screenshot() override

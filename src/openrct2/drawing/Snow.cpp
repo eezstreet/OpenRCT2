@@ -1,0 +1,58 @@
+/*****************************************************************************
+ * Copyright (c) 2014-2019 OpenRCT2 developers
+ *
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
+ *
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
+ *****************************************************************************/
+
+#include "../config/Config.h"
+#include "../interface/Viewport.h"
+#include "../ride/TrackDesign.h"
+#include "../scenario/Scenario.h"
+#include "../ui/UiContext.h"
+#include "../world/Climate.h"
+#include "Drawing.h"
+#include "IDrawingEngine.h"
+#include "Rain.h"
+
+using namespace OpenRCT2;
+using namespace OpenRCT2::Drawing;
+
+static void _DrawSnow_Internal(IRainDrawer* rainDrawer, int32_t left, int32_t top, int32_t width, int32_t height)
+{
+    int32_t x_start = -(int32_t)(gScenarioTicks / 2) + 8;
+    int32_t y_start = ((gScenarioTicks / 2) * 3) + 7;
+    y_start = -y_start;
+    x_start += left;
+    y_start += top;
+    rainDrawer->Draw(left, top, width, height, x_start, y_start);
+
+    x_start = -(int32_t)gScenarioTicks + 0x18;
+    y_start = (gScenarioTicks * 4) + 0x0D;
+    y_start = -y_start;
+    x_start += left;
+    y_start += top;
+    rainDrawer->Draw(left, top, width, height, x_start, y_start);
+}
+
+void DrawSnow(rct_drawpixelinfo* dpi, ISnowDrawer* snowDrawer)
+{
+    if (gConfigGeneral.render_weather_effects)
+    {
+        uint32_t viewFlags = 0;
+
+        rct_viewport* viewport = window_get_viewport(window_get_main());
+        if (viewport != nullptr)
+            viewFlags = viewport->flags;
+
+        // Get rain draw function and draw rain
+        uint32_t rainType = gClimateCurrent.RainLevel;
+        if (rainType == RAIN_LEVEL_SNOW && !gTrackDesignSaveMode && !(viewFlags & VIEWPORT_FLAG_HIGHLIGHT_PATH_ISSUES))
+        {
+            auto uiContext = GetContext()->GetUiContext();
+            uiContext->DrawSnowAnimation(snowDrawer, dpi, (DrawSnowFunc)_DrawSnow_Internal);
+        }
+    }
+}

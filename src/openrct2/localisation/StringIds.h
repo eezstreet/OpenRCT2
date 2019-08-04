@@ -4010,6 +4010,9 @@ enum
     STR_PEEPS_HOT = 6366,
     STR_PEEPS_COLD = 6367,
 
+    // for the cheat menu
+    STR_SNOW = 6368,
+
     // Have to include resource strings (from scenarios and objects) for the time being now that language is partially working
     STR_COUNT = 32768
 };

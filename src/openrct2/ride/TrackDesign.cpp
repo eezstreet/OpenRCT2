@@ -2311,7 +2311,7 @@ static void track_design_preview_clear_map()
         tile_element->AsSurface()->SetWaterHeight(0);
         tile_element->AsSurface()->SetSurfaceStyle(TERRAIN_GRASS);
         tile_element->AsSurface()->SetEdgeStyle(TERRAIN_EDGE_ROCK);
-        tile_element->AsSurface()->SetGrassLength(GRASS_LENGTH_CLEAR_0);
+        tile_element->AsSurface()->SetGrassLength(GRASS_LENGTH_CLEAR_0, true, false);
         tile_element->AsSurface()->SetOwnership(OWNERSHIP_OWNED);
         tile_element->AsSurface()->SetParkFences(0);
     }
