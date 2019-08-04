@@ -1283,6 +1283,8 @@ public:
         dst->destination_y = src->destination_y;
         dst->destination_tolerance = src->destination_tolerance;
         dst->var_37 = src->var_37;
+        dst->heat = src->heat;
+        dst->heat_target = src->heat_target;
         dst->energy = src->energy;
         dst->energy_target = src->energy_target;
         dst->happiness = src->happiness;

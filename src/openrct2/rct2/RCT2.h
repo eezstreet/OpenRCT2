@@ -440,6 +440,8 @@ struct RCT2SpritePeep : RCT12SpriteBase
     uint16_t destination_y;        // 0x34
     uint8_t destination_tolerance; // 0x36
     uint8_t var_37;
+    uint8_t heat;
+    uint8_t heat_target;
     uint8_t energy;                  // 0x38
     uint8_t energy_target;           // 0x39
     uint8_t happiness;               // 0x3A

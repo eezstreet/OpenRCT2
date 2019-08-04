@@ -195,13 +195,13 @@ enum PeepThoughtType : uint8_t
     PEEP_THOUGHT_TYPE_EXCITED_DEPRECATED = 172,   // "I'm so excited - It's an Intamin ride!"
     PEEP_THOUGHT_TYPE_HERE_WE_ARE = 173,          // "...and here we are on X!"
 
-    PEEP_THOUGHT_TYPE_FREEZING = 174,             // "I'm freezing"
-    PEEP_THOUGHT_TYPE_COLD = 175,                 // "I'm cold"
-    PEEP_THOUGHT_TYPE_HOT = 176,                  // "I'm hot"
-    PEEP_THOUGHT_TYPE_TOO_COLD = 177,             // "I'm too cold to ride X"
-    PEEP_THOUGHT_TYPE_ICE_CREAM_TOO_COLD = 178,   // "I'm too cold to buy Ice Cream"
-    PEEP_THOUGHT_TYPE_COFFEE_TOO_HOT = 179,       // "I'm too hot to buy Coffee"
-    PEEP_THOUGHT_TYPE_HOT_CHOCOLATE_TOO_HOT = 180,// "I'm too hot to buy Hot Chocolate"
+    PEEP_THOUGHT_TYPE_FREEZING = 174,              // "I'm freezing"
+    PEEP_THOUGHT_TYPE_COLD = 175,                  // "I'm cold"
+    PEEP_THOUGHT_TYPE_HOT = 176,                   // "I'm hot"
+    PEEP_THOUGHT_TYPE_TOO_COLD = 177,              // "I'm too cold to ride X"
+    PEEP_THOUGHT_TYPE_ICE_CREAM_TOO_COLD = 178,    // "I'm too cold to buy Ice Cream"
+    PEEP_THOUGHT_TYPE_COFFEE_TOO_HOT = 179,        // "I'm too hot to buy Coffee"
+    PEEP_THOUGHT_TYPE_HOT_CHOCOLATE_TOO_HOT = 180, // "I'm too hot to buy Hot Chocolate"
 
     PEEP_THOUGHT_TYPE_NONE = 255
 };
@@ -578,12 +578,12 @@ struct Peep : rct_sprite_common
     uint8_t nausea_target;    // 0x3D
     uint8_t heat;
     uint8_t heat_target;
-    uint8_t hunger;           // 0x3E
-    uint8_t thirst;           // 0x3F
-    uint8_t toilet;           // 0x40
-    uint8_t mass;             // 0x41
-    uint8_t time_to_consume;  // 0x42
-    uint8_t intensity; // 0x43 The max intensity is stored in the first 4 bits, and the min intensity in the second 4 bits
+    uint8_t hunger;          // 0x3E
+    uint8_t thirst;          // 0x3F
+    uint8_t toilet;          // 0x40
+    uint8_t mass;            // 0x41
+    uint8_t time_to_consume; // 0x42
+    uint8_t intensity;       // 0x43 The max intensity is stored in the first 4 bits, and the min intensity in the second 4 bits
     uint8_t nausea_tolerance;        // 0x44
     uint8_t window_invalidate_flags; // 0x45
     money16 paid_on_drink;           // 0x46
@@ -743,6 +743,7 @@ public: // Peep
 
     bool IsHot();
     bool IsCold();
+
 private:
     void UpdateFalling();
     void Update1();
@@ -782,6 +783,8 @@ public:
     int32_t HasFoodExtraFlag() const;
     bool HasDrinkStandardFlag() const;
     bool HasDrinkExtraFlag() const;
+    bool HasCoolingBeverage() const;
+    bool HasHeatingBeverage() const;
     int32_t HasEmptyContainerStandardFlag() const;
     int32_t HasEmptyContainerExtraFlag() const;
     void CheckIfLost();

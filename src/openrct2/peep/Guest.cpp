@@ -757,16 +757,22 @@ void Guest::Tick128UpdateGuest(int32_t index)
                 heat_target = 128;
             }
         }
-        else if (
-            HasItem(PEEP_ITEM_COFFEE) || HasItem(PEEP_ITEM_CHOCOLATE) || HasItem(PEEP_ITEM_DRINK)
-            || HasItem(PEEP_ITEM_FRUIT_JUICE) || HasItem(PEEP_ITEM_ICED_TEA) || HasItem(PEEP_ITEM_ICE_CREAM)
-            || HasItem(PEEP_ITEM_LEMONADE) || HasItem(PEEP_ITEM_SOYBEAN_MILK) || HasItem(PEEP_ITEM_SU_JONGKWA))
+        else if (HasCoolingBeverage() || HasHeatingBeverage())
         {
             heat_target = 128;
         }
         else if (gClimateCurrent.Temperature > gClimateHeatBounds[gClimate].MinimumToHeat)
         {
-            heat_target = std::min(heat_target + 4, 255);
+            if (gClimateCurrent.Temperature - gClimateHeatBounds[gClimate].MinimumToHeat >= 10)
+            {
+                // more than ten degrees over the heat limit = double the heat increase
+                heat_target = std::min(heat_target + 8, 255);
+            }
+            else
+            {
+                heat_target = std::min(heat_target + 4, 255);
+            }
+                
             if (IsHot() || IsCold())
             {
                 happiness_target = std::max(happiness_target - 2, 255);
@@ -1438,6 +1444,16 @@ bool Guest::HasDrinkExtraFlag() const
 {
     return item_extra_flags
         & (PEEP_ITEM_CHOCOLATE | PEEP_ITEM_ICED_TEA | PEEP_ITEM_FRUIT_JUICE | PEEP_ITEM_SOYBEAN_MILK | PEEP_ITEM_SU_JONGKWA);
+}
+
+bool Guest::HasCoolingBeverage() const
+{
+    return item_standard_flags & (PEEP_ITEM_DRINK | PEEP_ITEM_LEMONADE) || item_extra_flags & (PEEP_ITEM_ICED_TEA | PEEP_ITEM_FRUIT_JUICE | PEEP_ITEM_SOYBEAN_MILK | PEEP_ITEM_SU_JONGKWA);
+}
+
+bool Guest::HasHeatingBeverage() const
+{
+    return item_standard_flags & (PEEP_ITEM_COFFEE) || item_extra_flags & (PEEP_ITEM_CHOCOLATE);
 }
 
 /**
@@ -2115,7 +2131,7 @@ bool Guest::ShouldGoOnRide(Ride* ride, int32_t entranceNum, bool atQueue, bool t
     }
 
     if (ride->IsWaterRide() && IsCold())
-    {   // don't go for water rides when it's cold
+    { // don't go for water rides when it's cold
         if (peepAtRide)
         {
             InsertNewThought(PEEP_THOUGHT_TYPE_TOO_COLD, ride->id);
