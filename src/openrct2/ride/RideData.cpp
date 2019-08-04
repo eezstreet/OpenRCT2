@@ -1334,7 +1334,7 @@ const rct_ride_data_5 RideData5[RIDE_TYPE_COUNT] = {
     {   8,     64,     0,      255,    0,      1,      15,     0   },  // RIDE_TYPE_22
     {   8,     48,     0,      255,    0,      1,      15,     0   },  // RIDE_TYPE_INFORMATION_KIOSK
     {   8,     32,     0,      255,    0,      1,      5,      0   },  // RIDE_TYPE_TOILETS
-    {   8,     176,    3,      255,    2,      1,      45,     0   },  // RIDE_TYPE_FERRIS_WHEEL
+    {   16,     176,    3,      255,    2,      1,      45,     0   },  // RIDE_TYPE_FERRIS_WHEEL
     {   8,     64,     3,      255,    2,      1,      45,     0   },  // RIDE_TYPE_MOTION_SIMULATOR
     {   8,     128,    3,      255,    2,      1,      45,     0   },  // RIDE_TYPE_3D_CINEMA
     {   8,     112,    3,      255,    2,      1,      55,     0   },  // RIDE_TYPE_TOP_SPIN
@@ -1344,7 +1344,7 @@ const rct_ride_data_5 RideData5[RIDE_TYPE_COUNT] = {
     {   53,     24,     8,      25,     11,     42,     95,     0   },  // RIDE_TYPE_VERTICAL_DROP_ROLLER_COASTER
     {   8,     32,     0,      255,    0,      1,      5,      0   },  // RIDE_TYPE_CASH_MACHINE
     {   8,     64,     3,      255,    2,      1,      40,     0   },  // RIDE_TYPE_TWIST
-    {   8,     160,    3,      255,    2,      1,      22,     0   },  // RIDE_TYPE_HAUNTED_HOUSE
+    {   16,     160,    3,      255,    2,      1,      22,     0   },  // RIDE_TYPE_HAUNTED_HOUSE
     {   8,     48,     0,      255,    0,      1,      5,      0   },  // RIDE_TYPE_FIRST_AID
     {   8,     128,    3,      255,    2,      1,      39,     0   },  // RIDE_TYPE_CIRCUS
     {   8,      24,     6,      2,      7,      30,     50,     0   },  // RIDE_TYPE_GHOST_TRAIN
