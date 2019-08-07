@@ -501,7 +501,7 @@ static void noise_rand()
     }
 }
 
-static float fractal_noise(int32_t x, int32_t y, float frequency, int32_t octaves, float lacunarity, float persistence)
+float fractal_noise(int32_t x, int32_t y, float frequency, int32_t octaves, float lacunarity, float persistence)
 {
     float total = 0.0f;
     float amplitude = persistence;
@@ -611,6 +611,17 @@ static float grad(int32_t hash, float x, float y)
     float u = h < 4 ? x : y; // into 8 simple gradient directions,
     float v = h < 4 ? y : x; // and compute the dot product with (x,y).
     return ((h & 1) != 0 ? -u : u) + ((h & 2) != 0 ? -2.0f * v : 2.0f * v);
+}
+
+bool mapgen_has_snow(int32_t x, int32_t y, float snowyness)
+{
+    static bool initNoise = false;
+    if (!initNoise)
+    {
+        noise_rand();
+        initNoise = true;
+    }
+    return fractal_noise(x, y, 0.1f, 3, 0.3f, 0.65f) > ((1.0f - snowyness) * 2.0f - 1.0f);
 }
 
 static void mapgen_simplex(mapgen_settings* settings)

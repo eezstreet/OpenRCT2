@@ -26,6 +26,8 @@
 #include "../../sprites.h"
 #include "../../world/Sprite.h"
 #include "../../world/Surface.h"
+#include "../../world/MapGen.h"
+#include "../../world/Climate.h"
 #include "Paint.TileElement.h"
 
 #include <algorithm>
@@ -909,9 +911,39 @@ static void viewport_surface_draw_water_side_top(
 void surface_paint(paint_session* session, uint8_t direction, uint16_t height, const TileElement* tileElement)
 {
     rct_drawpixelinfo* dpi = &session->DPI;
+    const float snowPerHeight = 0.003f * gClimateCurrent.SnowLevel;
     session->InteractionType = VIEWPORT_INTERACTION_ITEM_TERRAIN;
     session->DidPassSurface = true;
     session->SurfaceElement = tileElement;
+
+    // special thanks to oli414 whose code helped me to understand smooth snow transitions better
+    if (gClimateCurrent.SnowLevel <= 0.0f && tileElement->AsSurface()->SnowPresent())
+    {
+        // melt the snow that's on the tile
+        tileElement->AsSurface()->SetGrassLength(GRASS_LENGTH_CLEAR_0, true, false);
+        map_invalidate_element(session->MapPosition.x, session->MapPosition.y, (TileElement*)tileElement);
+    }
+    else
+    {
+        if (tileElement->AsSurface()->SnowPresent())
+        {   // if there's snow present on the tile, we should be searching to see if the snow should be removed
+            if (!mapgen_has_snow(session->MapPosition.x >> 5, session->MapPosition.y >> 5, gClimateCurrent.SnowLevel + (tileElement->base_height * snowPerHeight)))
+            {
+                tileElement->AsSurface()->SetGrassLength(GRASS_LENGTH_CLEAR_0, true, false);
+                map_invalidate_element(session->MapPosition.x, session->MapPosition.y, (TileElement*)tileElement);
+            }
+        }
+        else if (gClimateCurrent.SnowLevel > 0.0f)
+        {   // if there's no snow present on the tile, we should be searching to see if the snow should be added
+            if (mapgen_has_snow(
+                    session->MapPosition.x >> 5, session->MapPosition.y >> 5,
+                    gClimateCurrent.SnowLevel + (tileElement->base_height * snowPerHeight)))
+            {
+                tileElement->AsSurface()->SetGrassLength(GRASS_LENGTH_CLEAR_0, false, true);
+                map_invalidate_element(session->MapPosition.x, session->MapPosition.y, (TileElement*)tileElement);
+            }
+        }
+    }
 
     const uint16_t zoomLevel = dpi->zoom_level;
     const uint8_t rotation = session->CurrentRotation;

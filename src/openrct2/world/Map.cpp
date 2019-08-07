@@ -54,6 +54,7 @@
 #include "Surface.h"
 #include "TileInspector.h"
 #include "Wall.h"
+#include "MapGen.h"
 
 #include <algorithm>
 #include <iterator>

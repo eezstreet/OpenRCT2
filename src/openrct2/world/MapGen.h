@@ -42,3 +42,5 @@ void mapgen_generate_custom_simplex(mapgen_settings* settings);
 bool mapgen_load_heightmap(const utf8* path);
 void mapgen_unload_heightmap();
 void mapgen_generate_from_heightmap(mapgen_settings* settings);
+float fractal_noise(int32_t x, int32_t y, float frequency, int32_t octaves, float lacunarity, float persistence);
+bool mapgen_has_snow(int32_t x, int32_t y, float snowyness);

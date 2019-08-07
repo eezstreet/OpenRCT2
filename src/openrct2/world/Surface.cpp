@@ -157,24 +157,6 @@ void SurfaceElement::SetGrassLengthAndInvalidate(uint8_t length, CoordsXY coords
 void SurfaceElement::UpdateGrassLength(CoordsXY coords)
 {
     uint32_t waterHeight = GetWaterHeight() * 2;
-    if (waterHeight <= base_height)
-    {
-        int32_t z = base_height * 8;
-
-        // either add or remove snow from this tile
-        if (gClimateCurrent.RainLevel == RAIN_LEVEL_SNOW)
-        {
-            grass_length |= SNOW_FLAG;
-            map_invalidate_tile(coords.x, coords.y, z, z + 16);
-            return;
-        }
-        else if (gClimateCurrent.Temperature > 0)
-        {
-            grass_length &= ~SNOW_FLAG;
-            map_invalidate_tile(coords.x, coords.y, z, z + 16);
-            return;
-        }
-    }
 
     // Check if tile is grass
     if (!CanGrassGrow())

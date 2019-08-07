@@ -90,6 +90,7 @@ struct ClimateState
     uint8_t WeatherEffect;
     uint8_t WeatherGloom;
     uint8_t RainLevel;
+    float SnowLevel;
 };
 
 struct ClimateHeatBounds

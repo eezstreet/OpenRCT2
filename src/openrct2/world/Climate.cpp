@@ -92,6 +92,7 @@ void climate_reset(int32_t climate)
     gClimateCurrent.WeatherEffect = weatherState->EffectLevel;
     gClimateCurrent.WeatherGloom = weatherState->GloomLevel;
     gClimateCurrent.RainLevel = weatherState->RainLevel;
+    gClimateCurrent.SnowLevel = 0.0f;
 
     _lightningTimer = 0;
     _thunderTimer = 0;
@@ -193,6 +194,29 @@ void climate_update()
             randomNumber >>= 16;
             _thunderTimer = 43 + (randomNumber % 64);
             _lightningTimer = randomNumber % 32;
+        }
+    }
+
+    if (gClimateCurrent.RainLevel == RAIN_LEVEL_SNOW)
+    {
+        if (gCurrentTicks & 0x3F)
+        {
+            gClimateCurrent.SnowLevel += 0.0015f;
+            if (gClimateCurrent.SnowLevel > 1.0f)
+            {
+                gClimateCurrent.SnowLevel = 1.0f;
+            }
+        }
+    }
+    else if (gClimateCurrent.Temperature > 0)
+    {
+        if (gCurrentTicks & 0x3F)
+        {
+            gClimateCurrent.SnowLevel -= 0.000250f;
+            if (gClimateCurrent.SnowLevel < 0.0f)
+            {
+                gClimateCurrent.SnowLevel = 0.0f;
+            }
         }
     }
 }
