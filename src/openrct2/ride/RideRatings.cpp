@@ -4301,7 +4301,7 @@ static void ride_ratings_calculate_lim_launched_roller_coaster(Ride* ride)
 
     if (ride->inversions == 0)
     {
-        ride_ratings_apply_max_negative_g_penalty(&ratings, ride, 10, 2, 2, 2);
+        ride_ratings_apply_max_negative_g_penalty(&ratings, ride, 10, 2, 2, 2); // bug?
         ride_ratings_apply_num_drops_penalty(&ratings, ride, 2, 2, 2, 2);
     }
 

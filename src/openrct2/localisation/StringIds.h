@@ -4013,6 +4013,16 @@ enum
     // for the cheat menu
     STR_SNOW = 6368,
 
+    // new excitement penalties display
+    STR_STATBAD_SPEED = 6369,
+    STR_STATBAD_LENGTH = 6370,
+    STR_STATBAD_VERTICAL_G = 6373,
+    STR_STATBAD_LATERAL_G = 6374,
+    STR_STATBAD_DROP_HEIGHT = 6375,
+    STR_STATBAD_DROPS = 6376,
+    STR_STATBAD_INVERSIONS = 6377,
+    STR_STATBAD_HOLES = 6377,
+
     // Have to include resource strings (from scenarios and objects) for the time being now that language is partially working
     STR_COUNT = 32768
 };

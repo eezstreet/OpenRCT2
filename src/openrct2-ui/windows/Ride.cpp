@@ -3250,6 +3250,428 @@ static void window_ride_vehicle_scrollpaint(rct_window* w, rct_drawpixelinfo* dp
 
 #pragma region Operating
 
+// New stuff for mod - highlighting stats that got nerfed
+static rct_string_id StatColour_MaxSpeed(Ride* ride)
+{
+    switch (ride->type)
+    {
+        case RIDE_TYPE_SPIRAL_ROLLER_COASTER:
+        case RIDE_TYPE_STAND_UP_ROLLER_COASTER:
+        case RIDE_TYPE_INVERTED_ROLLER_COASTER:
+        case RIDE_TYPE_LOOPING_ROLLER_COASTER:
+        case RIDE_TYPE_MINE_TRAIN_COASTER:
+        case RIDE_TYPE_CORKSCREW_ROLLER_COASTER:
+        case RIDE_TYPE_VERTICAL_DROP_ROLLER_COASTER:
+        case RIDE_TYPE_FLYING_ROLLER_COASTER:
+        case RIDE_TYPE_FLYING_ROLLER_COASTER_ALT:
+        case RIDE_TYPE_LAY_DOWN_ROLLER_COASTER:
+        case RIDE_TYPE_LAY_DOWN_ROLLER_COASTER_ALT:
+        case RIDE_TYPE_TWISTER_ROLLER_COASTER:
+        case RIDE_TYPE_WOODEN_ROLLER_COASTER:
+        case RIDE_TYPE_MULTI_DIMENSION_ROLLER_COASTER:
+        case RIDE_TYPE_MULTI_DIMENSION_ROLLER_COASTER_ALT:
+        case RIDE_TYPE_GIGA_COASTER:
+        case RIDE_TYPE_COMPACT_INVERTED_COASTER:
+        case RIDE_TYPE_INVERTED_IMPULSE_COASTER:
+        case RIDE_TYPE_LIM_LAUNCHED_ROLLER_COASTER:
+            if (ride->max_speed < 0xA0000)
+            {
+                return STR_STATBAD_SPEED;
+            }
+            break;
+        case RIDE_TYPE_SUSPENDED_SWINGING_COASTER:
+        case RIDE_TYPE_BOBSLEIGH_COASTER:
+            if (ride->max_speed < 0xC0000)
+            {
+                return STR_STATBAD_SPEED;
+            }
+            break;
+        case RIDE_TYPE_JUNIOR_ROLLER_COASTER:
+        case RIDE_TYPE_WOODEN_WILD_MOUSE:
+        case RIDE_TYPE_DINGHY_SLIDE:
+        case RIDE_TYPE_STEEL_WILD_MOUSE:
+        case RIDE_TYPE_WATER_COASTER:
+        case RIDE_TYPE_INVERTED_HAIRPIN_COASTER:
+        case RIDE_TYPE_MINI_ROLLER_COASTER:
+            if (ride->max_speed < 0x70000)
+            {
+                return STR_STATBAD_SPEED;
+            }
+            break;
+        case RIDE_TYPE_MINI_SUSPENDED_COASTER:
+        case RIDE_TYPE_STEEPLECHASE:
+            if (ride->max_speed < 0x80000)
+            {
+                return STR_STATBAD_SPEED;
+            }
+            break;
+        case RIDE_TYPE_SIDE_FRICTION_ROLLER_COASTER:
+            if (ride->max_speed < 0x50000)
+            {
+                return STR_STATBAD_SPEED;
+            }
+            break;
+    }
+    return STR_MAX_SPEED;
+}
+
+static rct_string_id StatColour_RideLength(Ride* ride)
+{
+    switch (ride->type)
+    {
+        case RIDE_TYPE_SUSPENDED_SWINGING_COASTER:
+        case RIDE_TYPE_BOBSLEIGH_COASTER:
+        case RIDE_TYPE_MINE_TRAIN_COASTER:
+        case RIDE_TYPE_WOODEN_ROLLER_COASTER:
+            if (ride->stations[0].SegmentLength < 0x1720000)
+            {
+                return STR_STATBAD_LENGTH;
+            }
+            break;
+        case RIDE_TYPE_MINIATURE_RAILWAY:
+        case RIDE_TYPE_MINI_SUSPENDED_COASTER:
+        case RIDE_TYPE_CAR_RIDE:
+        case RIDE_TYPE_RIVER_RAPIDS:
+        case RIDE_TYPE_REVERSER_ROLLER_COASTER:
+            if (ride->stations[0].SegmentLength < 0xC80000)
+            {
+                return STR_STATBAD_LENGTH;
+            }
+            break;
+        case RIDE_TYPE_MONORAIL:
+        case RIDE_TYPE_WOODEN_WILD_MOUSE:
+        case RIDE_TYPE_SUSPENDED_MONORAIL:
+        case RIDE_TYPE_STEEL_WILD_MOUSE:
+        case RIDE_TYPE_INVERTED_HAIRPIN_COASTER:
+            if (ride->stations[0].SegmentLength < 0xAA0000)
+            {
+                return STR_STATBAD_LENGTH;
+            }
+            break;
+        case RIDE_TYPE_STEEPLECHASE:
+            if (ride->stations[0].SegmentLength < 0xF00000)
+            {
+                return STR_STATBAD_LENGTH;
+            }
+            break;
+        case RIDE_TYPE_DINGHY_SLIDE:
+        case RIDE_TYPE_MONORAIL_CYCLES:
+            if (ride->stations[0].SegmentLength < 0x8C0000)
+            {
+                return STR_STATBAD_LENGTH;
+            }
+            break;
+        case RIDE_TYPE_CHAIRLIFT:
+            if (ride->stations[0].SegmentLength < 0x960000)
+            {
+                return STR_STATBAD_LENGTH;
+            }
+            break;
+        case RIDE_TYPE_VIRGINIA_REEL:
+            if (ride->stations[0].SegmentLength < 0xD20000)
+            {
+                return STR_STATBAD_LENGTH;
+            }
+            break;
+        case RIDE_TYPE_MINI_HELICOPTERS:
+            if (ride->stations[0].SegmentLength < 0xA00000)
+            {
+                return STR_STATBAD_LENGTH;
+            }
+            break;
+        case RIDE_TYPE_GHOST_TRAIN:
+            if (ride->stations[0].SegmentLength < 0xB40000)
+            {
+                return STR_STATBAD_LENGTH;
+            }
+            break;
+        case RIDE_TYPE_SIDE_FRICTION_ROLLER_COASTER:
+            if (ride->stations[0].SegmentLength < 0xFA0000)
+            {
+                return STR_STATBAD_LENGTH;
+            }
+            break;
+        case RIDE_TYPE_MINE_RIDE:
+            if (ride->stations[0].SegmentLength < 0x10E0000)
+            {
+                return STR_STATBAD_LENGTH;
+            }
+            break;
+    }
+    return STR_RIDE_LENGTH;
+}
+
+static rct_string_id StatColour_NegativeVerticalGs(Ride* ride)
+{
+    if (ride->max_negative_vertical_g <= RIDE_G_FORCES_RED_NEG_VERTICAL)
+    {
+        return STR_MAX_NEGATIVE_VERTICAL_G_RED;
+    }
+
+    switch (ride->type)
+    {
+        case RIDE_TYPE_STAND_UP_ROLLER_COASTER:
+        case RIDE_TYPE_STEEPLECHASE:
+        case RIDE_TYPE_MINI_ROLLER_COASTER:
+            if (ride->max_negative_vertical_g >= FIXED_2DP(0, 50))
+            {
+                return STR_STATBAD_VERTICAL_G;
+            }
+            break;
+        case RIDE_TYPE_SUSPENDED_SWINGING_COASTER:
+            if (ride->max_negative_vertical_g >= FIXED_2DP(0, 60))
+            {
+                return STR_STATBAD_VERTICAL_G;
+            }
+            break;
+        case RIDE_TYPE_INVERTED_ROLLER_COASTER:
+            if (ride->inversions == 0 && ride->max_negative_vertical_g >= FIXED_2DP(0, 30))
+            {
+                return STR_STATBAD_VERTICAL_G;
+            }
+            break;
+        case RIDE_TYPE_WOODEN_WILD_MOUSE:
+        case RIDE_TYPE_MINE_TRAIN_COASTER:
+        case RIDE_TYPE_VERTICAL_DROP_ROLLER_COASTER:
+        case RIDE_TYPE_WOODEN_ROLLER_COASTER:
+        case RIDE_TYPE_INVERTED_HAIRPIN_COASTER:
+            if (ride->max_negative_vertical_g >= FIXED_2DP(0, 10))
+            {
+                return STR_STATBAD_VERTICAL_G;
+            }
+            break;
+        case RIDE_TYPE_LOOPING_ROLLER_COASTER:
+            if (ride->inversions == 0 && ride->max_negative_vertical_g >= FIXED_2DP(0, 10))
+            {
+                return STR_STATBAD_VERTICAL_G;
+            }
+            break;
+        case RIDE_TYPE_CORKSCREW_ROLLER_COASTER:
+        case RIDE_TYPE_FLYING_ROLLER_COASTER:
+        case RIDE_TYPE_FLYING_ROLLER_COASTER_ALT:
+        case RIDE_TYPE_LAY_DOWN_ROLLER_COASTER:
+        case RIDE_TYPE_LAY_DOWN_ROLLER_COASTER_ALT:
+        case RIDE_TYPE_TWISTER_ROLLER_COASTER:
+        case RIDE_TYPE_SPIRAL_ROLLER_COASTER:
+        case RIDE_TYPE_MULTI_DIMENSION_ROLLER_COASTER:
+        case RIDE_TYPE_MULTI_DIMENSION_ROLLER_COASTER_ALT:
+        case RIDE_TYPE_GIGA_COASTER:
+            if (ride->inversions == 0 && ride->max_negative_vertical_g >= FIXED_2DP(0, 40))
+            {
+                return STR_STATBAD_VERTICAL_G;
+            }
+            break;
+        case RIDE_TYPE_COMPACT_INVERTED_COASTER:
+            if (ride->inversions == 0 && ride->max_negative_vertical_g >= FIXED_2DP(0, 30))
+            {
+                return STR_STATBAD_VERTICAL_G;
+            }
+            break;
+    }
+    return STR_MAX_NEGATIVE_VERTICAL_G;
+}
+
+static rct_string_id StatColour_LateralGs(Ride* ride)
+{
+    if (ride->max_lateral_g >= RIDE_G_FORCES_RED_LATERAL)
+    {
+        return STR_MAX_LATERAL_G_RED;
+    }
+
+    switch (ride->type)
+    {
+        case RIDE_TYPE_SUSPENDED_SWINGING_COASTER:
+        case RIDE_TYPE_WOODEN_WILD_MOUSE:
+        case RIDE_TYPE_STEEL_WILD_MOUSE:
+        case RIDE_TYPE_INVERTED_HAIRPIN_COASTER:
+            if (ride->max_lateral_g < FIXED_2DP(1, 50))
+            {
+                return STR_STATBAD_LATERAL_G;
+            }
+            break;
+        case RIDE_TYPE_MINI_SUSPENDED_COASTER:
+            if (ride->max_lateral_g < FIXED_2DP(1, 30))
+            {
+                return STR_STATBAD_LATERAL_G;
+            }
+            break;
+        case RIDE_TYPE_BOBSLEIGH_COASTER:
+            if (ride->max_lateral_g < FIXED_2DP(1, 20))
+            {
+                return STR_STATBAD_LATERAL_G;
+            }
+            break;
+    }
+    return STR_MAX_LATERAL_G;
+}
+
+static rct_string_id StatColour_Drops(Ride* ride)
+{
+    switch (ride->type)
+    {
+        case RIDE_TYPE_SPIRAL_ROLLER_COASTER:
+        case RIDE_TYPE_LOOPING_ROLLER_COASTER:
+        case RIDE_TYPE_CORKSCREW_ROLLER_COASTER:
+        case RIDE_TYPE_FLYING_ROLLER_COASTER:
+        case RIDE_TYPE_FLYING_ROLLER_COASTER_ALT:
+        case RIDE_TYPE_LAY_DOWN_ROLLER_COASTER:
+        case RIDE_TYPE_LAY_DOWN_ROLLER_COASTER_ALT:
+        case RIDE_TYPE_TWISTER_ROLLER_COASTER:
+        case RIDE_TYPE_MULTI_DIMENSION_ROLLER_COASTER:
+        case RIDE_TYPE_MULTI_DIMENSION_ROLLER_COASTER_ALT:
+        case RIDE_TYPE_GIGA_COASTER:
+        case RIDE_TYPE_LIM_LAUNCHED_ROLLER_COASTER:
+            if (ride->inversions == 0 && (ride->drops & 0x3F) < 2)
+            {
+                return STR_STATBAD_DROPS;
+            }
+            break;
+        case RIDE_TYPE_JUNIOR_ROLLER_COASTER:
+        case RIDE_TYPE_VERTICAL_DROP_ROLLER_COASTER:
+            if ((ride->drops & 0x3F) < 1)
+            {
+                return STR_STATBAD_DROPS;
+            }
+            break;
+        case RIDE_TYPE_WOODEN_WILD_MOUSE:
+        case RIDE_TYPE_INVERTED_HAIRPIN_COASTER:
+            if ((ride->drops & 0x3F) < 3)
+            {
+                return STR_STATBAD_DROPS;
+            }
+            break;
+        case RIDE_TYPE_STEEPLECHASE:
+        case RIDE_TYPE_MINE_TRAIN_COASTER:
+        case RIDE_TYPE_VIRGINIA_REEL:
+        case RIDE_TYPE_REVERSER_ROLLER_COASTER:
+        case RIDE_TYPE_WOODEN_ROLLER_COASTER:
+        case RIDE_TYPE_SIDE_FRICTION_ROLLER_COASTER:
+        case RIDE_TYPE_STEEL_WILD_MOUSE:
+        case RIDE_TYPE_WATER_COASTER:
+        case RIDE_TYPE_MINI_ROLLER_COASTER:
+            if ((ride->drops & 0x3F) < 2)
+            {
+                return STR_STATBAD_DROPS;
+            }
+            break;
+        case RIDE_TYPE_HEARTLINE_TWISTER_COASTER:
+            if ((ride->drops & 0x3F) < 4)
+            {
+                return STR_STATBAD_DROPS;
+            }
+            break;
+    }
+    return STR_DROPS;
+}
+
+static rct_string_id StatColour_HighestDrop(Ride* ride)
+{
+    switch (ride->type)
+    {
+        case RIDE_TYPE_SPIRAL_ROLLER_COASTER:
+        case RIDE_TYPE_INVERTED_ROLLER_COASTER:
+        case RIDE_TYPE_CORKSCREW_ROLLER_COASTER:
+        case RIDE_TYPE_TWISTER_ROLLER_COASTER:
+        case RIDE_TYPE_COMPACT_INVERTED_COASTER:
+            if (ride->inversions == 0 && ride->highest_drop_height < 12)
+            {
+                return STR_STATBAD_DROP_HEIGHT;
+            }
+            break;
+        case RIDE_TYPE_STAND_UP_ROLLER_COASTER:
+        case RIDE_TYPE_DINGHY_SLIDE:
+        case RIDE_TYPE_WOODEN_ROLLER_COASTER:
+            if (ride->highest_drop_height < 12)
+            {
+                return STR_STATBAD_DROP_HEIGHT;
+            }
+            break;
+        case RIDE_TYPE_SUSPENDED_SWINGING_COASTER:
+        case RIDE_TYPE_WOODEN_WILD_MOUSE:
+        case RIDE_TYPE_MINE_TRAIN_COASTER:
+            if (ride->highest_drop_height < 8)
+            {
+                return STR_STATBAD_DROP_HEIGHT;
+            }
+            break;
+        case RIDE_TYPE_STEEPLECHASE:
+            if (ride->highest_drop_height < 4)
+            {
+                return STR_STATBAD_DROP_HEIGHT;
+            }
+            break;
+        case RIDE_TYPE_LOG_FLUME:
+        case RIDE_TYPE_RIVER_RAPIDS:
+            if (ride->highest_drop_height < 2)
+            {
+                return STR_STATBAD_DROP_HEIGHT;
+            }
+            break;
+        case RIDE_TYPE_REVERSE_FREEFALL_COASTER:
+        case RIDE_TYPE_AIR_POWERED_VERTICAL_COASTER:
+            if (ride->highest_drop_height < 34)
+            {
+                return STR_STATBAD_DROP_HEIGHT;
+            }
+            break;
+        case RIDE_TYPE_VERTICAL_DROP_ROLLER_COASTER:
+            if (ride->highest_drop_height < 20)
+            {
+                return STR_STATBAD_DROP_HEIGHT;
+            }
+            break;
+        case RIDE_TYPE_SPLASH_BOATS:
+        case RIDE_TYPE_SIDE_FRICTION_ROLLER_COASTER:
+        case RIDE_TYPE_STEEL_WILD_MOUSE:
+            if (ride->highest_drop_height < 6)
+            {
+                return STR_STATBAD_DROP_HEIGHT;
+            }
+            break;
+        case RIDE_TYPE_GIGA_COASTER:
+            if (ride->inversions == 0 && ride->highest_drop_height < 16)
+            {
+                return STR_STATBAD_DROP_HEIGHT;
+            }
+            break;
+        case RIDE_TYPE_LIM_LAUNCHED_ROLLER_COASTER:
+            if (ride->inversions == 0 && ride->highest_drop_height < 10)
+            {
+                return STR_STATBAD_DROP_HEIGHT;
+            }
+            break;
+    }
+    return STR_HIGHEST_DROP_HEIGHT;
+}
+
+static rct_string_id StatColour_Inversions(Ride* ride)
+{
+    switch (ride->type)
+    {
+        case RIDE_TYPE_MINI_GOLF:
+            if (ride->inversions == 0)
+            {
+                return STR_STATBAD_HOLES;
+            }
+            return STR_HOLES;
+        case RIDE_TYPE_FLYING_ROLLER_COASTER:
+        case RIDE_TYPE_FLYING_ROLLER_COASTER_ALT:
+        case RIDE_TYPE_LAY_DOWN_ROLLER_COASTER:
+        case RIDE_TYPE_LAY_DOWN_ROLLER_COASTER_ALT:
+        case RIDE_TYPE_HEARTLINE_TWISTER_COASTER:
+        case RIDE_TYPE_MULTI_DIMENSION_ROLLER_COASTER:
+        case RIDE_TYPE_MULTI_DIMENSION_ROLLER_COASTER_ALT:
+            if (ride->inversions == 0)
+            {
+                return STR_STATBAD_INVERSIONS;
+            }
+            break;
+    }
+    return STR_INVERSIONS;
+}
+
+///////////////////////////////////////////////////////
+
 /**
  *
  *  rct2: 0x006B11D5
@@ -5654,7 +6076,7 @@ static void window_ride_measurements_paint(rct_window* w, rct_drawpixelinfo* dpi
                 {
                     // Max speed
                     maxSpeed = (ride->max_speed * 9) >> 18;
-                    gfx_draw_string_left(dpi, STR_MAX_SPEED, &maxSpeed, COLOUR_BLACK, x, y);
+                    gfx_draw_string_left(dpi, StatColour_MaxSpeed(ride), &maxSpeed, COLOUR_BLACK, x, y);
                     y += LIST_ROW_HEIGHT;
 
                     // Average speed
@@ -5723,7 +6145,7 @@ static void window_ride_measurements_paint(rct_window* w, rct_drawpixelinfo* dpi
                 set_format_arg(2 + (numLengths * 4), uint16_t, 0);
                 set_format_arg(4 + (numLengths * 4), uint16_t, 0);
                 set_format_arg(6 + (numLengths * 4), uint16_t, 0);
-                gfx_draw_string_left_clipped(dpi, STR_RIDE_LENGTH, gCommonFormatArgs, COLOUR_BLACK, x, y, 308);
+                gfx_draw_string_left_clipped(dpi, StatColour_RideLength(ride), gCommonFormatArgs, COLOUR_BLACK, x, y, 308);
                 y += LIST_ROW_HEIGHT;
 
                 if (ride_type_has_flag(ride->type, RIDE_TYPE_FLAG_HAS_G_FORCES))
@@ -5737,15 +6159,12 @@ static void window_ride_measurements_paint(rct_window* w, rct_drawpixelinfo* dpi
 
                     // Max. negative vertical G's
                     maxNegativeVerticalGs = ride->max_negative_vertical_g;
-                    stringId = maxNegativeVerticalGs <= RIDE_G_FORCES_RED_NEG_VERTICAL ? STR_MAX_NEGATIVE_VERTICAL_G_RED
-                                                                                       : STR_MAX_NEGATIVE_VERTICAL_G;
-                    gfx_draw_string_left(dpi, stringId, &maxNegativeVerticalGs, COLOUR_BLACK, x, y);
+                    gfx_draw_string_left(dpi, StatColour_NegativeVerticalGs(ride), &maxNegativeVerticalGs, COLOUR_BLACK, x, y);
                     y += LIST_ROW_HEIGHT;
 
                     // Max lateral G's
                     maxLateralGs = ride->max_lateral_g;
-                    stringId = maxLateralGs >= RIDE_G_FORCES_RED_LATERAL ? STR_MAX_LATERAL_G_RED : STR_MAX_LATERAL_G;
-                    gfx_draw_string_left(dpi, stringId, &maxLateralGs, COLOUR_BLACK, x, y);
+                    gfx_draw_string_left(dpi, StatColour_LateralGs(ride), &maxLateralGs, COLOUR_BLACK, x, y);
                     y += LIST_ROW_HEIGHT;
 
                     // Total 'air' time
@@ -5758,12 +6177,12 @@ static void window_ride_measurements_paint(rct_window* w, rct_drawpixelinfo* dpi
                 {
                     // Drops
                     drops = ride->drops & 0x3F;
-                    gfx_draw_string_left(dpi, STR_DROPS, &drops, COLOUR_BLACK, x, y);
+                    gfx_draw_string_left(dpi, StatColour_Drops(ride), &drops, COLOUR_BLACK, x, y);
                     y += LIST_ROW_HEIGHT;
 
                     // Highest drop height
                     highestDropHeight = (ride->highest_drop_height * 3) / 4;
-                    gfx_draw_string_left(dpi, STR_HIGHEST_DROP_HEIGHT, &highestDropHeight, COLOUR_BLACK, x, y);
+                    gfx_draw_string_left(dpi, StatColour_HighestDrop(ride), &highestDropHeight, COLOUR_BLACK, x, y);
                     y += LIST_ROW_HEIGHT;
                 }
 
@@ -5773,7 +6192,7 @@ static void window_ride_measurements_paint(rct_window* w, rct_drawpixelinfo* dpi
                     inversions = ride->inversions;
                     if (inversions != 0)
                     {
-                        gfx_draw_string_left(dpi, STR_INVERSIONS, &inversions, COLOUR_BLACK, x, y);
+                        gfx_draw_string_left(dpi, StatColour_Inversions(ride), &inversions, COLOUR_BLACK, x, y);
                         y += LIST_ROW_HEIGHT;
                     }
                 }
