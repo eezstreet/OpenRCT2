@@ -1,4 +1,4 @@
-# STR_XXXX part is read and XXXX becomes the string id number.
+﻿# STR_XXXX part is read and XXXX becomes the string id number.
 # Everything after the colon and before the new line will be saved as the string.
 # Use # at the beginning of a line to leave a comment.
 STR_0000    :
@@ -10,7 +10,7 @@ STR_0005    :Inverted Roller Coaster
 STR_0006    :Junior Roller Coaster
 STR_0007    :Miniature Railway
 STR_0008    :Monorail
-STR_0009    :Mini Suspended Coaster
+STR_0009    :Suspended Single-Rail Roller Coaster
 STR_0010    :Boat Hire
 STR_0011    :Wooden Wild Mouse
 STR_0012    :Steeplechase
@@ -3776,6 +3776,57 @@ STR_6325    :{SMALLFONT}{BLACK}Simulate ride/attraction
 STR_6326    :Can't simulate {POP16}{POP16}{POP16}{STRINGID}...
 STR_6327    :Transparent background for giant screenshots
 STR_6328    :{SMALLFONT}{BLACK}With this option enabled, giant screenshots will have a transparent background instead of the default black colour.
+STR_6329    :Arid/Warm
+STR_6330    :Arid/Cold
+STR_6331    :Semi-Arid
+STR_6332    :Mediterranean
+STR_6333    :Temperate
+STR_6334    :Tropical
+STR_6335    :Tropical Savannah
+STR_6336    :Island
+STR_6337    :Taiga
+STR_6338    :Tundra
+STR_6339    :Arid/Cold (Southern Hemisphere)
+STR_6340    :Mediterranean (Southern Hemisphere)
+STR_6341    :Temperate (Southern Hemisphere)
+STR_6342    :Tropical Savannah (Southern Hemisphere)
+STR_6343    :Taiga (Southern Hemisphere)
+STR_6344    :Hell
+STR_6345    :Mars
+STR_6346    :Starting Month
+STR_6347    :{SMALLFONT}{BLACK}Change the first month of the scenario year.
+STR_6348    :Ending Month
+STR_6349    :{SMALLFONT}{BLACK}Change the last month of the scenario year.
+STR_6350    :Guest Generation
+STR_6351    :{SMALLFONT}{BLACK}Change the method used to generate guests.
+STR_6352    :Advertisement Generation
+STR_6353    :{SMALLFONT}{BLACK}Change how advertisements affect guest generation.
+STR_6354    :Vanilla
+STR_6355    :Scaled
+STR_6356    :Vanilla
+STR_6357    :Diminishing Returns
+STR_6358    :{WINDOW_COLOUR_2}Heat:
+STR_6359    :{SMALLFONT}“I'm freezing”
+STR_6360    :{SMALLFONT}“I'm cold”
+STR_6361    :{SMALLFONT}“I'm hot”
+STR_6362    :{SMALLFONT}“I'm too cold to ride {STRINGID}”
+STR_6363    :{SMALLFONT}“I'm too cold to buy ice cream from {STRINGID}”
+STR_6364    :{SMALLFONT}“I'm too hot to buy coffee from {STRINGID}”
+STR_6365    :{SMALLFONT}“I'm too hot to buy hot chocolate from {STRINGID}”
+STR_6366    :{RED}Guests are complaining about how hot it is in your park
+STR_6367    :{RED}Guests are complaining about how cold it is in your park
+STR_6368    :Snow
+STR_6369    :{WINDOW_COLOUR_2}Max. speed: {OUTLINE}{GREY}{VELOCITY}
+STR_6370    :{WINDOW_COLOUR_2}Ride length: {OUTLINE}{GREY}{STRINGID}{STRINGID}{STRINGID}{STRINGID}
+STR_6371    :{LENGTH}
+STR_6372    :{LENGTH} / 
+STR_6373    :{WINDOW_COLOUR_2}Max. negative vertical G's: {OUTLINE}{GREY}{COMMA2DP32}g
+STR_6374    :{WINDOW_COLOUR_2}Max. lateral G's: {OUTLINE}{GREY}{COMMA2DP32}g
+STR_6375    :{WINDOW_COLOUR_2}Highest drop height: {OUTLINE}{GREY}{LENGTH}
+STR_6376    :{WINDOW_COLOUR_2}Drops: {OUTLINE}{GREY}{COMMA16}
+STR_6377    :{WINDOW_COLOUR_2}Inversions: {OUTLINE}{GREY}{COMMA16}
+STR_6378    :{WINDOW_COLOUR_2}Holes: {OUTLINE}{GREY}{COMMA16}
+
 
 #############
 # Scenarios #
