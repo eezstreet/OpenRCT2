@@ -54,8 +54,8 @@ public:
         }
 
         Peep* peep = GET_PEEP(_spriteIndex);
-        if (peep->type != PEEP_TYPE_STAFF
-            || (peep->staff_type != STAFF_TYPE_HANDYMAN && peep->staff_type != STAFF_TYPE_MECHANIC))
+        if (peep->AssignedPeepType != PEEP_TYPE_STAFF
+            || (peep->StaffType != STAFF_TYPE_HANDYMAN && peep->StaffType != STAFF_TYPE_MECHANIC))
         {
             log_warning("Invalid game command for sprite %u", _spriteIndex);
             return std::make_unique<GameActionResult>(GA_ERROR::INVALID_PARAMETERS, STR_NONE);
@@ -68,7 +68,7 @@ public:
     {
         Peep* peep = GET_PEEP(_spriteIndex);
 
-        peep->staff_orders = _ordersId;
+        peep->StaffOrders = _ordersId;
 
         window_invalidate_by_number(WC_PEEP, _spriteIndex);
         auto intent = Intent(INTENT_ACTION_REFRESH_STAFF_LIST);

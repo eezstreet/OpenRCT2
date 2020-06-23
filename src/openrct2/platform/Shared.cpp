@@ -66,7 +66,7 @@ static LARGE_INTEGER _entryTimestamp;
 
 using update_palette_func = void (*)(const uint8_t*, int32_t, int32_t);
 
-rct_palette_entry gPalette[256];
+GamePalette gPalette;
 
 void platform_update_palette(const uint8_t* colours, int32_t start_index, int32_t num_colours)
 {
@@ -95,18 +95,18 @@ void platform_update_palette(const uint8_t* colours, int32_t start_index, int32_
             }
         }
 
-        gPalette[i].red = r;
-        gPalette[i].green = g;
-        gPalette[i].blue = b;
-        gPalette[i].alpha = 0;
+        gPalette[i].Red = r;
+        gPalette[i].Green = g;
+        gPalette[i].Blue = b;
+        gPalette[i].Alpha = 0;
         colours += 4;
     }
 
     // Fix #1749 and #6535: rainbow path, donut shop and pause button contain black spots that should be white.
-    gPalette[255].alpha = 0;
-    gPalette[255].red = 255;
-    gPalette[255].green = 255;
-    gPalette[255].blue = 255;
+    gPalette[255].Alpha = 0;
+    gPalette[255].Red = 255;
+    gPalette[255].Green = 255;
+    gPalette[255].Blue = 255;
 
     if (!gOpenRCT2Headless)
     {
@@ -144,7 +144,7 @@ static void platform_ticks_init()
 #ifdef _WIN32
     LARGE_INTEGER freq;
     QueryPerformanceFrequency(&freq);
-    _frequency = (uint32_t)(freq.QuadPart / 1000);
+    _frequency = static_cast<uint32_t>(freq.QuadPart / 1000);
     QueryPerformanceCounter(&_entryTimestamp);
 #endif
 }
@@ -158,9 +158,9 @@ uint32_t platform_get_ticks()
     LARGE_INTEGER runningDelta;
     runningDelta.QuadPart = pfc.QuadPart - _entryTimestamp.QuadPart;
 
-    return (uint32_t)(runningDelta.QuadPart / _frequency);
+    return static_cast<uint32_t>(runningDelta.QuadPart / _frequency);
 #elif defined(__APPLE__) && (__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 101200)
-    return (uint32_t)(((mach_absolute_time() * _mach_base_info.numer) / _mach_base_info.denom) / 1000000);
+    return static_cast<uint32_t>(((mach_absolute_time() * _mach_base_info.numer) / _mach_base_info.denom) / 1000000);
 #else
     struct timespec ts;
     if (clock_gettime(CLOCK_MONOTONIC, &ts) != 0)
@@ -168,7 +168,7 @@ uint32_t platform_get_ticks()
         log_fatal("clock_gettime failed");
         exit(-1);
     }
-    return (uint32_t)(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+    return static_cast<uint32_t>(ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
 #endif
 }
 

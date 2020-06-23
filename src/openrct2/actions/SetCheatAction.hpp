@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2019 OpenRCT2 developers
+ * Copyright (c) 2014-2020 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -26,6 +26,7 @@
 #include "../world/Banner.h"
 #include "../world/Climate.h"
 #include "../world/Footpath.h"
+#include "../world/Location.hpp"
 #include "../world/Map.h"
 #include "../world/Park.h"
 #include "../world/Scenery.h"
@@ -51,6 +52,13 @@ public:
         , _param1(param1)
         , _param2(param2)
     {
+    }
+
+    void AcceptParameters(GameActionParameterVisitor & visitor) override
+    {
+        visitor.Visit("type", _cheatType);
+        visitor.Visit("param1", _param1);
+        visitor.Visit("param2", _param2);
     }
 
     uint16_t GetActionFlags() const override
@@ -96,6 +104,8 @@ public:
                 break;
             case CheatType::DisableClearanceChecks:
                 gCheatsDisableClearanceChecks = _param1 != 0;
+                // Required to update the clearance checks overlay on the Cheats button.
+                window_invalidate_by_class(WC_TOP_TOOLBAR);
                 break;
             case CheatType::DisableSupportLimits:
                 gCheatsDisableSupportLimits = _param1 != 0;
@@ -230,6 +240,15 @@ public:
             case CheatType::EnableAllDrawableTrackPieces:
                 gCheatsEnableAllDrawableTrackPieces = _param1 != 0;
                 break;
+            case CheatType::CreateDucks:
+                CreateDucks(_param1);
+                break;
+            case CheatType::RemoveDucks:
+                duck_remove_all();
+                break;
+            case CheatType::AllowTrackPlaceInvalidHeights:
+                gCheatsAllowTrackPlaceInvalidHeights = _param1 != 0;
+                break;
             default:
             {
                 log_error("Unabled cheat: %d", _cheatType.id);
@@ -323,9 +342,9 @@ private:
                     case GUEST_PARAMETER_NAUSEA_TOLERANCE:
                         return { { GUEST_PARAMETER_HAPPINESS, GUEST_PARAMETER_PREFERRED_RIDE_INTENSITY },
                                  { PEEP_NAUSEA_TOLERANCE_NONE, PEEP_NAUSEA_TOLERANCE_HIGH } };
-                    case GUEST_PARAMETER_BATHROOM:
+                    case GUEST_PARAMETER_TOILET:
                         return { { GUEST_PARAMETER_HAPPINESS, GUEST_PARAMETER_PREFERRED_RIDE_INTENSITY },
-                                 { 0, PEEP_MAX_BATHROOM } };
+                                 { 0, PEEP_MAX_TOILET } };
                     case GUEST_PARAMETER_PREFERRED_RIDE_INTENSITY:
                         return { { GUEST_PARAMETER_HAPPINESS, GUEST_PARAMETER_PREFERRED_RIDE_INTENSITY }, { 0, 255 } };
                     default:
@@ -343,6 +362,8 @@ private:
                 return { { 0, 5 }, { 0, 0 } };
             case CheatType::SetForcedParkRating:
                 return { { 0, 999 }, { 0, 0 } };
+            case CheatType::CreateDucks:
+                return { { 0, 100 }, { 0, 0 } };
             default:
                 return { { 0, 0 }, { 0, 0 } };
         }
@@ -350,17 +371,14 @@ private:
 
     void SetGrassLength(int32_t length) const
     {
-        int32_t x, y;
-
-        for (y = 0; y < MAXIMUM_MAP_SIZE_TECHNICAL; y++)
+        for (int32_t y = 0; y < MAXIMUM_MAP_SIZE_TECHNICAL; y++)
         {
-            for (x = 0; x < MAXIMUM_MAP_SIZE_TECHNICAL; x++)
+            for (int32_t x = 0; x < MAXIMUM_MAP_SIZE_TECHNICAL; x++)
             {
-                auto tileElement = map_get_surface_element_at(x, y);
-                if (tileElement == nullptr)
+                auto surfaceElement = map_get_surface_element_at(TileCoordsXY{ x, y }.ToCoordsXY());
+                if (surfaceElement == nullptr)
                     continue;
 
-                auto surfaceElement = tileElement->AsSurface();
                 if (surfaceElement != nullptr && (surfaceElement->GetOwnership() & OWNERSHIP_OWNED)
                     && surfaceElement->GetWaterHeight() == 0 && surfaceElement->CanGrassGrow())
                 {
@@ -409,14 +427,9 @@ private:
 
     void RemoveLitter() const
     {
-        rct_litter* litter;
-        uint16_t spriteIndex, nextSpriteIndex;
-
-        for (spriteIndex = gSpriteListHead[SPRITE_LIST_LITTER]; spriteIndex != SPRITE_INDEX_NULL; spriteIndex = nextSpriteIndex)
+        for (auto litter : EntityList<Litter>(SPRITE_LIST_LITTER))
         {
-            litter = &(get_sprite(spriteIndex)->litter);
-            nextSpriteIndex = litter->next;
-            sprite_remove((rct_sprite*)litter);
+            sprite_remove(litter);
         }
 
         tile_element_iterator it;
@@ -442,77 +455,59 @@ private:
 
     void FixBrokenRides() const
     {
-        ride_id_t rideIndex;
-        Ride* ride;
-
-        FOR_ALL_RIDES (rideIndex, ride)
+        for (auto& ride : GetRideManager())
         {
-            if ((ride->mechanic_status != RIDE_MECHANIC_STATUS_FIXING)
-                && (ride->lifecycle_flags & (RIDE_LIFECYCLE_BREAKDOWN_PENDING | RIDE_LIFECYCLE_BROKEN_DOWN)))
+            if ((ride.mechanic_status != RIDE_MECHANIC_STATUS_FIXING)
+                && (ride.lifecycle_flags & (RIDE_LIFECYCLE_BREAKDOWN_PENDING | RIDE_LIFECYCLE_BROKEN_DOWN)))
             {
-                auto mechanic = ride_get_assigned_mechanic(ride);
+                auto mechanic = ride_get_assigned_mechanic(&ride);
                 if (mechanic != nullptr)
                 {
                     mechanic->RemoveFromRide();
                 }
 
-                ride_fix_breakdown(ride, 0);
-                ride->window_invalidate_flags |= RIDE_INVALIDATE_RIDE_MAIN | RIDE_INVALIDATE_RIDE_LIST;
+                ride_fix_breakdown(&ride, 0);
+                ride.window_invalidate_flags |= RIDE_INVALIDATE_RIDE_MAIN | RIDE_INVALIDATE_RIDE_LIST;
             }
         }
     }
 
     void RenewRides() const
     {
-        int32_t i;
-        Ride* ride;
-
-        FOR_ALL_RIDES (i, ride)
+        for (auto& ride : GetRideManager())
         {
-            ride->Renew();
+            ride.Renew();
         }
         window_invalidate_by_class(WC_RIDE);
     }
 
     void MakeDestructible() const
     {
-        int32_t i;
-        Ride* ride;
-        FOR_ALL_RIDES (i, ride)
+        for (auto& ride : GetRideManager())
         {
-            if (ride->lifecycle_flags & RIDE_LIFECYCLE_INDESTRUCTIBLE)
-                ride->lifecycle_flags &= ~RIDE_LIFECYCLE_INDESTRUCTIBLE;
-            if (ride->lifecycle_flags & RIDE_LIFECYCLE_INDESTRUCTIBLE_TRACK)
-                ride->lifecycle_flags &= ~RIDE_LIFECYCLE_INDESTRUCTIBLE_TRACK;
+            ride.lifecycle_flags &= ~RIDE_LIFECYCLE_INDESTRUCTIBLE;
+            ride.lifecycle_flags &= ~RIDE_LIFECYCLE_INDESTRUCTIBLE_TRACK;
         }
         window_invalidate_by_class(WC_RIDE);
     }
 
     void ResetRideCrashStatus() const
     {
-        int32_t i;
-        Ride* ride;
-
-        FOR_ALL_RIDES (i, ride)
+        for (auto& ride : GetRideManager())
         {
-            // Reset crash status
-            if (ride->lifecycle_flags & RIDE_LIFECYCLE_CRASHED)
-                ride->lifecycle_flags &= ~RIDE_LIFECYCLE_CRASHED;
-            // Reset crash history
-            ride->last_crash_type = RIDE_CRASH_TYPE_NONE;
+            // Reset crash status and history
+            ride.lifecycle_flags &= ~RIDE_LIFECYCLE_CRASHED;
+            ride.last_crash_type = RIDE_CRASH_TYPE_NONE;
         }
         window_invalidate_by_class(WC_RIDE);
     }
 
     void Set10MinuteInspection() const
     {
-        int32_t i;
-        Ride* ride;
-
-        FOR_ALL_RIDES (i, ride)
+        for (auto& ride : GetRideManager())
         {
             // Set inspection interval to 10 minutes
-            ride->inspection_interval = RIDE_INSPECTION_EVERY_10_MINUTES;
+            ride.inspection_interval = RIDE_INSPECTION_EVERY_10_MINUTES;
         }
         window_invalidate_by_class(WC_RIDE);
     }
@@ -575,46 +570,42 @@ private:
 
     void SetGuestParameter(int32_t parameter, int32_t value) const
     {
-        int32_t spriteIndex;
-        Peep* p;
-        FOR_ALL_GUESTS (spriteIndex, p)
+        for (auto peep : EntityList<Guest>(SPRITE_LIST_PEEP))
         {
-            auto peep = p->AsGuest();
-            assert(peep != nullptr);
             switch (parameter)
             {
                 case GUEST_PARAMETER_HAPPINESS:
-                    peep->happiness = value;
-                    peep->happiness_target = value;
+                    peep->Happiness = value;
+                    peep->HappinessTarget = value;
                     // Clear the 'red-faced with anger' status if we're making the guest happy
                     if (value > 0)
                     {
-                        peep->peep_flags &= ~PEEP_FLAGS_ANGRY;
-                        peep->angriness = 0;
+                        peep->PeepFlags &= ~PEEP_FLAGS_ANGRY;
+                        peep->Angriness = 0;
                     }
                     break;
                 case GUEST_PARAMETER_ENERGY:
-                    peep->energy = value;
-                    peep->energy_target = value;
+                    peep->Energy = value;
+                    peep->EnergyTarget = value;
                     break;
                 case GUEST_PARAMETER_HUNGER:
-                    peep->hunger = value;
+                    peep->Hunger = value;
                     break;
                 case GUEST_PARAMETER_THIRST:
-                    peep->thirst = value;
+                    peep->Thirst = value;
                     break;
                 case GUEST_PARAMETER_NAUSEA:
-                    peep->nausea = value;
-                    peep->nausea_target = value;
+                    peep->Nausea = value;
+                    peep->NauseaTarget = value;
                     break;
                 case GUEST_PARAMETER_NAUSEA_TOLERANCE:
-                    peep->nausea_tolerance = value;
+                    peep->NauseaTolerance = value;
                     break;
-                case GUEST_PARAMETER_BATHROOM:
-                    peep->toilet = value;
+                case GUEST_PARAMETER_TOILET:
+                    peep->Toilet = value;
                     break;
                 case GUEST_PARAMETER_PREFERRED_RIDE_INTENSITY:
-                    peep->intensity = (15 << 4) | value;
+                    peep->Intensity = IntensityRange(value, 15);
                     break;
             }
             peep->UpdateSpriteType();
@@ -623,28 +614,24 @@ private:
 
     void GiveObjectToGuests(int32_t object) const
     {
-        int32_t spriteIndex;
-        Peep* p;
-        FOR_ALL_GUESTS (spriteIndex, p)
+        for (auto peep : EntityList<Guest>(SPRITE_LIST_PEEP))
         {
-            auto peep = p->AsGuest();
-            assert(peep != nullptr);
             switch (object)
             {
                 case OBJECT_MONEY:
-                    peep->cash_in_pocket = MONEY(1000, 00);
+                    peep->CashInPocket = MONEY(1000, 00);
                     break;
                 case OBJECT_PARK_MAP:
-                    peep->item_standard_flags |= PEEP_ITEM_MAP;
+                    peep->ItemStandardFlags |= PEEP_ITEM_MAP;
                     break;
                 case OBJECT_BALLOON:
-                    peep->item_standard_flags |= PEEP_ITEM_BALLOON;
-                    peep->balloon_colour = scenario_rand_max(COLOUR_COUNT - 1);
+                    peep->ItemStandardFlags |= PEEP_ITEM_BALLOON;
+                    peep->BalloonColour = scenario_rand_max(COLOUR_COUNT - 1);
                     peep->UpdateSpriteType();
                     break;
                 case OBJECT_UMBRELLA:
-                    peep->item_standard_flags |= PEEP_ITEM_UMBRELLA;
-                    peep->umbrella_colour = scenario_rand_max(COLOUR_COUNT - 1);
+                    peep->ItemStandardFlags |= PEEP_ITEM_UMBRELLA;
+                    peep->UmbrellaColour = scenario_rand_max(COLOUR_COUNT - 1);
                     peep->UpdateSpriteType();
                     break;
             }
@@ -654,36 +641,34 @@ private:
 
     void RemoveAllGuests() const
     {
-        Peep* peep;
-        rct_vehicle* vehicle;
-        uint16_t spriteIndex, nextSpriteIndex;
-        ride_id_t rideIndex;
-        Ride* ride;
-
-        FOR_ALL_RIDES (rideIndex, ride)
+        uint16_t spriteIndex;
+        for (auto& ride : GetRideManager())
         {
-            ride->num_riders = 0;
+            ride.num_riders = 0;
 
             for (size_t stationIndex = 0; stationIndex < MAX_STATIONS; stationIndex++)
             {
-                ride->stations[stationIndex].QueueLength = 0;
-                ride->stations[stationIndex].LastPeepInQueue = SPRITE_INDEX_NULL;
+                ride.stations[stationIndex].QueueLength = 0;
+                ride.stations[stationIndex].LastPeepInQueue = SPRITE_INDEX_NULL;
             }
 
-            for (auto trainIndex : ride->vehicles)
+            for (auto trainIndex : ride.vehicles)
             {
                 spriteIndex = trainIndex;
                 while (spriteIndex != SPRITE_INDEX_NULL)
                 {
-                    vehicle = GET_VEHICLE(spriteIndex);
+                    auto vehicle = GET_VEHICLE(spriteIndex);
                     for (size_t i = 0, offset = 0; i < vehicle->num_peeps; i++)
                     {
                         while (vehicle->peep[i + offset] == SPRITE_INDEX_NULL)
                         {
                             offset++;
                         }
-                        peep = GET_PEEP(vehicle->peep[i + offset]);
-                        vehicle->mass -= peep->mass;
+                        auto peep = GET_PEEP(vehicle->peep[i + offset]);
+                        if (peep != nullptr)
+                        {
+                            vehicle->mass -= peep->Mass;
+                        }
                     }
 
                     for (auto& peepInTrainIndex : vehicle->peep)
@@ -699,11 +684,11 @@ private:
             }
         }
 
-        for (spriteIndex = gSpriteListHead[SPRITE_LIST_PEEP]; spriteIndex != SPRITE_INDEX_NULL; spriteIndex = nextSpriteIndex)
+        // Do not use the FOR_ALL_PEEPS macro for this as next sprite index
+        // will be fetched on a deleted peep.
+        for (auto peep : EntityList<Peep>(SPRITE_LIST_PEEP))
         {
-            peep = &(get_sprite(spriteIndex)->peep);
-            nextSpriteIndex = peep->next;
-            if (peep->type == PEEP_TYPE_GUEST)
+            if (peep->AssignedPeepType == PEEP_TYPE_GUEST)
             {
                 peep->Remove();
             }
@@ -715,27 +700,21 @@ private:
 
     void ExplodeGuests() const
     {
-        int32_t sprite_index;
-        Peep* peep;
-
-        FOR_ALL_GUESTS (sprite_index, peep)
+        for (auto peep : EntityList<Guest>(SPRITE_LIST_PEEP))
         {
             if (scenario_rand_max(6) == 0)
             {
-                peep->peep_flags |= PEEP_FLAGS_EXPLODE;
+                peep->PeepFlags |= PEEP_FLAGS_EXPLODE;
             }
         }
     }
 
     void SetStaffSpeed(uint8_t value) const
     {
-        uint16_t spriteIndex;
-        Peep* peep;
-
-        FOR_ALL_STAFF (spriteIndex, peep)
+        for (auto peep : EntityList<Staff>(SPRITE_LIST_PEEP))
         {
-            peep->energy = value;
-            peep->energy_target = value;
+            peep->Energy = value;
+            peep->EnergyTarget = value;
         }
     }
 
@@ -744,28 +723,27 @@ private:
         const int32_t min = 32;
         const int32_t max = gMapSizeUnits - 32;
 
-        for (CoordsXY coords = { min, min }; coords.y <= max; coords.y += 32)
+        for (CoordsXY coords = { min, min }; coords.y <= max; coords.y += COORDS_XY_STEP)
         {
-            for (coords.x = min; coords.x <= max; coords.x += 32)
+            for (coords.x = min; coords.x <= max; coords.x += COORDS_XY_STEP)
             {
-                TileElement* surfaceElement = map_get_surface_element_at(coords);
+                auto* surfaceElement = map_get_surface_element_at(coords);
                 if (surfaceElement == nullptr)
                     continue;
 
                 // Ignore already owned tiles.
-                if (surfaceElement->AsSurface()->GetOwnership() & OWNERSHIP_OWNED)
+                if (surfaceElement->GetOwnership() & OWNERSHIP_OWNED)
                     continue;
 
-                int32_t base_z = surfaceElement->base_height;
-                int32_t destOwnership = check_max_allowable_land_rights_for_tile(coords.x >> 5, coords.y >> 5, base_z);
+                int32_t baseZ = surfaceElement->GetBaseZ();
+                int32_t destOwnership = check_max_allowable_land_rights_for_tile({ coords, baseZ });
 
                 // only own tiles that were not set to 0
                 if (destOwnership != OWNERSHIP_UNOWNED)
                 {
-                    surfaceElement->AsSurface()->SetOwnership(destOwnership);
+                    surfaceElement->SetOwnership(destOwnership);
                     update_park_fences_around_tile(coords);
-                    uint16_t baseHeight = surfaceElement->base_height * 8;
-                    map_invalidate_tile(coords.x, coords.y, baseHeight, baseHeight + 16);
+                    map_invalidate_tile({ coords, baseZ, baseZ + 16 });
                 }
             }
         }
@@ -773,15 +751,13 @@ private:
         // Completely unown peep spawn points
         for (const auto& spawn : gPeepSpawns)
         {
-            int32_t x = spawn.x;
-            int32_t y = spawn.y;
-            if (x != PEEP_SPAWN_UNDEFINED)
+            auto* surfaceElement = map_get_surface_element_at(spawn);
+            if (surfaceElement != nullptr)
             {
-                TileElement* surfaceElement = map_get_surface_element_at({ x, y });
-                surfaceElement->AsSurface()->SetOwnership(OWNERSHIP_UNOWNED);
-                update_park_fences_around_tile({ x, y });
-                uint16_t baseHeight = surfaceElement->base_height * 8;
-                map_invalidate_tile(x, y, baseHeight, baseHeight + 16);
+                surfaceElement->SetOwnership(OWNERSHIP_UNOWNED);
+                update_park_fences_around_tile(spawn);
+                uint16_t baseZ = surfaceElement->GetBaseZ();
+                map_invalidate_tile({ spawn, baseZ, baseZ + 16 });
             }
         }
 
@@ -792,5 +768,18 @@ private:
     {
         auto parkSetParameter = ParkSetParameterAction(isOpen ? ParkParameter::Open : ParkParameter::Close);
         GameActions::ExecuteNested(&parkSetParameter);
+    }
+
+    void CreateDucks(int count) const
+    {
+        for (int i = 0; i < count; i++)
+        {
+            // 100 attempts at finding some water to create a few ducks at
+            for (int32_t attempts = 0; attempts < 100; attempts++)
+            {
+                if (scenario_create_ducks())
+                    break;
+            }
+        }
     }
 };

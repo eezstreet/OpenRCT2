@@ -12,13 +12,13 @@
 #include "common.h"
 
 #define OPENRCT2_NAME "OpenRCT2"
-#define OPENRCT2_VERSION "0.2.3"
+#define OPENRCT2_VERSION "0.2.6"
 
 #if defined(__amd64__) || defined(_M_AMD64)
 #    define OPENRCT2_ARCHITECTURE "x86-64"
 #elif defined(__i386__) || defined(_M_IX86)
 #    define OPENRCT2_ARCHITECTURE "x86"
-#elif defined(__aarch64__)
+#elif defined(__aarch64__) || defined(_M_ARM64)
 #    define OPENRCT2_ARCHITECTURE "AArch64"
 #elif defined(__arm__) || defined(_M_ARM)
 #    if defined(__ARM_ARCH_7A__)
@@ -55,6 +55,9 @@
 #endif
 #ifdef __FreeBSD__
 #    define OPENRCT2_PLATFORM "FreeBSD"
+#endif
+#ifdef __NetBSD__
+#    define OPENRCT2_PLATFORM "NetBSD"
 #endif
 #ifdef __ANDROID__
 #    define OPENRCT2_PLATFORM "Android"

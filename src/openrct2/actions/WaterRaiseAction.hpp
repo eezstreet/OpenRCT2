@@ -64,34 +64,45 @@ private:
 
         res->Position.x = ((validRange.GetLeft() + validRange.GetRight()) / 2) + 16;
         res->Position.y = ((validRange.GetTop() + validRange.GetBottom()) / 2) + 16;
-        int32_t z = tile_element_height(res->Position.x, res->Position.y);
-        int16_t waterHeight = tile_element_water_height(res->Position.x, res->Position.y);
+        int32_t z = tile_element_height(res->Position);
+        int16_t waterHeight = tile_element_water_height(res->Position);
         if (waterHeight != 0)
         {
             z = waterHeight;
         }
         res->Position.z = z;
-        res->ExpenditureType = RCT_EXPENDITURE_TYPE_LANDSCAPING;
+        res->Expenditure = ExpenditureType::Landscaping;
 
-        uint8_t maxHeight = GetHighestHeight();
+        auto maxHeight = GetHighestHeight(validRange) / COORDS_Z_STEP;
         bool hasChanged = false;
-        for (int32_t y = validRange.GetTop(); y <= validRange.GetBottom(); y += 32)
+        bool withinOwnership = false;
+        for (int32_t y = validRange.GetTop(); y <= validRange.GetBottom(); y += COORDS_XY_STEP)
         {
-            for (int32_t x = validRange.GetLeft(); x <= validRange.GetRight(); x += 32)
+            for (int32_t x = validRange.GetLeft(); x <= validRange.GetRight(); x += COORDS_XY_STEP)
             {
-                TileElement* tileElement = map_get_surface_element_at(x / 32, y / 32);
-                if (tileElement == nullptr)
+                if (!LocationValid({ x, y }))
                     continue;
 
-                SurfaceElement* surfaceElement = tileElement->AsSurface();
-                uint8_t height = surfaceElement->GetWaterHeight();
+                auto surfaceElement = map_get_surface_element_at(CoordsXY{ x, y });
+                if (surfaceElement == nullptr)
+                    continue;
+
+                if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) && !gCheatsSandboxMode)
+                {
+                    if (!map_is_location_in_park(CoordsXY{ x, y }))
+                    {
+                        continue;
+                    }
+                }
+                withinOwnership = true;
+
+                uint8_t height = surfaceElement->GetWaterHeight() / COORDS_Z_STEP;
 
                 if (surfaceElement->base_height > maxHeight)
                     continue;
 
                 if (height != 0)
                 {
-                    height *= 2;
                     if (height > maxHeight)
                         continue;
                     height += 2;
@@ -117,9 +128,17 @@ private:
             }
         }
 
+        if (!withinOwnership)
+        {
+            GameActionResult::Ptr ownerShipResult = std::make_unique<GameActionResult>(
+                GA_ERROR::DISALLOWED, STR_LAND_NOT_OWNED_BY_PARK);
+            ownerShipResult->ErrorTitle = STR_CANT_RAISE_WATER_LEVEL_HERE;
+            return ownerShipResult;
+        }
+
         if (isExecuting && hasChanged)
         {
-            audio_play_sound_at_location(SoundId::LayingOutWater, res->Position.x, res->Position.y, res->Position.z);
+            audio_play_sound_at_location(SoundId::LayingOutWater, res->Position);
         }
         // Force ride construction to recheck area
         _currentTrackSelectionFlags |= TRACK_SELECTION_FLAG_RECHECK;
@@ -128,21 +147,30 @@ private:
     }
 
 private:
-    uint8_t GetHighestHeight() const
+    uint16_t GetHighestHeight(MapRange validRange) const
     {
-        uint8_t maxHeight{ 255 };
-        for (int32_t y = _range.GetTop(); y <= _range.GetBottom(); y += 32)
+        // The highest height to raise the water to is the lowest water level in the selection
+        uint16_t maxHeight = 255 * COORDS_Z_STEP;
+        for (int32_t y = validRange.GetTop(); y <= validRange.GetBottom(); y += COORDS_XY_STEP)
         {
-            for (int32_t x = _range.GetLeft(); x <= _range.GetRight(); x += 32)
+            for (int32_t x = validRange.GetLeft(); x <= validRange.GetRight(); x += COORDS_XY_STEP)
             {
-                TileElement* tile_element = map_get_surface_element_at({ x, y });
-                if (tile_element == nullptr)
+                if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) && !gCheatsSandboxMode)
+                {
+                    if (!map_is_location_in_park(CoordsXY{ x, y }))
+                    {
+                        continue;
+                    }
+                }
+
+                auto* surfaceElement = map_get_surface_element_at(CoordsXY{ x, y });
+                if (surfaceElement == nullptr)
                     continue;
 
-                uint8_t height = tile_element->base_height;
-                if (tile_element->AsSurface()->GetWaterHeight() > 0)
+                auto height = surfaceElement->GetBaseZ();
+                if (surfaceElement->GetWaterHeight() > 0)
                 {
-                    height = tile_element->AsSurface()->GetWaterHeight() * 2;
+                    height = surfaceElement->GetWaterHeight();
                 }
 
                 if (maxHeight > height)

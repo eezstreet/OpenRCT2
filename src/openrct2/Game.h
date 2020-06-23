@@ -66,40 +66,41 @@ enum GAME_COMMAND
     GAME_COMMAND_REMOVE_LARGE_SCENERY,         // GA
     GAME_COMMAND_SET_CURRENT_LOAN,             // GA
     GAME_COMMAND_SET_RESEARCH_FUNDING,         // GA
-    GAME_COMMAND_PLACE_TRACK_DESIGN,
-    GAME_COMMAND_START_MARKETING_CAMPAIGN, // GA
-    GAME_COMMAND_PLACE_MAZE_DESIGN,
-    GAME_COMMAND_PLACE_BANNER,             // GA
-    GAME_COMMAND_REMOVE_BANNER,            // GA
-    GAME_COMMAND_SET_SCENERY_COLOUR,       // GA
-    GAME_COMMAND_SET_WALL_COLOUR,          // GA
-    GAME_COMMAND_SET_LARGE_SCENERY_COLOUR, // GA
-    GAME_COMMAND_SET_BANNER_COLOUR,        // GA
-    GAME_COMMAND_SET_LAND_OWNERSHIP,       // GA
-    GAME_COMMAND_CLEAR_SCENERY,            // GA
-    GAME_COMMAND_SET_BANNER_NAME,          // GA
-    GAME_COMMAND_SET_SIGN_NAME,            // GA
-    GAME_COMMAND_SET_BANNER_STYLE,         // GA
-    GAME_COMMAND_SET_SIGN_STYLE,           // GA
-    GAME_COMMAND_SET_PLAYER_GROUP,         // GA
-    GAME_COMMAND_MODIFY_GROUPS,            // GA
-    GAME_COMMAND_KICK_PLAYER,              // GA
-    GAME_COMMAND_CHEAT,                    // GA
-    GAME_COMMAND_PICKUP_GUEST,             // GA
-    GAME_COMMAND_PICKUP_STAFF,             // GA
-    GAME_COMMAND_BALLOON_PRESS,            // GA
-    GAME_COMMAND_MODIFY_TILE,              // GA
-    GAME_COMMAND_EDIT_SCENARIO_OPTIONS,    // GA
-    GAME_COMMAND_PLACE_PEEP_SPAWN,         // GA, TODO: refactor to separate array for just game actions
-    GAME_COMMAND_SET_CLIMATE,              // GA
-    GAME_COMMAND_SET_COLOUR_SCHEME,        // GA
-    GAME_COMMAND_SET_STAFF_COSTUME,        // GA
-    GAME_COMMAND_PLACE_FOOTPATH_SCENERY,   // GA
-    GAME_COMMAND_REMOVE_FOOTPATH_SCENERY,  // GA
-    GAME_COMMAND_GUEST_SET_FLAGS,          // GA
-    GAME_COMMAND_SET_DATE,                 // GA
+    GAME_COMMAND_PLACE_TRACK_DESIGN,           // GA
+    GAME_COMMAND_START_MARKETING_CAMPAIGN,     // GA
+    GAME_COMMAND_PLACE_MAZE_DESIGN,            // GA
+    GAME_COMMAND_PLACE_BANNER,                 // GA
+    GAME_COMMAND_REMOVE_BANNER,                // GA
+    GAME_COMMAND_SET_SCENERY_COLOUR,           // GA
+    GAME_COMMAND_SET_WALL_COLOUR,              // GA
+    GAME_COMMAND_SET_LARGE_SCENERY_COLOUR,     // GA
+    GAME_COMMAND_SET_BANNER_COLOUR,            // GA
+    GAME_COMMAND_SET_LAND_OWNERSHIP,           // GA
+    GAME_COMMAND_CLEAR_SCENERY,                // GA
+    GAME_COMMAND_SET_BANNER_NAME,              // GA
+    GAME_COMMAND_SET_SIGN_NAME,                // GA
+    GAME_COMMAND_SET_BANNER_STYLE,             // GA
+    GAME_COMMAND_SET_SIGN_STYLE,               // GA
+    GAME_COMMAND_SET_PLAYER_GROUP,             // GA
+    GAME_COMMAND_MODIFY_GROUPS,                // GA
+    GAME_COMMAND_KICK_PLAYER,                  // GA
+    GAME_COMMAND_CHEAT,                        // GA
+    GAME_COMMAND_PICKUP_GUEST,                 // GA
+    GAME_COMMAND_PICKUP_STAFF,                 // GA
+    GAME_COMMAND_BALLOON_PRESS,                // GA
+    GAME_COMMAND_MODIFY_TILE,                  // GA
+    GAME_COMMAND_EDIT_SCENARIO_OPTIONS,        // GA
+    GAME_COMMAND_PLACE_PEEP_SPAWN,             // GA
+    GAME_COMMAND_SET_CLIMATE,                  // GA
+    GAME_COMMAND_SET_COLOUR_SCHEME,            // GA
+    GAME_COMMAND_SET_STAFF_COSTUME,            // GA
+    GAME_COMMAND_PLACE_FOOTPATH_SCENERY,       // GA
+    GAME_COMMAND_REMOVE_FOOTPATH_SCENERY,      // GA
+    GAME_COMMAND_GUEST_SET_FLAGS,              // GA
+    GAME_COMMAND_SET_DATE,                     // GA
     GAME_COMMAND_SET_MONTHS_OPEN,          // GA
     GAME_COMMAND_SET_GENERATION_ALGORITHMS,// GA
+    GAME_COMMAND_CUSTOM,                   // GA
     GAME_COMMAND_COUNT,
 };
 
@@ -130,15 +131,8 @@ enum
     ERROR_TYPE_FILE_LOAD = 255
 };
 
-using GAME_COMMAND_POINTER = void(
-    int32_t* eax, int32_t* ebx, int32_t* ecx, int32_t* edx, int32_t* esi, int32_t* edi, int32_t* ebp);
-
 extern rct_string_id gGameCommandErrorTitle;
 extern rct_string_id gGameCommandErrorText;
-extern uint8_t gErrorType;
-extern rct_string_id gErrorStringId;
-
-extern GAME_COMMAND_POINTER* new_game_command_table[GAME_COMMAND_COUNT];
 
 extern uint32_t gCurrentTicks;
 extern uint32_t gCurrentRealTimeTicks;
@@ -150,14 +144,11 @@ extern bool gDoSingleUpdate;
 extern float gDayNightCycle;
 extern bool gInUpdateCode;
 extern bool gInMapInitCode;
-extern int32_t gGameCommandNestLevel;
 extern std::string gCurrentLoadedPath;
 
 extern bool gLoadKeepWindowsOpen;
 
-extern uint8_t gUnk13CA740;
-extern uint8_t gUnk141F568;
-
+void game_reset_speed();
 void game_increase_game_speed();
 void game_reduce_game_speed();
 
@@ -165,15 +156,13 @@ void game_create_windows();
 void reset_all_sprite_quadrant_placements();
 void update_palette_effects();
 
-int32_t game_do_command(int32_t eax, int32_t ebx, int32_t ecx, int32_t edx, int32_t esi, int32_t edi, int32_t ebp);
-int32_t game_do_command_p(
-    uint32_t command, int32_t* eax, int32_t* ebx, int32_t* ecx, int32_t* edx, int32_t* esi, int32_t* edi, int32_t* ebp);
-
 struct rct_scenario_data;
 
 void game_load_or_quit_no_save_prompt();
 void load_from_sv6(const char* path);
 void game_load_init();
+void game_load_scripts();
+void game_unload_scripts();
 void pause_toggle();
 bool game_is_paused();
 bool game_is_not_paused();
@@ -189,3 +178,5 @@ void game_convert_strings_to_rct2(rct_scenario_data* s6);
 void utf8_to_rct2_self(char* buffer, size_t length);
 void rct2_to_utf8_self(char* buffer, size_t length);
 void game_fix_save_vars();
+void start_silent_record();
+bool stop_silent_record();

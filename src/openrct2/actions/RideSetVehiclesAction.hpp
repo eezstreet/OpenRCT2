@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2019 OpenRCT2 developers
+ * Copyright (c) 2014-2020 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -17,7 +17,9 @@
 #include "../localisation/Localisation.h"
 #include "../localisation/StringIds.h"
 #include "../management/Research.h"
+#include "../object/ObjectManager.h"
 #include "../ride/Ride.h"
+#include "../ride/RideData.h"
 #include "../ui/UiContext.h"
 #include "../ui/WindowManager.h"
 #include "../world/Park.h"
@@ -33,7 +35,7 @@ enum class RideSetVehicleType : uint8_t
 DEFINE_GAME_ACTION(RideSetVehicleAction, GAME_COMMAND_SET_RIDE_VEHICLES, GameActionResult)
 {
 private:
-    NetworkRideId_t _rideIndex{ -1 };
+    NetworkRideId_t _rideIndex{ RideIdNewNull };
     uint8_t _type;
     uint8_t _value;
     uint8_t _colour;
@@ -55,6 +57,14 @@ public:
     {
     }
 
+    void AcceptParameters(GameActionParameterVisitor & visitor) override
+    {
+        visitor.Visit("ride", _rideIndex);
+        visitor.Visit("type", _type);
+        visitor.Visit("value", _value);
+        visitor.Visit("colour", _colour);
+    }
+
     uint16_t GetActionFlags() const override
     {
         return GameAction::GetActionFlags() | GA_FLAGS::ALLOW_WHILE_PAUSED;
@@ -74,14 +84,8 @@ public:
         }
         auto errTitle = SetVehicleTypeErrorTitle[_type];
 
-        if (_rideIndex >= MAX_RIDES || _rideIndex == RIDE_ID_NULL)
-        {
-            log_warning("Invalid game command for ride %u", uint32_t(_rideIndex));
-            return std::make_unique<GameActionResult>(GA_ERROR::INVALID_PARAMETERS, errTitle);
-        }
-
-        Ride* ride = get_ride(_rideIndex);
-        if (ride == nullptr || ride->type == RIDE_TYPE_NULL)
+        auto ride = get_ride(_rideIndex);
+        if (ride == nullptr)
         {
             log_warning("Invalid game command, ride_id = %u", uint32_t(_rideIndex));
             return std::make_unique<GameActionResult>(GA_ERROR::INVALID_PARAMETERS, errTitle);
@@ -137,8 +141,8 @@ public:
     GameActionResult::Ptr Execute() const override
     {
         auto errTitle = SetVehicleTypeErrorTitle[_type];
-        Ride* ride = get_ride(_rideIndex);
-        if (ride == nullptr || ride->type == RIDE_TYPE_NULL)
+        auto ride = get_ride(_rideIndex);
+        if (ride == nullptr)
         {
             log_warning("Invalid game command, ride_id = %u", uint32_t(_rideIndex));
             return std::make_unique<GameActionResult>(GA_ERROR::INVALID_PARAMETERS, errTitle);
@@ -207,11 +211,10 @@ public:
         ride->UpdateMaxVehicles();
 
         auto res = std::make_unique<GameActionResult>();
-        if (ride->overall_view.xy != RCT_XY8_UNDEFINED)
+        if (!ride->overall_view.isNull())
         {
-            res->Position.x = ride->overall_view.x * 32 + 16;
-            res->Position.y = ride->overall_view.y * 32 + 16;
-            res->Position.z = tile_element_height(res->Position.x, res->Position.y);
+            auto location = ride->overall_view.ToTileCentre();
+            res->Position = { location, tile_element_height(res->Position) };
         }
 
         auto intent = Intent(INTENT_ACTION_RIDE_PAINT_RESET_VEHICLE);
@@ -229,8 +232,9 @@ private:
         int32_t rideTypeIterator, rideTypeIteratorMax;
 
         if (gCheatsShowVehiclesFromOtherTrackTypes
-            && !(ride_type_has_flag(ride->type, RIDE_TYPE_FLAG_FLAT_RIDE) || ride->type == RIDE_TYPE_MAZE
-                 || ride->type == RIDE_TYPE_MINI_GOLF))
+            && !(
+                ride_type_has_flag(ride->type, RIDE_TYPE_FLAG_FLAT_RIDE) || ride->type == RIDE_TYPE_MAZE
+                || ride->type == RIDE_TYPE_MINI_GOLF))
         {
             selectionShouldBeExpanded = true;
             rideTypeIterator = 0;
@@ -253,11 +257,10 @@ private:
                     continue;
             }
 
-            uint8_t* rideEntryIndexPtr = get_ride_entry_indices_for_ride_type(rideTypeIterator);
-            for (uint8_t* currentRideEntryIndex = rideEntryIndexPtr; *currentRideEntryIndex != RIDE_ENTRY_INDEX_NULL;
-                 currentRideEntryIndex++)
+            auto& objManager = OpenRCT2::GetContext()->GetObjectManager();
+            auto& rideEntries = objManager.GetAllRideEntries(rideTypeIterator);
+            for (auto rideEntryIndex : rideEntries)
             {
-                uint8_t rideEntryIndex = *currentRideEntryIndex;
                 if (rideEntryIndex == _value)
                 {
                     if (!ride_entry_is_invented(rideEntryIndex) && !gCheatsIgnoreResearchStatus)

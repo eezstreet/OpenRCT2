@@ -24,12 +24,12 @@ namespace OpenRCT2::Audio
         SDL_AudioFormat format;
         int32_t channels;
 
-        int32_t BytesPerSample() const
+        [[nodiscard]] int32_t BytesPerSample() const
         {
-            return (SDL_AUDIO_BITSIZE(format)) / 8;
+            return (SDL_AUDIO_BITSIZE(format)) / 8; // NOLINT(hicpp-signed-bitwise)
         }
 
-        int32_t GetByteRate() const
+        [[nodiscard]] int32_t GetByteRate() const
         {
             return BytesPerSample() * channels;
         }

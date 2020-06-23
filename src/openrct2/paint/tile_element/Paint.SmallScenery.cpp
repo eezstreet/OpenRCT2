@@ -37,7 +37,6 @@ void scenery_paint(paint_session* session, uint8_t direction, int32_t height, co
         return;
     }
     SmallSceneryElement* sceneryElement = tileElement->AsSmallScenery();
-    // RCT2_CALLPROC_X(0x6DFF47, 0, 0, direction, height, (int32_t)tileElement, 0, 0); return;
     session->InteractionType = VIEWPORT_INTERACTION_ITEM_SCENERY;
     LocationXYZ16 boxlength;
     LocationXYZ16 boxoffset;
@@ -115,9 +114,9 @@ void scenery_paint(paint_session* session, uint8_t direction, int32_t height, co
     else
     {
         // 6DFFC2:
-        uint8_t ecx = (tileElement->AsSmallScenery()->GetSceneryQuadrant() + rotation) & 3;
-        x_offset = ScenerySubTileOffsets[ecx].x;
-        y_offset = ScenerySubTileOffsets[ecx].y;
+        uint8_t quadrant = (tileElement->AsSmallScenery()->GetSceneryQuadrant() + rotation) & 3;
+        x_offset = SceneryQuadrantOffsets[quadrant].x;
+        y_offset = SceneryQuadrantOffsets[quadrant].y;
         boxoffset.x = x_offset;
         boxoffset.y = y_offset;
     }

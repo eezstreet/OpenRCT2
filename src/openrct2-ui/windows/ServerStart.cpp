@@ -46,8 +46,8 @@ enum {
     WIDX_LOAD_SERVER
 };
 
-#define WW 300
-#define WH 154
+static constexpr const int32_t WW = 300;
+static constexpr const int32_t WH = 154;
 
 static rct_widget window_server_start_widgets[] = {
     { WWT_FRAME,            0,  0,      WW-1,   0,          WH-1,   STR_NONE,                       STR_NONE },                 // panel / background
@@ -195,7 +195,7 @@ static void window_server_start_mouseup(rct_window* w, rct_widgetindex widgetInd
                 gConfigNetwork.maxplayers++;
             }
             config_save_default();
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_MAXPLAYERS_DECREASE:
             if (gConfigNetwork.maxplayers > 1)
@@ -203,12 +203,12 @@ static void window_server_start_mouseup(rct_window* w, rct_widgetindex widgetInd
                 gConfigNetwork.maxplayers--;
             }
             config_save_default();
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_ADVERTISE_CHECKBOX:
             gConfigNetwork.advertise = !gConfigNetwork.advertise;
             config_save_default();
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_START_SERVER:
             window_scenarioselect_open(window_server_start_scenarioselect_callback, false);
@@ -217,7 +217,7 @@ static void window_server_start_mouseup(rct_window* w, rct_widgetindex widgetInd
             network_set_password(_password);
             auto intent = Intent(WC_LOADSAVE);
             intent.putExtra(INTENT_EXTRA_LOADSAVE_TYPE, LOADSAVETYPE_LOAD | LOADSAVETYPE_GAME);
-            intent.putExtra(INTENT_EXTRA_CALLBACK, (void*)window_server_start_loadsave_callback);
+            intent.putExtra(INTENT_EXTRA_CALLBACK, reinterpret_cast<void*>(window_server_start_loadsave_callback));
             context_open_intent(&intent);
             break;
     }
@@ -331,21 +331,29 @@ static void window_server_start_invalidate(rct_window* w)
     colour_scheme_update_by_class(w, WC_SERVER_LIST);
 
     widget_set_checkbox_value(w, WIDX_ADVERTISE_CHECKBOX, gConfigNetwork.advertise);
-    set_format_arg(18, uint16_t, gConfigNetwork.maxplayers);
+    auto ft = Formatter::Common();
+    ft.Increment(18);
+    ft.Add<uint16_t>(gConfigNetwork.maxplayers);
 }
 
 static void window_server_start_paint(rct_window* w, rct_drawpixelinfo* dpi)
 {
     window_draw_widgets(w, dpi);
 
-    gfx_draw_string_left(dpi, STR_PORT, nullptr, w->colours[1], w->x + 6, w->y + w->widgets[WIDX_PORT_INPUT].top);
-    gfx_draw_string_left(dpi, STR_SERVER_NAME, nullptr, w->colours[1], w->x + 6, w->y + w->widgets[WIDX_NAME_INPUT].top);
     gfx_draw_string_left(
-        dpi, STR_SERVER_DESCRIPTION, nullptr, w->colours[1], w->x + 6, w->y + w->widgets[WIDX_DESCRIPTION_INPUT].top);
+        dpi, STR_PORT, nullptr, w->colours[1], w->windowPos + ScreenCoordsXY{ 6, w->widgets[WIDX_PORT_INPUT].top });
     gfx_draw_string_left(
-        dpi, STR_SERVER_GREETING, nullptr, w->colours[1], w->x + 6, w->y + w->widgets[WIDX_GREETING_INPUT].top);
-    gfx_draw_string_left(dpi, STR_PASSWORD, nullptr, w->colours[1], w->x + 6, w->y + w->widgets[WIDX_PASSWORD_INPUT].top);
-    gfx_draw_string_left(dpi, STR_MAX_PLAYERS, nullptr, w->colours[1], w->x + 6, w->y + w->widgets[WIDX_MAXPLAYERS].top);
+        dpi, STR_SERVER_NAME, nullptr, w->colours[1], w->windowPos + ScreenCoordsXY{ 6, w->widgets[WIDX_NAME_INPUT].top });
+    gfx_draw_string_left(
+        dpi, STR_SERVER_DESCRIPTION, nullptr, w->colours[1],
+        w->windowPos + ScreenCoordsXY{ 6, w->widgets[WIDX_DESCRIPTION_INPUT].top });
+    gfx_draw_string_left(
+        dpi, STR_SERVER_GREETING, nullptr, w->colours[1],
+        w->windowPos + ScreenCoordsXY{ 6, w->widgets[WIDX_GREETING_INPUT].top });
+    gfx_draw_string_left(
+        dpi, STR_PASSWORD, nullptr, w->colours[1], w->windowPos + ScreenCoordsXY{ 6, w->widgets[WIDX_PASSWORD_INPUT].top });
+    gfx_draw_string_left(
+        dpi, STR_MAX_PLAYERS, nullptr, w->colours[1], w->windowPos + ScreenCoordsXY{ 6, w->widgets[WIDX_MAXPLAYERS].top });
 }
 
 #endif

@@ -16,6 +16,10 @@
 #include <openrct2/localisation/Localisation.h>
 #include <openrct2/world/Park.h>
 
+static constexpr const rct_string_id WINDOW_TITLE = STR_WATER;
+static constexpr const int32_t WH = 77;
+static constexpr const int32_t WW = 76;
+
 // clang-format off
 enum WINDOW_WATER_WIDGET_IDX {
     WIDX_BACKGROUND,
@@ -27,9 +31,7 @@ enum WINDOW_WATER_WIDGET_IDX {
 };
 
 static rct_widget window_water_widgets[] = {
-    { WWT_FRAME,    0,  0,  75, 0,  76, 0xFFFFFFFF,                             STR_NONE },                         // panel / background
-    { WWT_CAPTION,  0,  1,  74, 1,  14, STR_WATER,                              STR_WINDOW_TITLE_TIP },             // title bar
-    { WWT_CLOSEBOX, 0,  63, 73, 2,  13, STR_CLOSE_X,                            STR_CLOSE_WINDOW_TIP },             // close x button
+    WINDOW_SHIM(WINDOW_TITLE, WW, WH),
     { WWT_IMGBTN,   0,  16, 59, 17, 48, SPR_LAND_TOOL_SIZE_0,                   STR_NONE },                         // preview box
     { WWT_TRNBTN,   2,  17, 32, 18, 33, IMAGE_TYPE_REMAP | SPR_LAND_TOOL_DECREASE,    STR_ADJUST_SMALLER_WATER_TIP },     // decrement size
     { WWT_TRNBTN,   2,  43, 58, 32, 47, IMAGE_TYPE_REMAP | SPR_LAND_TOOL_INCREASE,    STR_ADJUST_LARGER_WATER_TIP },      // increment size
@@ -90,7 +92,7 @@ rct_window* window_water_open()
     if (window != nullptr)
         return window;
 
-    window = window_create(context_get_width() - 76, 29, 76, 77, &window_water_events, WC_WATER, 0);
+    window = window_create(ScreenCoordsXY(context_get_width() - 76, 29), 76, 77, &window_water_events, WC_WATER, 0);
     window->widgets = window_water_widgets;
     window->enabled_widgets = (1 << WIDX_CLOSE) | (1 << WIDX_DECREMENT) | (1 << WIDX_INCREMENT) | (1 << WIDX_PREVIEW);
     window->hold_down_widgets = (1 << WIDX_INCREMENT) | (1 << WIDX_DECREMENT);
@@ -141,14 +143,14 @@ static void window_water_mousedown(rct_window* w, rct_widgetindex widgetIndex, r
             gLandToolSize = std::max(MINIMUM_TOOL_SIZE, gLandToolSize - 1);
 
             // Invalidate the window
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_INCREMENT:
             // Increment land tool size
             gLandToolSize = std::min(MAXIMUM_TOOL_SIZE, gLandToolSize + 1);
 
             // Invalidate the window
-            window_invalidate(w);
+            w->Invalidate();
             break;
     }
 }
@@ -168,7 +170,7 @@ static void window_water_textinput(rct_window* w, rct_widgetindex widgetIndex, c
         size = std::min(MAXIMUM_TOOL_SIZE, size);
         gLandToolSize = size;
 
-        window_invalidate(w);
+        w->Invalidate();
     }
 }
 
@@ -209,29 +211,31 @@ static void window_water_invalidate(rct_window* w)
  */
 static void window_water_paint(rct_window* w, rct_drawpixelinfo* dpi)
 {
-    int32_t x, y;
-
-    x = w->x + (window_water_widgets[WIDX_PREVIEW].left + window_water_widgets[WIDX_PREVIEW].right) / 2;
-    y = w->y + (window_water_widgets[WIDX_PREVIEW].top + window_water_widgets[WIDX_PREVIEW].bottom) / 2;
+    auto screenCoords = ScreenCoordsXY{
+        w->windowPos.x + (window_water_widgets[WIDX_PREVIEW].left + window_water_widgets[WIDX_PREVIEW].right) / 2,
+        w->windowPos.y + (window_water_widgets[WIDX_PREVIEW].top + window_water_widgets[WIDX_PREVIEW].bottom) / 2
+    };
 
     window_draw_widgets(w, dpi);
     // Draw number for tool sizes bigger than 7
     if (gLandToolSize > MAX_TOOL_SIZE_WITH_SPRITE)
     {
-        gfx_draw_string_centred(dpi, STR_LAND_TOOL_SIZE_VALUE, x, y - 2, COLOUR_BLACK, &gLandToolSize);
+        gfx_draw_string_centred(
+            dpi, STR_LAND_TOOL_SIZE_VALUE, screenCoords - ScreenCoordsXY{ 0, 2 }, COLOUR_BLACK, &gLandToolSize);
     }
 
     if (!(gParkFlags & PARK_FLAGS_NO_MONEY))
     {
         // Draw raise cost amount
-        x = (window_water_widgets[WIDX_PREVIEW].left + window_water_widgets[WIDX_PREVIEW].right) / 2 + w->x;
-        y = window_water_widgets[WIDX_PREVIEW].bottom + w->y + 5;
+        screenCoords = { (window_water_widgets[WIDX_PREVIEW].left + window_water_widgets[WIDX_PREVIEW].right) / 2
+                             + w->windowPos.x,
+                         window_water_widgets[WIDX_PREVIEW].bottom + w->windowPos.y + 5 };
         if (gWaterToolRaiseCost != MONEY32_UNDEFINED && gWaterToolRaiseCost != 0)
-            gfx_draw_string_centred(dpi, STR_RAISE_COST_AMOUNT, x, y, COLOUR_BLACK, &gWaterToolRaiseCost);
-        y += 10;
+            gfx_draw_string_centred(dpi, STR_RAISE_COST_AMOUNT, screenCoords, COLOUR_BLACK, &gWaterToolRaiseCost);
+        screenCoords.y += 10;
 
         // Draw lower cost amount
         if (gWaterToolLowerCost != MONEY32_UNDEFINED && gWaterToolLowerCost != 0)
-            gfx_draw_string_centred(dpi, STR_LOWER_COST_AMOUNT, x, y, COLOUR_BLACK, &gWaterToolLowerCost);
+            gfx_draw_string_centred(dpi, STR_LOWER_COST_AMOUNT, screenCoords, COLOUR_BLACK, &gWaterToolLowerCost);
     }
 }

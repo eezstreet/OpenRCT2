@@ -52,7 +52,7 @@ static void large_scenery_paint_supports(
 
     wooden_b_supports_paint_setup(session, (direction & 1), ax, supportHeight, supportImageColourFlags, nullptr);
 
-    int32_t clearanceHeight = ceil2(tileElement->clearance_height * 8 + 15, 16);
+    int32_t clearanceHeight = ceil2(tileElement->GetClearanceZ() + 15, 16);
 
     if (tile->flags & LARGE_SCENERY_TILE_FLAG_ALLOW_SUPPORTS_ABOVE)
     {
@@ -70,7 +70,7 @@ static rct_large_scenery_text_glyph* large_scenery_sign_get_glyph(rct_large_scen
 {
     if (codepoint >= std::size(text->glyphs))
     {
-        return &text->glyphs[(size_t)'?'];
+        return &text->glyphs[static_cast<size_t>('?')];
     }
     return &text->glyphs[codepoint];
 }
@@ -103,7 +103,7 @@ static void large_scenery_sign_fit_text(const utf8* str, rct_large_scenery_text*
     safe_strcpy(fitStr, str, bufLen);
     int32_t w = 0;
     uint32_t codepoint;
-    while (w <= text->max_width && (codepoint = utf8_get_next(fitStrEnd, (const utf8**)&fitStrEnd)) != 0)
+    while (w <= text->max_width && (codepoint = utf8_get_next(fitStrEnd, const_cast<const utf8**>(&fitStrEnd))) != 0)
     {
         if (height)
         {
@@ -284,7 +284,7 @@ void large_scenery_paint(paint_session* session, uint8_t direction, uint16_t hei
     }
     if (entry->large_scenery.flags & LARGE_SCENERY_FLAG_3D_TEXT)
     {
-        if (entry->large_scenery.tiles[1].x_offset != (int16_t)(uint16_t)0xFFFF)
+        if (entry->large_scenery.tiles[1].x_offset != static_cast<int16_t>(static_cast<uint16_t>(0xFFFF)))
         {
             int32_t sequenceDirection = (tileElement->AsLargeScenery()->GetSequenceIndex() - 1) & 3;
             if (sequenceDirection != direction)
@@ -301,8 +301,7 @@ void large_scenery_paint(paint_session* session, uint8_t direction, uint16_t hei
         }
         // 6B8331:
         // Draw sign text:
-        set_format_arg(0, uint32_t, 0);
-        set_format_arg(4, uint32_t, 0);
+        Formatter::Common().Add<uint32_t>(0).Add<uint32_t>(0);
         int32_t textColour = tileElement->AsLargeScenery()->GetSecondaryColour();
         if (dword_F4387C)
         {
@@ -312,15 +311,10 @@ void large_scenery_paint(paint_session* session, uint8_t direction, uint16_t hei
         auto banner = tileElement->AsLargeScenery()->GetBanner();
         if (banner != nullptr)
         {
-            auto stringId = banner->string_idx;
-            if (banner->flags & BANNER_FLAG_LINKED_TO_RIDE)
-            {
-                auto ride = get_ride(banner->ride_index);
-                stringId = ride->name;
-                set_format_arg(0, uint32_t, ride->name_arguments);
-            }
+            auto ft = Formatter::Common();
+            banner->FormatTextTo(ft);
             utf8 signString[256];
-            format_string(signString, sizeof(signString), stringId, gCommonFormatArgs);
+            format_string(signString, sizeof(signString), STR_STRINGID, gCommonFormatArgs);
             rct_large_scenery_text* text = entry->large_scenery.text;
             int32_t y_offset = (text->offset[(direction & 1)].y * 2);
             if (text->flags & LARGE_SCENERY_TEXT_FLAG_VERTICAL)
@@ -362,7 +356,7 @@ void large_scenery_paint(paint_session* session, uint8_t direction, uint16_t hei
                             utf8* spacesrc = nullptr;
                             utf8* spacedst = nullptr;
                             int32_t w = 0;
-                            uint32_t codepoint = utf8_get_next(src, (const utf8**)&src);
+                            uint32_t codepoint = utf8_get_next(src, const_cast<const utf8**>(&src));
                             do
                             {
                                 w += large_scenery_sign_get_glyph(text, codepoint)->width;
@@ -373,7 +367,7 @@ void large_scenery_paint(paint_session* session, uint8_t direction, uint16_t hei
                                 }
                             } while (w <= text->max_width && (dst = utf8_write_codepoint(dst, codepoint)) != nullptr
                                      && (srcold = src) != nullptr
-                                     && (codepoint = utf8_get_next(src, (const utf8**)&src)) != '\0');
+                                     && (codepoint = utf8_get_next(src, const_cast<const utf8**>(&src))) != '\0');
                             src = srcold;
                             if (spacesrc && codepoint)
                             {
@@ -417,47 +411,44 @@ void large_scenery_paint(paint_session* session, uint8_t direction, uint16_t hei
         return;
     }
     // Draw scrolling text:
-    set_format_arg(0, uint32_t, 0);
-    set_format_arg(4, uint32_t, 0);
     uint8_t textColour = tileElement->AsLargeScenery()->GetSecondaryColour();
     if (dword_F4387C)
     {
         textColour = COLOUR_GREY;
     }
-    if (direction == 3)
+    if (direction == 0)
     {
-        textColour |= (1 << 7);
-    }
-    // 6B809A:
-    set_format_arg(7, uint8_t, textColour);
-    BannerIndex bannerIndex = tileElement->AsLargeScenery()->GetBannerIndex();
-    uint16_t scrollMode = entry->large_scenery.scrolling_mode + ((direction + 1) & 0x3);
-    auto banner = GetBanner(bannerIndex);
-    set_format_arg(0, rct_string_id, banner->string_idx);
-    if (banner->flags & BANNER_FLAG_LINKED_TO_RIDE)
-    {
-        Ride* ride = get_ride(banner->ride_index);
-        set_format_arg(0, rct_string_id, ride->name);
-        set_format_arg(2, uint32_t, ride->name_arguments);
-    }
-    utf8 signString[256];
-    rct_string_id stringId = STR_SCROLLING_SIGN_TEXT;
-    if (gConfigGeneral.upper_case_banners)
-    {
-        format_string_to_upper(signString, sizeof(signString), stringId, gCommonFormatArgs);
+        textColour = ColourMapA[textColour].mid_dark;
     }
     else
     {
-        format_string(signString, sizeof(signString), stringId, gCommonFormatArgs);
+        textColour = ColourMapA[textColour].light;
     }
+    // 6B809A:
+    uint16_t scrollMode = entry->large_scenery.scrolling_mode + ((direction + 1) & 0x3);
+    auto banner = tileElement->AsLargeScenery()->GetBanner();
+    if (banner != nullptr)
+    {
+        auto ft = Formatter::Common();
+        banner->FormatTextTo(ft);
+        utf8 signString[256];
+        if (gConfigGeneral.upper_case_banners)
+        {
+            format_string_to_upper(signString, sizeof(signString), STR_SCROLLING_SIGN_TEXT, gCommonFormatArgs);
+        }
+        else
+        {
+            format_string(signString, sizeof(signString), STR_SCROLLING_SIGN_TEXT, gCommonFormatArgs);
+        }
 
-    gCurrentFontSpriteBase = FONT_SPRITE_BASE_TINY;
+        gCurrentFontSpriteBase = FONT_SPRITE_BASE_TINY;
 
-    uint16_t string_width = gfx_get_string_width(signString);
-    uint16_t scroll = (gCurrentTicks / 2) % string_width;
-    sub_98199C(
-        session, scrolling_text_setup(session, stringId, scroll, scrollMode), 0, 0, 1, 1, 21, height + 25, boxoffset.x,
-        boxoffset.y, boxoffset.z);
+        uint16_t stringWidth = gfx_get_string_width(signString);
+        uint16_t scroll = stringWidth > 0 ? (gCurrentTicks / 2) % stringWidth : 0;
+        sub_98199C(
+            session, scrolling_text_setup(session, STR_SCROLLING_SIGN_TEXT, scroll, scrollMode, textColour), 0, 0, 1, 1, 21,
+            height + 25, boxoffset.x, boxoffset.y, boxoffset.z);
+    }
 
     large_scenery_paint_supports(session, direction, height, tileElement, dword_F4387C, tile);
 }

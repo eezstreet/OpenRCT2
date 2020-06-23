@@ -36,7 +36,7 @@ public:
     LandLowerAction()
     {
     }
-    LandLowerAction(CoordsXY coords, MapRange range, uint8_t selectionType)
+    LandLowerAction(const CoordsXY& coords, MapRange range, uint8_t selectionType)
         : _coords(coords)
         , _range(range)
         , _selectionType(selectionType)
@@ -83,26 +83,36 @@ private:
 
         MapRange validRange = MapRange{ aX, aY, bX, bY };
 
-        res->Position = { _coords.x, _coords.y, tile_element_height(_coords.x, _coords.y) };
-        res->ExpenditureType = RCT_EXPENDITURE_TYPE_LANDSCAPING;
+        res->Position = { _coords.x, _coords.y, tile_element_height(_coords) };
+        res->Expenditure = ExpenditureType::Landscaping;
 
         if (isExecuting)
         {
-            audio_play_sound_at_location(SoundId::PlaceItem, _coords.x, _coords.y, tile_element_height(_coords.x, _coords.y));
+            audio_play_sound_at_location(SoundId::PlaceItem, { _coords.x, _coords.y, tile_element_height(_coords) });
         }
 
-        uint8_t maxHeight = map_get_highest_land_height(
-            validRange.GetLeft(), validRange.GetRight(), validRange.GetTop(), validRange.GetBottom());
+        uint8_t maxHeight = map_get_highest_land_height(validRange);
+        bool withinOwnership = false;
 
-        for (int32_t y = validRange.GetTop(); y <= validRange.GetBottom(); y += 32)
+        for (int32_t y = validRange.GetTop(); y <= validRange.GetBottom(); y += COORDS_XY_STEP)
         {
-            for (int32_t x = validRange.GetLeft(); x <= validRange.GetRight(); x += 32)
+            for (int32_t x = validRange.GetLeft(); x <= validRange.GetRight(); x += COORDS_XY_STEP)
             {
-                TileElement* tileElement = map_get_surface_element_at(x / 32, y / 32);
-                if (tileElement == nullptr)
+                if (!LocationValid({ x, y }))
+                    continue;
+                auto* surfaceElement = map_get_surface_element_at(CoordsXY{ x, y });
+                if (surfaceElement == nullptr)
                     continue;
 
-                SurfaceElement* surfaceElement = tileElement->AsSurface();
+                if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) && !gCheatsSandboxMode)
+                {
+                    if (!map_is_location_in_park(CoordsXY{ x, y }))
+                    {
+                        continue;
+                    }
+                }
+                withinOwnership = true;
+
                 uint8_t height = surfaceElement->base_height;
                 if (surfaceElement->GetSlope() & TILE_ELEMENT_SURFACE_RAISED_CORNERS_MASK)
                     height += 2;
@@ -134,6 +144,14 @@ private:
                     return result;
                 }
             }
+        }
+
+        if (!withinOwnership)
+        {
+            GameActionResult::Ptr ownerShipResult = std::make_unique<GameActionResult>(
+                GA_ERROR::DISALLOWED, STR_LAND_NOT_OWNED_BY_PARK);
+            ownerShipResult->ErrorTitle = STR_CANT_LOWER_LAND_HERE;
+            return ownerShipResult;
         }
 
         // Force ride construction to recheck area

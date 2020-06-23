@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2019 OpenRCT2 developers
+ * Copyright (c) 2014-2020 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -52,6 +52,7 @@ private:
     int32_t _colour;
     int32_t _seatRotation;
     int32_t _trackPlaceFlags;
+    bool _fromTrackDesign;
 
 public:
     TrackPlaceAction()
@@ -59,8 +60,8 @@ public:
     }
 
     TrackPlaceAction(
-        NetworkRideId_t rideIndex, int32_t trackType, CoordsXYZD origin, int32_t brakeSpeed, int32_t colour,
-        int32_t seatRotation, int32_t liftHillAndAlternativeState)
+        NetworkRideId_t rideIndex, int32_t trackType, const CoordsXYZD& origin, int32_t brakeSpeed, int32_t colour,
+        int32_t seatRotation, int32_t liftHillAndAlternativeState, bool fromTrackDesign)
         : _rideIndex(rideIndex)
         , _trackType(trackType)
         , _origin(origin)
@@ -68,11 +69,24 @@ public:
         , _colour(colour)
         , _seatRotation(seatRotation)
         , _trackPlaceFlags(liftHillAndAlternativeState)
+        , _fromTrackDesign(fromTrackDesign)
     {
         _origin.direction &= 3;
     }
 
-    uint16_t GetActionFlags() const override
+    void AcceptParameters(GameActionParameterVisitor & visitor) override
+    {
+        visitor.Visit(_origin);
+        visitor.Visit("ride", _rideIndex);
+        visitor.Visit("trackType", _trackType);
+        visitor.Visit("brakeSpeed", _brakeSpeed);
+        visitor.Visit("colour", _colour);
+        visitor.Visit("seatRotation", _seatRotation);
+        visitor.Visit("trackPlaceFlags", _trackPlaceFlags);
+        visitor.Visit("isFromTrackDesign", _fromTrackDesign);
+    }
+
+    uint16_t GetActionFlags() const override final
     {
         return GameAction::GetActionFlags();
     }
@@ -87,21 +101,16 @@ public:
 
     GameActionResult::Ptr Query() const override
     {
-        Ride* ride = get_ride(_rideIndex);
+        auto ride = get_ride(_rideIndex);
         if (ride == nullptr)
         {
-            log_warning("Invalid ride for track placement, rideIndex = %d", (int32_t)_rideIndex);
-            return std::make_unique<TrackPlaceActionResult>(GA_ERROR::INVALID_PARAMETERS, STR_NONE);
-        }
-        if (ride->type == RIDE_TYPE_NULL)
-        {
-            log_warning("Invalid ride type, rideIndex = %d", (int32_t)_rideIndex);
+            log_warning("Invalid ride for track placement, rideIndex = %d", static_cast<int32_t>(_rideIndex));
             return std::make_unique<TrackPlaceActionResult>(GA_ERROR::INVALID_PARAMETERS, STR_NONE);
         }
         rct_ride_entry* rideEntry = get_ride_entry(ride->subtype);
         if (rideEntry == nullptr)
         {
-            log_warning("Invalid ride subtype for track placement, rideIndex = %d", (int32_t)_rideIndex);
+            log_warning("Invalid ride subtype for track placement, rideIndex = %d", static_cast<int32_t>(_rideIndex));
             return std::make_unique<TrackPlaceActionResult>(GA_ERROR::INVALID_PARAMETERS, STR_NONE);
         }
 
@@ -112,14 +121,14 @@ public:
         }
 
         auto res = std::make_unique<TrackPlaceActionResult>();
-        res->ExpenditureType = RCT_EXPENDITURE_TYPE_RIDE_CONSTRUCTION;
+        res->Expenditure = ExpenditureType::RideConstruction;
         res->Position.x = _origin.x + 16;
         res->Position.y = _origin.y + 16;
         res->Position.z = _origin.z;
 
         res->GroundFlags = 0;
 
-        uint32_t rideTypeFlags = RideProperties[ride->type].flags;
+        uint32_t rideTypeFlags = RideTypeDescriptors[ride->type].Flags;
 
         if ((ride->lifecycle_flags & RIDE_LIFECYCLE_INDESTRUCTIBLE_TRACK) && _trackType == TRACK_ELEM_END_STATION)
         {
@@ -154,7 +163,7 @@ public:
             }
             // Backwards steep lift hills are allowed, even on roller coasters that do not support forwards steep lift hills.
             if ((_trackPlaceFlags & CONSTRUCTION_LIFT_HILL_SELECTED)
-                && !(RideTypePossibleTrackConfigurations[ride->type] & (1ULL << TRACK_LIFT_HILL_STEEP))
+                && !RideTypeDescriptors[ride->type].SupportsTrackPiece(TRACK_LIFT_HILL_STEEP)
                 && !gCheatsEnableChainLiftOnAllTrack)
             {
                 if (TrackFlags[_trackType] & TRACK_ELEM_FLAG_IS_STEEP_UP)
@@ -165,19 +174,15 @@ public:
         }
 
         money32 cost = 0;
-        TileElement* tileElement;
         const rct_preview_track* trackBlock = get_track_def_from_ride(ride, _trackType);
         uint32_t numElements = 0;
         // First check if any of the track pieces are outside the park
         for (; trackBlock->index != 0xFF; trackBlock++)
         {
-            CoordsXYZ tileCoords{ _origin.x, _origin.y, _origin.z };
-            LocationXY16 track{ trackBlock->x, trackBlock->y };
-            rotate_map_coordinates(&track.x, &track.y, _origin.direction);
-            tileCoords.x += track.x;
-            tileCoords.y += track.y;
+            auto rotatedTrack = CoordsXYZ{ CoordsXY{ trackBlock->x, trackBlock->y }.Rotate(_origin.direction), 0 };
+            auto tileCoords = CoordsXYZ{ _origin.x, _origin.y, _origin.z } + rotatedTrack;
 
-            if (!map_is_location_owned(tileCoords.x, tileCoords.y, tileCoords.z) && !gCheatsSandboxMode)
+            if (!LocationValid(tileCoords) || (!map_is_location_owned(tileCoords) && !gCheatsSandboxMode))
             {
                 return std::make_unique<TrackPlaceActionResult>(GA_ERROR::DISALLOWED, STR_LAND_NOT_OWNED_BY_PARK);
             }
@@ -190,18 +195,21 @@ public:
             return std::make_unique<TrackPlaceActionResult>(GA_ERROR::NO_FREE_ELEMENTS, STR_TILE_ELEMENT_LIMIT_REACHED);
         }
         const uint16_t* trackFlags = (rideTypeFlags & RIDE_TYPE_FLAG_FLAT_RIDE) ? FlatTrackFlags : TrackFlags;
-        if (trackFlags[_trackType] & TRACK_ELEM_FLAG_STARTS_AT_HALF_HEIGHT)
+        if (!gCheatsAllowTrackPlaceInvalidHeights)
         {
-            if ((_origin.z & 0x0F) != 8)
+            if (trackFlags[_trackType] & TRACK_ELEM_FLAG_STARTS_AT_HALF_HEIGHT)
             {
-                return std::make_unique<TrackPlaceActionResult>(GA_ERROR::INVALID_PARAMETERS, STR_CONSTRUCTION_ERR_UNKNOWN);
+                if ((_origin.z & 0x0F) != 8)
+                {
+                    return std::make_unique<TrackPlaceActionResult>(GA_ERROR::INVALID_PARAMETERS, STR_CONSTRUCTION_ERR_UNKNOWN);
+                }
             }
-        }
-        else
-        {
-            if ((_origin.z & 0x0F) != 0)
+            else
             {
-                return std::make_unique<TrackPlaceActionResult>(GA_ERROR::INVALID_PARAMETERS, STR_CONSTRUCTION_ERR_UNKNOWN);
+                if ((_origin.z & 0x0F) != 0)
+                {
+                    return std::make_unique<TrackPlaceActionResult>(GA_ERROR::INVALID_PARAMETERS, STR_CONSTRUCTION_ERR_UNKNOWN);
+                }
             }
         }
 
@@ -210,12 +218,8 @@ public:
 
         for (int32_t blockIndex = 0; trackBlock->index != 0xFF; trackBlock++, blockIndex++)
         {
-            CoordsXYZ mapLoc{ _origin.x, _origin.y, _origin.z };
-            LocationXY16 track{ trackBlock->x, trackBlock->y };
-            rotate_map_coordinates(&track.x, &track.y, _origin.direction);
-            mapLoc.x += track.x;
-            mapLoc.y += track.y;
-            mapLoc.z += trackBlock->z;
+            auto rotatedTrack = CoordsXYZ{ CoordsXY{ trackBlock->x, trackBlock->y }.Rotate(_origin.direction), trackBlock->z };
+            auto mapLoc = CoordsXYZ{ _origin.x, _origin.y, _origin.z } + rotatedTrack;
             auto quarterTile = trackBlock->var_08.Rotate(_origin.direction);
 
             if (mapLoc.z < 16)
@@ -223,34 +227,46 @@ public:
                 return std::make_unique<TrackPlaceActionResult>(GA_ERROR::INVALID_PARAMETERS, STR_TOO_LOW);
             }
 
-            int32_t baseZ = mapLoc.z / 8;
+            int32_t baseZ = floor2(mapLoc.z, COORDS_Z_STEP);
 
             int32_t clearanceZ = trackBlock->var_07;
-            if (trackBlock->var_09 & (1 << 2) && RideData5[ride->type].clearance_height > 24)
+            if (trackBlock->flags & RCT_PREVIEW_TRACK_FLAG_IS_VERTICAL
+                && RideTypeDescriptors[ride->type].Heights.ClearanceHeight > 24)
             {
                 clearanceZ += 24;
             }
             else
             {
-                clearanceZ += RideData5[ride->type].clearance_height;
+                clearanceZ += RideTypeDescriptors[ride->type].Heights.ClearanceHeight;
             }
 
-            clearanceZ = (clearanceZ / 8) + baseZ;
+            clearanceZ = floor2(clearanceZ, COORDS_Z_STEP) + baseZ;
 
-            if (clearanceZ >= 255)
+            if (clearanceZ > MAX_TRACK_HEIGHT)
             {
                 return std::make_unique<TrackPlaceActionResult>(GA_ERROR::INVALID_PARAMETERS, STR_TOO_HIGH);
             }
 
-            uint8_t crossingMode = (ride->type == RIDE_TYPE_MINIATURE_RAILWAY && _trackType == TRACK_ELEM_FLAT)
+            uint8_t crossingMode = (RideTypeDescriptors[ride->type].HasFlag(RIDE_TYPE_FLAG_SUPPORTS_LEVEL_CROSSINGS)
+                                    && _trackType == TRACK_ELEM_FLAT)
                 ? CREATE_CROSSING_MODE_TRACK_OVER_PATH
                 : CREATE_CROSSING_MODE_NONE;
             if (!map_can_construct_with_clear_at(
-                    mapLoc.x, mapLoc.y, baseZ, clearanceZ, &map_place_non_scenery_clear_func, quarterTile, GetFlags(), &cost,
+                    { mapLoc, baseZ, clearanceZ }, &map_place_non_scenery_clear_func, quarterTile, GetFlags(), &cost,
                     crossingMode))
             {
                 return std::make_unique<TrackPlaceActionResult>(
                     GA_ERROR::NO_CLEARANCE, gGameCommandErrorText, gCommonFormatArgs);
+            }
+
+            // When building a level crossing, remove any pre-existing path furniture.
+            if (crossingMode == CREATE_CROSSING_MODE_TRACK_OVER_PATH)
+            {
+                auto footpathElement = map_get_footpath_element(mapLoc);
+                if (footpathElement != nullptr && footpathElement->AsPath()->HasAddition())
+                {
+                    footpathElement->AsPath()->SetAddition(0);
+                }
             }
 
             uint8_t mapGroundFlags = gMapGroundFlags & (ELEMENT_IS_ABOVE_GROUND | ELEMENT_IS_UNDERGROUND);
@@ -314,9 +330,11 @@ public:
 
             if ((rideTypeFlags & RIDE_TYPE_FLAG_TRACK_MUST_BE_ON_WATER) && !byte_9D8150)
             {
-                tileElement = map_get_surface_element_at({ mapLoc.x, mapLoc.y });
+                auto surfaceElement = map_get_surface_element_at(mapLoc);
+                if (surfaceElement == nullptr)
+                    return std::make_unique<TrackPlaceActionResult>(GA_ERROR::UNKNOWN, STR_NONE);
 
-                uint8_t waterHeight = tileElement->AsSurface()->GetWaterHeight() * 2;
+                auto waterHeight = surfaceElement->GetWaterHeight();
                 if (waterHeight == 0)
                 {
                     return std::make_unique<TrackPlaceActionResult>(GA_ERROR::DISALLOWED, STR_CAN_ONLY_BUILD_THIS_ON_WATER);
@@ -326,10 +344,10 @@ public:
                 {
                     return std::make_unique<TrackPlaceActionResult>(GA_ERROR::DISALLOWED, STR_CAN_ONLY_BUILD_THIS_ON_WATER);
                 }
-                waterHeight -= 2;
-                if (waterHeight == tileElement->base_height)
+                waterHeight -= LAND_HEIGHT_STEP;
+                if (waterHeight == surfaceElement->GetBaseZ())
                 {
-                    uint8_t slope = tileElement->AsSurface()->GetSlope() & TILE_ELEMENT_SLOPE_ALL_CORNERS_UP;
+                    uint8_t slope = surfaceElement->GetSlope() & TILE_ELEMENT_SLOPE_ALL_CORNERS_UP;
                     if (slope == TILE_ELEMENT_SLOPE_W_CORNER_DN || slope == TILE_ELEMENT_SLOPE_S_CORNER_DN
                         || slope == TILE_ELEMENT_SLOPE_E_CORNER_DN || slope == TILE_ELEMENT_SLOPE_N_CORNER_DN)
                     {
@@ -349,36 +367,40 @@ public:
             }
             if ((entranceDirections & TRACK_SEQUENCE_FLAG_ORIGIN) && trackBlock->index == 0)
             {
-                if (!track_add_station_element(mapLoc.x, mapLoc.y, baseZ, _origin.direction, _rideIndex, 0))
+                if (!track_add_station_element({ mapLoc, baseZ, _origin.direction }, _rideIndex, 0, _fromTrackDesign))
                 {
                     return std::make_unique<TrackPlaceActionResult>(GA_ERROR::UNKNOWN, gGameCommandErrorText);
                 }
             }
 
             // 6c5648 12 push
-            tileElement = map_get_surface_element_at({ mapLoc.x, mapLoc.y });
+            auto surfaceElement = map_get_surface_element_at(mapLoc);
+            if (surfaceElement == nullptr)
+                return std::make_unique<TrackPlaceActionResult>(GA_ERROR::UNKNOWN, STR_NONE);
+
             if (!gCheatsDisableSupportLimits)
             {
-                int32_t ride_height = clearanceZ - tileElement->base_height;
+                int32_t ride_height = clearanceZ - surfaceElement->GetBaseZ();
                 if (ride_height >= 0)
                 {
                     uint16_t maxHeight;
 
-                    if (RideGroupManager::RideTypeIsIndependent(ride->type) && rideEntry->max_height != 0)
+                    if (RideTypeDescriptors[ride->type].HasFlag(RIDE_TYPE_FLAG_LIST_VEHICLES_SEPARATELY)
+                        && rideEntry->max_height != 0)
                     {
                         maxHeight = rideEntry->max_height;
                     }
-                    else if (RideGroupManager::RideTypeHasRideGroups(ride->type))
+                    else if (RideTypeDescriptors[ride->type].HasFlag(RIDE_TYPE_FLAG_HAS_RIDE_GROUPS))
                     {
                         const RideGroup* rideGroup = RideGroupManager::GetRideGroup(ride->type, rideEntry);
                         maxHeight = rideGroup->MaximumHeight;
                     }
                     else
                     {
-                        maxHeight = RideData5[ride->type].max_height;
+                        maxHeight = RideTypeDescriptors[ride->type].Heights.MaxHeight;
                     }
 
-                    ride_height /= 2;
+                    ride_height /= COORDS_Z_PER_TINY_Z;
                     if (ride_height > maxHeight && !byte_9D8150)
                     {
                         return std::make_unique<TrackPlaceActionResult>(GA_ERROR::DISALLOWED, STR_TOO_HIGH_FOR_SUPPORTS);
@@ -386,16 +408,16 @@ public:
                 }
             }
 
-            int32_t supportHeight = baseZ - tileElement->base_height;
+            int32_t supportHeight = baseZ - surfaceElement->GetBaseZ();
             if (supportHeight < 0)
             {
-                supportHeight = 10;
+                supportHeight = (10 * COORDS_Z_STEP);
             }
 
-            cost += ((supportHeight / 2) * RideTrackCosts[ride->type].support_price) * 5;
+            cost += ((supportHeight / (2 * COORDS_Z_STEP)) * RideTypeDescriptors[ride->type].BuildCosts.SupportPrice) * 5;
         }
 
-        money32 price = RideTrackCosts[ride->type].track_price;
+        money32 price = RideTypeDescriptors[ride->type].BuildCosts.TrackPrice;
         price *= (rideTypeFlags & RIDE_TYPE_FLAG_FLAT_RIDE) ? FlatRideTrackPricing[_trackType] : TrackPricing[_trackType];
 
         price >>= 16;
@@ -405,29 +427,29 @@ public:
 
     GameActionResult::Ptr Execute() const override
     {
-        Ride* ride = get_ride(_rideIndex);
+        auto ride = get_ride(_rideIndex);
         if (ride == nullptr)
         {
-            log_warning("Invalid ride for track placement, rideIndex = %d", (int32_t)_rideIndex);
+            log_warning("Invalid ride for track placement, rideIndex = %d", static_cast<int32_t>(_rideIndex));
             return std::make_unique<TrackPlaceActionResult>(GA_ERROR::INVALID_PARAMETERS);
         }
 
         rct_ride_entry* rideEntry = get_ride_entry(ride->subtype);
         if (rideEntry == nullptr)
         {
-            log_warning("Invalid ride subtype for track placement, rideIndex = %d", (int32_t)_rideIndex);
+            log_warning("Invalid ride subtype for track placement, rideIndex = %d", static_cast<int32_t>(_rideIndex));
             return std::make_unique<TrackPlaceActionResult>(GA_ERROR::INVALID_PARAMETERS);
         }
 
         auto res = std::make_unique<TrackPlaceActionResult>();
-        res->ExpenditureType = RCT_EXPENDITURE_TYPE_RIDE_CONSTRUCTION;
+        res->Expenditure = ExpenditureType::RideConstruction;
         res->Position.x = _origin.x + 16;
         res->Position.y = _origin.y + 16;
         res->Position.z = _origin.z;
 
         res->GroundFlags = 0;
 
-        uint32_t rideTypeFlags = RideProperties[ride->type].flags;
+        uint32_t rideTypeFlags = RideTypeDescriptors[ride->type].Flags;
 
         const uint8_t(*wallEdges)[16];
         if (rideTypeFlags & RIDE_TYPE_FLAG_FLAT_RIDE)
@@ -440,40 +462,38 @@ public:
         }
 
         money32 cost = 0;
-        TileElement* tileElement;
         const rct_preview_track* trackBlock = get_track_def_from_ride(ride, _trackType);
 
         trackBlock = get_track_def_from_ride(ride, _trackType);
         for (int32_t blockIndex = 0; trackBlock->index != 0xFF; trackBlock++, blockIndex++)
         {
-            CoordsXYZ mapLoc{ _origin.x, _origin.y, _origin.z };
-            LocationXY16 track{ trackBlock->x, trackBlock->y };
-            rotate_map_coordinates(&track.x, &track.y, _origin.direction);
-            mapLoc.x += track.x;
-            mapLoc.y += track.y;
-            mapLoc.z += trackBlock->z;
+            auto rotatedTrack = CoordsXYZ{ CoordsXY{ trackBlock->x, trackBlock->y }.Rotate(_origin.direction), trackBlock->z };
+            auto mapLoc = CoordsXYZ{ _origin.x, _origin.y, _origin.z } + rotatedTrack;
 
             auto quarterTile = trackBlock->var_08.Rotate(_origin.direction);
 
-            int32_t baseZ = mapLoc.z / 8;
+            int32_t baseZ = floor2(mapLoc.z, COORDS_Z_STEP);
             int32_t clearanceZ = trackBlock->var_07;
-            if (trackBlock->var_09 & (1 << 2) && RideData5[ride->type].clearance_height > 24)
+            if (trackBlock->flags & RCT_PREVIEW_TRACK_FLAG_IS_VERTICAL
+                && RideTypeDescriptors[ride->type].Heights.ClearanceHeight > 24)
             {
                 clearanceZ += 24;
             }
             else
             {
-                clearanceZ += RideData5[ride->type].clearance_height;
+                clearanceZ += RideTypeDescriptors[ride->type].Heights.ClearanceHeight;
             }
 
-            clearanceZ = (clearanceZ / 8) + baseZ;
+            clearanceZ = floor2(clearanceZ, COORDS_Z_STEP) + baseZ;
+            const auto mapLocWithClearance = CoordsXYRangedZ(mapLoc, baseZ, clearanceZ);
 
-            uint8_t crossingMode = (ride->type == RIDE_TYPE_MINIATURE_RAILWAY && _trackType == TRACK_ELEM_FLAT)
+            uint8_t crossingMode = (RideTypeDescriptors[ride->type].HasFlag(RIDE_TYPE_FLAG_SUPPORTS_LEVEL_CROSSINGS)
+                                    && _trackType == TRACK_ELEM_FLAT)
                 ? CREATE_CROSSING_MODE_TRACK_OVER_PATH
                 : CREATE_CROSSING_MODE_NONE;
             if (!map_can_construct_with_clear_at(
-                    mapLoc.x, mapLoc.y, baseZ, clearanceZ, &map_place_non_scenery_clear_func, quarterTile,
-                    GetFlags() | GAME_COMMAND_FLAG_APPLY, &cost, crossingMode))
+                    mapLocWithClearance, &map_place_non_scenery_clear_func, quarterTile, GetFlags() | GAME_COMMAND_FLAG_APPLY,
+                    &cost, crossingMode))
             {
                 return std::make_unique<TrackPlaceActionResult>(
                     GA_ERROR::NO_CLEARANCE, gGameCommandErrorText, gCommonFormatArgs);
@@ -481,10 +501,10 @@ public:
 
             if (!(GetFlags() & GAME_COMMAND_FLAG_GHOST) && !gCheatsDisableClearanceChecks)
             {
-                footpath_remove_litter(mapLoc.x, mapLoc.y, mapLoc.z);
+                footpath_remove_litter(mapLoc);
                 if (rideTypeFlags & RIDE_TYPE_FLAG_TRACK_NO_WALLS)
                 {
-                    wall_remove_at(mapLoc.x, mapLoc.y, baseZ * 8, clearanceZ * 8);
+                    wall_remove_at(mapLocWithClearance);
                 }
                 else
                 {
@@ -492,11 +512,11 @@ public:
                     uint8_t intersectingDirections = (*wallEdges)[blockIndex];
                     intersectingDirections ^= 0x0F;
                     intersectingDirections = rol4(intersectingDirections, _origin.direction);
-                    for (int32_t i = 0; i < 4; i++)
+                    for (int32_t i = 0; i < NumOrthogonalDirections; i++)
                     {
                         if (intersectingDirections & (1 << i))
                         {
-                            wall_remove_intersecting_walls(mapLoc.x, mapLoc.y, baseZ, clearanceZ, i);
+                            wall_remove_intersecting_walls(mapLocWithClearance, i);
                         }
                     }
                 }
@@ -512,15 +532,17 @@ public:
             res->GroundFlags = mapGroundFlags;
 
             // 6c5648 12 push
-            tileElement = map_get_surface_element_at({ mapLoc.x, mapLoc.y });
+            auto surfaceElement = map_get_surface_element_at(mapLoc);
+            if (surfaceElement == nullptr)
+                return std::make_unique<TrackPlaceActionResult>(GA_ERROR::UNKNOWN, STR_NONE);
 
-            int32_t supportHeight = baseZ - tileElement->base_height;
+            int32_t supportHeight = baseZ - surfaceElement->GetBaseZ();
             if (supportHeight < 0)
             {
-                supportHeight = 10;
+                supportHeight = (10 * COORDS_Z_STEP);
             }
 
-            cost += ((supportHeight / 2) * RideTrackCosts[ride->type].support_price) * 5;
+            cost += ((supportHeight / (2 * COORDS_Z_STEP)) * RideTypeDescriptors[ride->type].BuildCosts.SupportPrice) * 5;
 
             invalidate_test_results(ride);
             switch (_trackType)
@@ -532,9 +554,7 @@ public:
                     if (trackBlock->index != 0)
                         break;
                     ride->lifecycle_flags |= RIDE_LIFECYCLE_CABLE_LIFT_HILL_COMPONENT_USED;
-                    ride->cable_lift_x = mapLoc.x;
-                    ride->cable_lift_y = mapLoc.y;
-                    ride->cable_lift_z = baseZ;
+                    ride->CableLiftLoc = mapLoc;
                     break;
                 case TRACK_ELEM_BLOCK_BRAKES:
                     ride->num_block_brakes++;
@@ -565,7 +585,7 @@ public:
             }
 
             int32_t entranceDirections = 0;
-            if (ride->overall_view.xy != RCT_XY8_UNDEFINED)
+            if (!ride->overall_view.isNull())
             {
                 if (!(GetFlags() & GAME_COMMAND_FLAG_NO_SPEND))
                 {
@@ -580,15 +600,14 @@ public:
                 }
             }
 
-            if (entranceDirections & TRACK_SEQUENCE_FLAG_ORIGIN || ride->overall_view.xy == RCT_XY8_UNDEFINED)
+            if (entranceDirections & TRACK_SEQUENCE_FLAG_ORIGIN || ride->overall_view.isNull())
             {
-                ride->overall_view.x = mapLoc.x / 32;
-                ride->overall_view.y = mapLoc.y / 32;
+                ride->overall_view = mapLoc;
             }
 
-            tileElement = tile_element_insert(mapLoc.x / 32, mapLoc.y / 32, baseZ, quarterTile.GetBaseQuarterOccupied());
+            auto tileElement = tile_element_insert(mapLoc, quarterTile.GetBaseQuarterOccupied());
             assert(tileElement != nullptr);
-            tileElement->clearance_height = clearanceZ;
+            tileElement->SetClearanceZ(clearanceZ);
             tileElement->SetType(TILE_ELEMENT_TYPE_TRACK);
             tileElement->SetDirection(_origin.direction);
             if (_trackPlaceFlags & CONSTRUCTION_LIFT_HILL_SELECTED)
@@ -607,16 +626,16 @@ public:
             switch (_trackType)
             {
                 case TRACK_ELEM_WATERFALL:
-                    map_animation_create(MAP_ANIMATION_TYPE_TRACK_WATERFALL, mapLoc.x, mapLoc.y, tileElement->base_height);
+                    map_animation_create(MAP_ANIMATION_TYPE_TRACK_WATERFALL, CoordsXYZ{ mapLoc, tileElement->GetBaseZ() });
                     break;
                 case TRACK_ELEM_RAPIDS:
-                    map_animation_create(MAP_ANIMATION_TYPE_TRACK_RAPIDS, mapLoc.x, mapLoc.y, tileElement->base_height);
+                    map_animation_create(MAP_ANIMATION_TYPE_TRACK_RAPIDS, CoordsXYZ{ mapLoc, tileElement->GetBaseZ() });
                     break;
                 case TRACK_ELEM_WHIRLPOOL:
-                    map_animation_create(MAP_ANIMATION_TYPE_TRACK_WHIRLPOOL, mapLoc.x, mapLoc.y, tileElement->base_height);
+                    map_animation_create(MAP_ANIMATION_TYPE_TRACK_WHIRLPOOL, CoordsXYZ{ mapLoc, tileElement->GetBaseZ() });
                     break;
                 case TRACK_ELEM_SPINNING_TUNNEL:
-                    map_animation_create(MAP_ANIMATION_TYPE_TRACK_SPINNINGTUNNEL, mapLoc.x, mapLoc.y, tileElement->base_height);
+                    map_animation_create(MAP_ANIMATION_TYPE_TRACK_SPINNINGTUNNEL, CoordsXYZ{ mapLoc, tileElement->GetBaseZ() });
                     break;
             }
             if (track_element_has_speed_setting(_trackType))
@@ -659,7 +678,7 @@ public:
                             tempLoc.x += CoordsDirectionDelta[tempDirection].x;
                             tempLoc.y += CoordsDirectionDelta[tempDirection].y;
                             tempDirection = direction_reverse(tempDirection);
-                            wall_remove_intersecting_walls(tempLoc.x, tempLoc.y, baseZ, clearanceZ, tempDirection & 3);
+                            wall_remove_intersecting_walls({ tempLoc, baseZ, clearanceZ }, tempDirection & 3);
                         }
                     }
                 }
@@ -670,7 +689,7 @@ public:
                 if (trackBlock->index == 0)
                 {
                     track_add_station_element(
-                        mapLoc.x, mapLoc.y, baseZ, _origin.direction, _rideIndex, GAME_COMMAND_FLAG_APPLY);
+                        { mapLoc, _origin.direction }, _rideIndex, GAME_COMMAND_FLAG_APPLY, _fromTrackDesign);
                 }
                 sub_6CB945(ride);
                 ride->UpdateMaxVehicles();
@@ -678,19 +697,22 @@ public:
 
             if (rideTypeFlags & RIDE_TYPE_FLAG_TRACK_MUST_BE_ON_WATER)
             {
-                TileElement* surfaceElement = map_get_surface_element_at({ mapLoc.x, mapLoc.y });
-                surfaceElement->AsSurface()->SetHasTrackThatNeedsWater(true);
-                tileElement = surfaceElement;
+                auto* waterSurfaceElement = map_get_surface_element_at(mapLoc);
+                if (waterSurfaceElement != nullptr)
+                {
+                    waterSurfaceElement->SetHasTrackThatNeedsWater(true);
+                    tileElement = reinterpret_cast<TileElement*>(waterSurfaceElement);
+                }
             }
 
             if (!gCheatsDisableClearanceChecks || !(GetFlags() & GAME_COMMAND_FLAG_GHOST))
             {
-                footpath_connect_edges(mapLoc.x, mapLoc.y, tileElement, GetFlags());
+                footpath_connect_edges(mapLoc, tileElement, GetFlags());
             }
-            map_invalidate_tile_full(mapLoc.x, mapLoc.y);
+            map_invalidate_tile_full(mapLoc);
         }
 
-        money32 price = RideTrackCosts[ride->type].track_price;
+        money32 price = RideTypeDescriptors[ride->type].BuildCosts.TrackPrice;
         price *= (rideTypeFlags & RIDE_TYPE_FLAG_FLAT_RIDE) ? FlatRideTrackPricing[_trackType] : TrackPricing[_trackType];
 
         price >>= 16;

@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2019 OpenRCT2 developers
+ * Copyright (c) 2014-2020 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -19,15 +19,16 @@
 #include "../world/MapAnimation.h"
 #include "../world/Sprite.h"
 
-#define RCT1_MAX_TILE_ELEMENTS 0xC000
-#define RCT1_MAX_SPRITES 5000
-#define RCT1_MAX_TRAINS_PER_RIDE 12
-#define RCT1_MAX_MAP_SIZE 128
-#define RCT1_MAX_RIDES_IN_PARK 128
-#define RCT1_MAX_STAFF 116
-#define RCT1_RESEARCH_FLAGS_SEPARATOR 0xFF
-#define RCT1_MAX_ANIMATED_OBJECTS 1000
-#define RCT1_MAX_BANNERS 100
+constexpr const uint16_t RCT1_MAX_TILE_ELEMENTS = 0xC000;
+constexpr const uint16_t RCT1_MAX_SPRITES = 5000;
+constexpr const uint8_t RCT1_MAX_TRAINS_PER_RIDE = 12;
+constexpr const uint8_t RCT1_MAX_MAP_SIZE = 128;
+constexpr const uint8_t RCT1_MAX_STAFF = 116;
+constexpr const uint8_t RCT1_RESEARCH_FLAGS_SEPARATOR = 0xFF;
+constexpr const uint16_t RCT1_MAX_ANIMATED_OBJECTS = 1000;
+constexpr const uint8_t RCT1_MAX_BANNERS = 100;
+constexpr int32_t RCT1_COORDS_Z_STEP = 4;
+constexpr const uint32_t RCT1_NUM_LL_CSG_ENTRIES = 69917;
 
 struct ParkLoadResult;
 
@@ -64,14 +65,14 @@ struct rct1_ride
     uint16_t name;                                            // 0x022
     uint16_t name_argument_ride;                              // 0x024
     uint16_t name_argument_number;                            // 0x026
-    LocationXY8 overall_view;                                 // 0x028
-    LocationXY8 station_starts[RCT12_MAX_STATIONS_PER_RIDE];  // 0x02A
+    RCT12xy8 overall_view;                                    // 0x028
+    RCT12xy8 station_starts[RCT12_MAX_STATIONS_PER_RIDE];     // 0x02A
     uint8_t station_height[RCT12_MAX_STATIONS_PER_RIDE];      // 0x032
     uint8_t station_length[RCT12_MAX_STATIONS_PER_RIDE];      // 0x036
     uint8_t station_light[RCT12_MAX_STATIONS_PER_RIDE];       // 0x03A
     uint8_t station_depart[RCT12_MAX_STATIONS_PER_RIDE];      // 0x03E
-    LocationXY8 entrance[RCT12_MAX_STATIONS_PER_RIDE];        // 0x042
-    LocationXY8 exit[RCT12_MAX_STATIONS_PER_RIDE];            // 0x04A
+    RCT12xy8 entrance[RCT12_MAX_STATIONS_PER_RIDE];           // 0x042
+    RCT12xy8 exit[RCT12_MAX_STATIONS_PER_RIDE];               // 0x04A
     uint16_t last_peep_in_queue[RCT12_MAX_STATIONS_PER_RIDE]; // 0x052
     uint8_t num_peeps_in_queue[RCT12_MAX_STATIONS_PER_RIDE];  // 0x05A
     uint16_t vehicles[RCT1_MAX_TRAINS_PER_RIDE];              // 0x05E
@@ -87,7 +88,7 @@ struct rct1_ride
     uint8_t max_waiting_time;                                 // 0x07F
     uint8_t operation_option;                                 // 0x080
     uint8_t boat_hire_return_direction;                       // 0x081
-    LocationXY8 boat_hire_return_position;                    // 0x082
+    RCT12xy8 boat_hire_return_position;                       // 0x082
     uint8_t data_logging_index;                               // 0x084
     uint8_t special_track_elements;                           // 0x085
     uint16_t unk_86;                                          // 0x086
@@ -107,7 +108,7 @@ struct rct1_ride
     uint32_t testing_flags;                                   // 0x0B8
     // x y map location of the current track piece during a test
     // this is to prevent counting special tracks multiple times
-    LocationXY8 cur_test_track_location; // 0x0BC
+    RCT12xy8 cur_test_track_location; // 0x0BC
     // Next 3 variables are related (XXXX XYYY ZZZa aaaa)
     uint16_t turn_count_default; // 0x0BE X = current turn count
     uint16_t turn_count_banked;  // 0x0C0
@@ -124,25 +125,25 @@ struct rct1_ride
     uint8_t unk_CC[2];              // 0x0CC
     uint8_t num_sheltered_sections; // 0x0CE
     // see cur_test_track_location
-    uint8_t cur_test_track_z;                    // 0x0CF
-    int16_t unk_D0;                              // 0x0D0
-    int16_t unk_D2;                              // 0x0D2
-    int16_t customers_per_hour;                  // 0x0D4
-    int16_t unk_D6;                              // 0x0D6
-    int16_t unk_D8;                              // 0x0D8
-    int16_t unk_DA;                              // 0x0DA
-    int16_t unk_DC;                              // 0x0DC
-    int16_t unk_DE;                              // 0x0DE
-    uint16_t age;                                // 0x0E0
-    int16_t running_cost;                        // 0x0E2
-    int16_t unk_E4;                              // 0x0E4
-    int16_t unk_E6;                              // 0x0E6
-    money16 price;                               // 0x0E8
-    LocationXY8 chairlift_bullwheel_location[2]; // 0x0EA
-    uint8_t chairlift_bullwheel_z[2];            // 0x0EE
+    uint8_t cur_test_track_z;                 // 0x0CF
+    int16_t unk_D0;                           // 0x0D0
+    int16_t unk_D2;                           // 0x0D2
+    int16_t customers_per_hour;               // 0x0D4
+    int16_t unk_D6;                           // 0x0D6
+    int16_t unk_D8;                           // 0x0D8
+    int16_t unk_DA;                           // 0x0DA
+    int16_t unk_DC;                           // 0x0DC
+    int16_t unk_DE;                           // 0x0DE
+    uint16_t age;                             // 0x0E0
+    int16_t running_cost;                     // 0x0E2
+    int16_t unk_E4;                           // 0x0E4
+    int16_t unk_E6;                           // 0x0E6
+    money16 price;                            // 0x0E8
+    RCT12xy8 chairlift_bullwheel_location[2]; // 0x0EA
+    uint8_t chairlift_bullwheel_z[2];         // 0x0EE
     union
     {
-        rating_tuple ratings;
+        RatingTuple ratings;
         struct
         {
             ride_rating excitement; // 0x0F0
@@ -175,7 +176,7 @@ struct rct1_ride
     uint8_t pad_11F[0x7];              // 0x11F
     uint8_t spiral_slide_progress;     // 0x126
     uint8_t pad_127[0x9];              // 0x127
-    int16_t build_date;                // 0x130
+    uint16_t build_date;               // 0x130
     money16 upkeep_cost;               // 0x131
     uint16_t race_winner;              // 0x132
     uint8_t unk_134[2];                // 0x134
@@ -187,7 +188,7 @@ struct rct1_ride
     uint8_t broken_vehicle;            // 0x141
     uint8_t broken_car;                // 0x142
     uint8_t breakdown_reason;          // 0x143
-    uint8_t unk_144[2];                // 0x144
+    money16 price_secondary;           // 0x144
     union
     {
         struct
@@ -248,9 +249,9 @@ struct rct1_vehicle : RCT12SpriteBase
     };
     union
     {
-        int16_t track_direction;   // 0x36 (0000 0000 0000 0011)
-        int16_t track_type;        // 0x36 (0000 0011 1111 1100)
-        LocationXY8 boat_location; // 0x36
+        int16_t track_direction; // 0x36 (0000 0000 0000 0011)
+        int16_t track_type;      // 0x36 (0000 0011 1111 1100)
+        RCT12xy8 boat_location;  // 0x36
     };
     uint16_t track_x;               // 0x38
     uint16_t track_y;               // 0x3A
@@ -266,19 +267,19 @@ struct rct1_vehicle : RCT12SpriteBase
     uint16_t var_44;
     uint16_t mass;         // 0x46
     uint16_t update_flags; // 0x48
-    uint8_t swing_sprite;
+    uint8_t SwingSprite;
     uint8_t current_station; // 0x4B
     union
     {
-        int16_t swinging_car_var_0; // 0x4C
-        int16_t current_time;       // 0x4C
+        int16_t SwingPosition; // 0x4C
+        int16_t current_time;  // 0x4C
         struct
         {
             int8_t ferris_wheel_var_0; // 0x4C
             int8_t ferris_wheel_var_1; // 0x4D
         };
     };
-    int16_t var_4E;
+    int16_t SwingSpeed;
     uint8_t status;                  // 0x50
     uint8_t sub_state;               // 0x51
     uint16_t peep[32];               // 0x52
@@ -309,7 +310,7 @@ struct rct1_vehicle : RCT12SpriteBase
     uint16_t var_C8;
     uint16_t var_CA;
     uint8_t scream_sound_id; // 0xCC
-    uint8_t var_CD;
+    uint8_t TrackSubposition;
     union
     {
         uint8_t var_CE;
@@ -500,7 +501,7 @@ enum RCT1_PEEP_SPRITE_TYPE
     RCT1_PEEP_SPRITE_TYPE_HEAD_DOWN = 23,
     RCT1_PEEP_SPRITE_TYPE_NAUSEOUS = 24,
     RCT1_PEEP_SPRITE_TYPE_VERY_NAUSEOUS = 25,
-    RCT1_PEEP_SPRITE_TYPE_REQUIRE_BATHROOM = 26,
+    RCT1_PEEP_SPRITE_TYPE_REQUIRE_TOILET = 26,
     RCT1_PEEP_SPRITE_TYPE_HAT = 27,
     RCT1_PEEP_SPRITE_TYPE_BURGER = 28,
     RCT1_PEEP_SPRITE_TYPE_TENTACLE = 29,
@@ -675,7 +676,7 @@ struct rct1_s4
     uint16_t view_y;
     uint8_t view_zoom;
     uint8_t view_rotation;
-    rct_map_animation map_animations[RCT1_MAX_ANIMATED_OBJECTS];
+    RCT12MapAnimation map_animations[RCT1_MAX_ANIMATED_OBJECTS];
     uint32_t num_map_animations;
     uint8_t unk_1CADBC[12];
     uint16_t scrolling_text_step;
@@ -712,7 +713,7 @@ struct rct1_s4
 assert_struct_size(rct1_s4, 0x1F850C);
 
 /**
- * Track design structure.
+ * Track design structure. Only for base RCT1
  * size: 0x2006
  */
 struct rct_track_td4
@@ -755,18 +756,25 @@ struct rct_track_td4
     uint8_t intensity;           // 0x34
     uint8_t nausea;              // 0x35
     money16 upkeep_cost;         // 0x36
+};
 
-    // Added Attractions / Loopy Landscapes only
+assert_struct_size(rct_track_td4, 0x38);
+
+/**
+ * Track design structure for Added Attractions / Loopy Landscapes
+ * size: 0x2006
+ */
+struct rct_track_td4_aa : public rct_track_td4
+{
     uint8_t track_spine_colour[RCT12_NUM_COLOUR_SCHEMES];   // 0x38
     uint8_t track_rail_colour[RCT12_NUM_COLOUR_SCHEMES];    // 0x3C
     uint8_t track_support_colour[RCT12_NUM_COLOUR_SCHEMES]; // 0x40
     uint8_t flags2;                                         // 0x44
 
-    uint8_t var_45[0x7F]; // 0x45
-
-    void* elements; // 0xC4 (data starts here in file, 38 for original RCT1)
-    size_t elementsSize;
+    uint8_t pad_45[0x7F]; // 0x45
 };
+
+assert_struct_size(rct_track_td4_aa, 0xC4);
 #pragma pack(pop)
 
 enum
@@ -1048,19 +1056,58 @@ enum
 
 enum
 {
+    RCT1_WALL_TYPE_MESH_FENCE = 0,
+    RCT1_WALL_TYPE_MESH_FENCE_WITH_GATE = 1,
+    RCT1_WALL_TYPE_ROMAN = 2,
+    RCT1_WALL_TYPE_EGYPTIAN = 3,
+    RCT1_WALL_TYPE_HEDGE = 4,
+    RCT1_WALL_TYPE_HEDGE_WITH_GATE = 5,
+    RCT1_WALL_TYPE_BLUE_PLAYING_CARDS = 6,
+    RCT1_WALL_TYPE_RED_PLAYING_CARDS = 7,
+    RCT1_WALL_TYPE_WHITE_RAILING = 8,
+    RCT1_WALL_TYPE_WHITE_RAILING_WITH_GATE = 9,
+    RCT1_WALL_TYPE_MARTIAN = 10,
     RCT1_WALL_TYPE_GLASS_SMOOTH = 11,
-    RCT1_WALL_TYPE_GLASS_PANELS = 22,
     RCT1_WALL_TYPE_WOODEN_PANEL_FENCE = 12,
     RCT1_WALL_TYPE_WOODEN_PANEL_FENCE_WITH_GATE = 13,
+    RCT1_WALL_TYPE_WOODEN_POST_FENCE = 14,
+    RCT1_WALL_TYPE_RED_WOODEN_POST_FENCE = 15,
+    RCT1_WALL_TYPE_BARBED_WIRE = 16,
+    RCT1_WALL_TYPE_BARBED_WIRE_WITH_GATE = 17,
+    RCT1_WALL_TYPE_PRIMITIVE_TALL_WOOD_FENCE = 18,
+    RCT1_WALL_TYPE_PRIMITIVE_SHORT_WOOD_FENCE = 19,
+    RCT1_WALL_TYPE_IRON_RAILING = 20,
+    RCT1_WALL_TYPE_IRON_RAILING_WITH_GATE = 21,
+    RCT1_WALL_TYPE_GLASS_PANELS = 22,
+    RCT1_WALL_TYPE_BONE_FENCE = 23,
+    RCT1_WALL_TYPE_BRICK = 24,
+    RCT1_WALL_TYPE_BRICK_WITH_GATE = 25,
     RCT1_WALL_TYPE_WHITE_WOODEN_PANEL_FENCE = 26,
     RCT1_WALL_TYPE_RED_WOODEN_PANEL_FENCE = 27,
+    RCT1_WALL_TYPE_STONE = 28,
+    RCT1_WALL_TYPE_STONE_WITH_GATE = 29,
+    RCT1_WALL_TYPE_WOODEN_FENCE = 30,
+    RCT1_WALL_TYPE_JUNGLE = 31,
+    RCT1_WALL_TYPE_CONIFER_HEDGE = 32,
+    RCT1_WALL_TYPE_CONIFER_HEDGE_WITH_GATE = 33,
+    RCT1_WALL_TYPE_SMALL_BROWN_CASTLE = 34,
     RCT1_WALL_TYPE_SMALL_GREY_CASTLE = 35,
-    RCT1_WALL_TYPE_LARGE_CREY_CASTLE = 42,
-    RCT1_WALL_TYPE_LARGE_CREY_CASTLE_CROSS = 43,
-    RCT1_WALL_TYPE_LARGE_CREY_CASTLE_GATE = 44,
-    RCT1_WALL_TYPE_LARGE_CREY_CASTLE_WINDOW = 45,
-    RCT1_WALL_TYPE_MEDIUM_CREY_CASTLE = 46,
+    RCT1_WALL_TYPE_ROMAN_COLUMN = 36,
+    RCT1_WALL_TYPE_LARGE_BROWN_CASTLE = 37,
+    RCT1_WALL_TYPE_LARGE_BROWN_CASTLE_CROSS = 38,
+    RCT1_WALL_TYPE_LARGE_BROWN_CASTLE_GATE = 39,
+    RCT1_WALL_TYPE_LARGE_BROWN_CASTLE_WINDOW = 40,
+    RCT1_WALL_TYPE_MEDIUM_BROWN_CASTLE = 41,
+    RCT1_WALL_TYPE_LARGE_GREY_CASTLE = 42,
+    RCT1_WALL_TYPE_LARGE_GREY_CASTLE_CROSS = 43,
+    RCT1_WALL_TYPE_LARGE_GREY_CASTLE_GATE = 44,
+    RCT1_WALL_TYPE_LARGE_GREY_CASTLE_WINDOW = 45,
+    RCT1_WALL_TYPE_MEDIUM_GREY_CASTLE = 46,
+    RCT1_WALL_TYPE_CREEPY = 47,
+    RCT1_WALL_TYPE_CREEPY_GATE = 48,
+    RCT1_WALL_TYPE_BARBED_WIRE_WITH_SNOW = 49,
     RCT1_WALL_TYPE_WOODEN_PANEL_FENCE_WITH_SNOW = 50,
+    RCT1_WALL_TYPE_WOODEN_POST_FENCE_WITH_SNOW = 51,
 };
 
 enum
@@ -1213,6 +1260,8 @@ enum
     RCT1_SCENERY_GEOMETRIC_SCULPTURE_3 = 168, // TGE3
     RCT1_SCENERY_GEOMETRIC_SCULPTURE_4 = 170, // TGE4
     RCT1_SCENERY_GEOMETRIC_SCULPTURE_5 = 171, // TGE5
+
+    RCT1_SCENERY_SMALL_RED_GARDENS = 176, // TG19
 };
 
 enum

@@ -40,7 +40,7 @@ enum
     DATE_FORMAT_YEAR_DAY_MONTH
 };
 
-struct openrct_timeofday
+struct openrct2_timeofday
 {
     uint8_t second;
     uint8_t minute;
@@ -54,7 +54,7 @@ extern const rct_string_id DateFormatStringFormatIds[];
 extern uint16_t gDateMonthTicks;
 extern uint16_t gDateMonthsElapsed;
 
-extern openrct_timeofday gRealTimeOfDay;
+extern openrct2_timeofday gRealTimeOfDay;
 
 // gets the number of months in a business year
 int32_t date_get_months_in_year();

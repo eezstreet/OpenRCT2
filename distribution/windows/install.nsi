@@ -170,11 +170,16 @@ Section "!OpenRCT2" Section1
     File ..\..\contributors.md
     Push "$INSTDIR\contributors.md"
     Call unix2dos
+    File ..\scripting.md
+    Push "$INSTDIR\scripting.md"
+    Call unix2dos
+    File ..\openrct2.d.ts
+    Push "$INSTDIR\openrct2.d.ts"
+    Call unix2dos
 
     ; Copy executable
     File /oname=${OPENRCT2_EXE} ${BINARY_DIR}\${OPENRCT2_EXE}
     File /oname=${OPENRCT2_COM} ${BINARY_DIR}\${OPENRCT2_COM}
-    File /oname=openrct2.dll ${BINARY_DIR}\openrct2.dll
 
     ; Create the Registry Entries
     WriteRegStr HKEY_LOCAL_MACHINE "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\OpenRCT2" "Comments" "Visit ${APPURLLINK}"
@@ -241,9 +246,10 @@ Section "Uninstall"
     Delete "$INSTDIR\licence.txt"
     Delete "$INSTDIR\readme.txt"
     Delete "$INSTDIR\contributors.md"
+    Delete "$INSTDIR\scripting.md"
+    Delete "$INSTDIR\openrct2.d.ts"
     Delete "$INSTDIR\${OPENRCT2_EXE}"
     Delete "$INSTDIR\${OPENRCT2_COM}"
-    Delete "$INSTDIR\openrct2.dll"
     Delete "$INSTDIR\INSTALL.LOG"
 
     ; Data files

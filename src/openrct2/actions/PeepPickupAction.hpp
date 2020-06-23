@@ -32,7 +32,7 @@ private:
 
 public:
     PeepPickupAction() = default;
-    PeepPickupAction(PeepPickupType type, uint32_t spriteId, CoordsXYZ loc, NetworkPlayerId_t owner)
+    PeepPickupAction(PeepPickupType type, uint32_t spriteId, const CoordsXYZ& loc, NetworkPlayerId_t owner)
         : _type(static_cast<uint8_t>(type))
         , _spriteId(spriteId)
         , _loc(loc)
@@ -57,6 +57,11 @@ public:
         if (_spriteId >= MAX_SPRITES || _spriteId == SPRITE_INDEX_NULL)
         {
             log_error("Failed to pick up peep for sprite %d", _spriteId);
+            return MakeResult(GA_ERROR::INVALID_PARAMETERS, STR_ERR_CANT_PLACE_PERSON_HERE);
+        }
+
+        if (!_loc.isNull() && !LocationValid(_loc))
+        {
             return MakeResult(GA_ERROR::INVALID_PARAMETERS, STR_ERR_CANT_PLACE_PERSON_HERE);
         }
 
@@ -104,9 +109,9 @@ public:
                     return MakeResult(GA_ERROR::UNKNOWN, STR_ERR_CANT_PLACE_PERSON_HERE);
                 }
 
-                if (!peep->Place({ _loc.x / 32, _loc.y / 32, _loc.z }, false))
+                if (auto res2 = peep->Place(TileCoordsXYZ(_loc), false); res2->Error != GA_ERROR::OK)
                 {
-                    return MakeResult(GA_ERROR::UNKNOWN, STR_ERR_CANT_PLACE_PERSON_HERE, gGameCommandErrorText);
+                    return res2;
                 }
                 break;
             default:
@@ -174,9 +179,9 @@ public:
             break;
             case PeepPickupType::Place:
                 res->Position = _loc;
-                if (!peep->Place({ _loc.x / 32, _loc.y / 32, _loc.z }, true))
+                if (auto res2 = peep->Place(TileCoordsXYZ(_loc), true); res2->Error != GA_ERROR::OK)
                 {
-                    return MakeResult(GA_ERROR::UNKNOWN, STR_ERR_CANT_PLACE_PERSON_HERE, gGameCommandErrorText);
+                    return res2;
                 }
                 CancelConcurrentPickups(peep);
                 break;

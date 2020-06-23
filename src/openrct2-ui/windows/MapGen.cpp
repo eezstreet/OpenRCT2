@@ -110,13 +110,12 @@ enum {
 
 #pragma region Widgets
 
-#define WW 250
-#define WH 273
+static constexpr const rct_string_id WINDOW_TITLE = STR_MAPGEN_WINDOW_TITLE;
+static constexpr const int32_t WW = 250;
+static constexpr const int32_t WH = 273;
 
 #define SHARED_WIDGETS \
-    { WWT_FRAME,    0,  0,          WW - 1, 0,  WH - 1, 0xFFFFFFFF,                 STR_NONE },             /* WIDX_BACKGROUND */ \
-    { WWT_CAPTION,  0,  1,          WW - 2, 1,  14,     STR_MAPGEN_WINDOW_TITLE,    STR_WINDOW_TITLE_TIP }, /* WIDX_TITLE */ \
-    { WWT_CLOSEBOX, 0,  WW - 13,    WW - 3, 2,  13,     STR_CLOSE_X,                STR_CLOSE_WINDOW_TIP }, /* WIDX_CLOSE */ \
+    WINDOW_SHIM(WINDOW_TITLE, WW, WH), /* WIDX_BACKGROUND, WIDX_TITLE, WIDX_CLOSE */ \
     { WWT_RESIZE,   1,  0,          WW - 1, 43, WH - 2, 0xFFFFFFFF,                 STR_NONE },             /* WIDX_PAGE_BACKGROUND */ \
     { WWT_TAB,      1,  3,          33,     17, 43,     IMAGE_TYPE_REMAP | SPR_TAB,       STR_NONE },             /* WIDX_TAB_1 */ \
     { WWT_TAB,      1,  34,         64,     17, 43,     IMAGE_TYPE_REMAP | SPR_TAB,       STR_NONE },             /* WIDX_TAB_2 */ \
@@ -125,7 +124,7 @@ enum {
 
 static rct_widget MapWidgets[] = {
     SHARED_WIDGETS,
-    { WWT_BUTTON,           1, WW - 95, WW - 6, WH - 17, WH - 6, STR_MAPGEN_ACTION_GENERATE, STR_NONE },
+    { WWT_BUTTON,           1, WW - 95, WW - 6, WH - 18, WH - 5, STR_MAPGEN_ACTION_GENERATE, STR_NONE },
       SPINNER_WIDGETS      (1,  104,    198,    52,     63,     STR_NONE,                   STR_NONE), // NB: 3 widgets
       SPINNER_WIDGETS      (1,  104,    198,    70,     81,     STR_NONE,                   STR_NONE), // NB: 3 widgets
       SPINNER_WIDGETS      (1,  104,    198,    88,     99,     STR_NONE,                   STR_NONE), // NB: 3 widgets
@@ -136,7 +135,7 @@ static rct_widget MapWidgets[] = {
 
 static rct_widget RandomWidgets[] = {
     SHARED_WIDGETS,
-    { WWT_BUTTON,           1, WW - 95, WW - 6, WH - 17, WH - 6, STR_MAPGEN_ACTION_GENERATE,        STR_NONE },
+    { WWT_BUTTON,           1, WW - 95, WW - 6, WH - 18, WH - 5, STR_MAPGEN_ACTION_GENERATE,        STR_NONE },
     { WWT_CHECKBOX,         1,  4,      198,    52,     63,     STR_MAPGEN_OPTION_RANDOM_TERRAIN,   STR_NONE },
     { WWT_CHECKBOX,         1,  4,      198,    70,     81,     STR_MAPGEN_OPTION_PLACE_TREES,      STR_NONE },
     { WIDGETS_END },
@@ -144,7 +143,7 @@ static rct_widget RandomWidgets[] = {
 
 static rct_widget SimplexWidgets[] = {
     SHARED_WIDGETS,
-    { WWT_BUTTON,           1, WW - 95, WW - 6, WH - 17, WH - 6, STR_MAPGEN_ACTION_GENERATE,      STR_NONE }, // WIDX_SIMPLEX_GENERATE
+    { WWT_BUTTON,           1, WW - 95, WW - 6, WH - 18, WH - 5, STR_MAPGEN_ACTION_GENERATE,      STR_NONE }, // WIDX_SIMPLEX_GENERATE
     { WWT_LABEL_CENTRED,    1,  4,      198,    52,     63,     STR_MAPGEN_SIMPLEX_NOISE,         STR_NONE }, // WIDX_SIMPLEX_LABEL
       SPINNER_WIDGETS      (1,  104,    198,    70,     81,     STR_NONE,                         STR_NONE),  // WIDX_SIMPLEX_LOW{,_UP,_DOWN}
       SPINNER_WIDGETS      (1,  104,    198,    88,     99,     STR_NONE,                         STR_NONE),  // WIDX_SIMPLEX_HIGH{,_UP,_DOWN}
@@ -161,7 +160,7 @@ static rct_widget SimplexWidgets[] = {
 
 static rct_widget HeightmapWidgets[] = {
     SHARED_WIDGETS,
-    { WWT_BUTTON,           1, WW - 155, WW - 6, WH - 17, WH - 6, STR_MAPGEN_SELECT_HEIGHTMAP, STR_NONE }, // WIDX_HEIGHTMAP_SELECT
+    { WWT_BUTTON,           1, WW - 155, WW - 6, WH - 18, WH - 5, STR_MAPGEN_SELECT_HEIGHTMAP, STR_NONE }, // WIDX_HEIGHTMAP_SELECT
     { WWT_CHECKBOX,         1,  4,      103,    52,     63,     STR_MAPGEN_SMOOTH_HEIGHTMAP,STR_NONE }, // WIDX_HEIGHTMAP_SMOOTH_HEIGHTMAP
       SPINNER_WIDGETS      (1,  104,    198,    70,     81,     STR_NONE,                   STR_NONE), // WIDX_HEIGHTMAP_STRENGTH{,_UP,_DOWN}
     { WWT_CHECKBOX,         1,  4,      103,    88,     99,     STR_MAPGEN_NORMALIZE,       STR_NONE }, // WIDX_HEIGHTMAP_NORMALIZE
@@ -490,11 +489,11 @@ static constexpr const int32_t TabAnimationLoops[WINDOW_MAPGEN_PAGE_COUNT] = {
 };
 // clang-format on
 
-#define BASESIZE_MIN 0
-#define BASESIZE_MAX 60
-#define WATERLEVEL_MIN 0
-#define WATERLEVEL_MAX 54
-#define MAX_SMOOTH_ITERATIONS 20
+constexpr int32_t BASESIZE_MIN = 0;
+constexpr int32_t BASESIZE_MAX = 60;
+constexpr int32_t WATERLEVEL_MIN = 0;
+constexpr int32_t WATERLEVEL_MAX = 54;
+constexpr int32_t MAX_SMOOTH_ITERATIONS = 20;
 
 static void window_mapgen_set_page(rct_window* w, int32_t page);
 static void window_mapgen_set_pressed_tab(rct_window* w);
@@ -534,7 +533,7 @@ rct_window* window_mapgen_open()
     w->frame_no = 0;
 
     w->page = WINDOW_MAPGEN_PAGE_BASE;
-    window_invalidate(w);
+    w->Invalidate();
     w->widgets = PageWidgets[WINDOW_MAPGEN_PAGE_BASE];
     w->enabled_widgets = PageEnabledWidgets[WINDOW_MAPGEN_PAGE_BASE];
     w->hold_down_widgets = HoldDownWidgets[WINDOW_MAPGEN_PAGE_BASE];
@@ -596,14 +595,14 @@ static void window_mapgen_base_mouseup(rct_window* w, rct_widgetindex widgetInde
             window_text_input_open(w, WIDX_MAP_SIZE, STR_MAP_SIZE_2, STR_ENTER_MAP_SIZE, STR_FORMAT_INTEGER, _mapSize - 2, 4);
             break;
         case WIDX_BASE_HEIGHT:
-            TextInputDescriptionArgs[0] = (uint16_t)((BASESIZE_MIN - 12) / 2);
-            TextInputDescriptionArgs[1] = (uint16_t)((BASESIZE_MAX - 12) / 2);
+            TextInputDescriptionArgs[0] = static_cast<uint16_t>((BASESIZE_MIN - 12) / 2);
+            TextInputDescriptionArgs[1] = static_cast<uint16_t>((BASESIZE_MAX - 12) / 2);
             window_text_input_open(
                 w, WIDX_BASE_HEIGHT, STR_BASE_HEIGHT, STR_ENTER_BASE_HEIGHT, STR_FORMAT_INTEGER, (_baseHeight - 12) / 2, 3);
             break;
         case WIDX_WATER_LEVEL:
-            TextInputDescriptionArgs[0] = (uint16_t)((WATERLEVEL_MIN - 12) / 2);
-            TextInputDescriptionArgs[1] = (uint16_t)((WATERLEVEL_MAX - 12) / 2);
+            TextInputDescriptionArgs[0] = static_cast<uint16_t>((WATERLEVEL_MIN - 12) / 2);
+            TextInputDescriptionArgs[1] = static_cast<uint16_t>((WATERLEVEL_MAX - 12) / 2);
             window_text_input_open(
                 w, WIDX_WATER_LEVEL, STR_WATER_LEVEL, STR_ENTER_WATER_LEVEL, STR_FORMAT_INTEGER, (_waterLevel - 12) / 2, 3);
             break;
@@ -616,27 +615,27 @@ static void window_mapgen_base_mousedown(rct_window* w, rct_widgetindex widgetIn
     {
         case WIDX_MAP_SIZE_UP:
             _mapSize = std::min(_mapSize + 1, MAXIMUM_MAP_SIZE_TECHNICAL);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_MAP_SIZE_DOWN:
             _mapSize = std::max(_mapSize - 1, MINIMUM_MAP_SIZE_TECHNICAL);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_BASE_HEIGHT_UP:
             _baseHeight = std::min(_baseHeight + 2, BASESIZE_MAX);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_BASE_HEIGHT_DOWN:
             _baseHeight = std::max(_baseHeight - 2, BASESIZE_MIN);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_WATER_LEVEL_UP:
             _waterLevel = std::min(_waterLevel + 2, WATERLEVEL_MAX);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_WATER_LEVEL_DOWN:
             _waterLevel = std::max(_waterLevel - 2, WATERLEVEL_MIN);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_FLOOR_TEXTURE:
             land_tool_show_surface_style_dropdown(w, widget, _floorTexture);
@@ -661,14 +660,14 @@ static void window_mapgen_base_dropdown(rct_window* w, rct_widgetindex widgetInd
 
             if (gLandToolTerrainSurface == type)
             {
-                gLandToolTerrainSurface = 255;
+                gLandToolTerrainSurface = OBJECT_ENTRY_INDEX_NULL;
             }
             else
             {
                 gLandToolTerrainSurface = type;
                 _floorTexture = type;
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_WALL_TEXTURE:
             if (dropdownIndex == -1)
@@ -678,14 +677,14 @@ static void window_mapgen_base_dropdown(rct_window* w, rct_widgetindex widgetInd
 
             if (gLandToolTerrainEdge == type)
             {
-                gLandToolTerrainEdge = 255;
+                gLandToolTerrainEdge = OBJECT_ENTRY_INDEX_NULL;
             }
             else
             {
                 gLandToolTerrainEdge = type;
                 _wallTexture = type;
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
     }
 }
@@ -729,13 +728,13 @@ static void window_mapgen_textinput(rct_window* w, rct_widgetindex widgetIndex, 
             break;
     }
 
-    window_invalidate(w);
+    w->Invalidate();
 }
 
 static void window_mapgen_base_invalidate(rct_window* w)
 {
-    auto surfaceImage = (uint32_t)SPR_NONE;
-    auto edgeImage = (uint32_t)SPR_NONE;
+    auto surfaceImage = static_cast<uint32_t>(SPR_NONE);
+    auto edgeImage = static_cast<uint32_t>(SPR_NONE);
 
     auto& objManager = GetContext()->GetObjectManager();
     const auto surfaceObj = static_cast<TerrainSurfaceObject*>(
@@ -745,7 +744,7 @@ static void window_mapgen_base_invalidate(rct_window* w)
         surfaceImage = surfaceObj->IconImageId;
         if (surfaceObj->Colour != 255)
         {
-            surfaceImage |= surfaceObj->Colour << 19 | IMAGE_TYPE_REMAP;
+            surfaceImage |= SPRITE_ID_PALETTE_COLOUR_1(surfaceObj->Colour);
         }
     }
     const auto edgeObj = static_cast<TerrainEdgeObject*>(objManager.GetLoadedObject(OBJECT_TYPE_TERRAIN_EDGE, _wallTexture));
@@ -775,28 +774,33 @@ static void window_mapgen_base_paint(rct_window* w, rct_drawpixelinfo* dpi)
 
     const uint8_t textColour = w->colours[1];
 
-    gfx_draw_string_left(dpi, STR_MAP_SIZE, nullptr, textColour, w->x + 4, w->y + w->widgets[WIDX_MAP_SIZE].top + 1);
     gfx_draw_string_left(
-        dpi, STR_BASE_HEIGHT_LABEL, nullptr, textColour, w->x + 4, w->y + w->widgets[WIDX_BASE_HEIGHT].top + 1);
+        dpi, STR_MAP_SIZE, nullptr, textColour, w->windowPos + ScreenCoordsXY{ 4, w->widgets[WIDX_MAP_SIZE].top + 1 });
     gfx_draw_string_left(
-        dpi, STR_WATER_LEVEL_LABEL, nullptr, textColour, w->x + 4, w->y + w->widgets[WIDX_WATER_LEVEL].top + 1);
-    gfx_draw_string_left(dpi, STR_TERRAIN_LABEL, nullptr, textColour, w->x + 4, w->y + w->widgets[WIDX_FLOOR_TEXTURE].top + 1);
+        dpi, STR_BASE_HEIGHT_LABEL, nullptr, textColour,
+        w->windowPos + ScreenCoordsXY{ 4, w->widgets[WIDX_BASE_HEIGHT].top + 1 });
+    gfx_draw_string_left(
+        dpi, STR_WATER_LEVEL_LABEL, nullptr, textColour,
+        w->windowPos + ScreenCoordsXY{ 4, w->widgets[WIDX_WATER_LEVEL].top + 1 });
+    gfx_draw_string_left(
+        dpi, STR_TERRAIN_LABEL, nullptr, textColour,
+        w->windowPos + ScreenCoordsXY{ 4, w->widgets[WIDX_FLOOR_TEXTURE].top + 1 });
 
     // The practical map size is 2 lower than the technical map size
-    LocationXY16 mapSizeArgs = MakeXY16(_mapSize - 2, _mapSize - 2);
+    TileCoordsXY mapSizeArgs = { _mapSize - 2, _mapSize - 2 };
     gfx_draw_string_left(
-        dpi, STR_RESOLUTION_X_BY_Y, &mapSizeArgs, w->colours[1], w->x + w->widgets[WIDX_MAP_SIZE].left + 1,
-        w->y + w->widgets[WIDX_MAP_SIZE].top + 1);
+        dpi, STR_RESOLUTION_X_BY_Y, &mapSizeArgs, w->colours[1],
+        w->windowPos + ScreenCoordsXY{ w->widgets[WIDX_MAP_SIZE].left + 1, w->widgets[WIDX_MAP_SIZE].top + 1 });
 
     arg = (_baseHeight - 12) / 2;
     gfx_draw_string_left(
-        dpi, STR_COMMA16, &arg, w->colours[1], w->x + w->widgets[WIDX_BASE_HEIGHT].left + 1,
-        w->y + w->widgets[WIDX_BASE_HEIGHT].top + 1);
+        dpi, STR_COMMA16, &arg, w->colours[1],
+        w->windowPos + ScreenCoordsXY{ w->widgets[WIDX_BASE_HEIGHT].left + 1, w->widgets[WIDX_BASE_HEIGHT].top + 1 });
 
     arg = (_waterLevel - 12) / 2;
     gfx_draw_string_left(
-        dpi, STR_COMMA16, &arg, w->colours[1], w->x + w->widgets[WIDX_WATER_LEVEL].left + 1,
-        w->y + w->widgets[WIDX_WATER_LEVEL].top + 1);
+        dpi, STR_COMMA16, &arg, w->colours[1],
+        w->windowPos + ScreenCoordsXY{ w->widgets[WIDX_WATER_LEVEL].left + 1, w->widgets[WIDX_WATER_LEVEL].top + 1 });
 }
 
 #pragma endregion
@@ -901,7 +905,7 @@ static void window_mapgen_simplex_mouseup(rct_window* w, rct_widgetindex widgetI
 
             mapgenSettings.simplex_low = _simplex_low;
             mapgenSettings.simplex_high = _simplex_high;
-            mapgenSettings.simplex_base_freq = ((float)_simplex_base_freq) / 100.00f;
+            mapgenSettings.simplex_base_freq = (static_cast<float>(_simplex_base_freq)) / 100.00f;
             mapgenSettings.simplex_octaves = _simplex_octaves;
 
             mapgen_generate(&mapgenSettings);
@@ -916,55 +920,55 @@ static void window_mapgen_simplex_mousedown(rct_window* w, rct_widgetindex widge
     {
         case WIDX_SIMPLEX_LOW_UP:
             _simplex_low = std::min(_simplex_low + 1, 24);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_SIMPLEX_LOW_DOWN:
             _simplex_low = std::max(_simplex_low - 1, 0);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_SIMPLEX_HIGH_UP:
             _simplex_high = std::min(_simplex_high + 1, 36);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_SIMPLEX_HIGH_DOWN:
             _simplex_high = std::max(_simplex_high - 1, 0);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_SIMPLEX_BASE_FREQ_UP:
             _simplex_base_freq = std::min(_simplex_base_freq + 5, 1000);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_SIMPLEX_BASE_FREQ_DOWN:
             _simplex_base_freq = std::max(_simplex_base_freq - 5, 0);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_SIMPLEX_OCTAVES_UP:
             _simplex_octaves = std::min(_simplex_octaves + 1, 10);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_SIMPLEX_OCTAVES_DOWN:
             _simplex_octaves = std::max(_simplex_octaves - 1, 1);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_SIMPLEX_MAP_SIZE_UP:
             _mapSize = std::min(_mapSize + 1, MAXIMUM_MAP_SIZE_TECHNICAL);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_SIMPLEX_MAP_SIZE_DOWN:
             _mapSize = std::max(_mapSize - 1, MINIMUM_MAP_SIZE_TECHNICAL);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_SIMPLEX_WATER_LEVEL_UP:
             _waterLevel = std::min(_waterLevel + 2, 54);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_SIMPLEX_WATER_LEVEL_DOWN:
             _waterLevel = std::max(_waterLevel - 2, 0);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_SIMPLEX_RANDOM_TERRAIN_CHECKBOX:
             _randomTerrain = !_randomTerrain;
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_SIMPLEX_FLOOR_TEXTURE:
             land_tool_show_surface_style_dropdown(w, widget, _floorTexture);
@@ -974,7 +978,7 @@ static void window_mapgen_simplex_mousedown(rct_window* w, rct_widgetindex widge
             break;
         case WIDX_SIMPLEX_PLACE_TREES_CHECKBOX:
             _placeTrees ^= 1;
-            window_invalidate(w);
+            w->Invalidate();
             break;
     }
 }
@@ -993,14 +997,14 @@ static void window_mapgen_simplex_dropdown(rct_window* w, rct_widgetindex widget
 
             if (gLandToolTerrainSurface == type)
             {
-                gLandToolTerrainSurface = 255;
+                gLandToolTerrainSurface = OBJECT_ENTRY_INDEX_NULL;
             }
             else
             {
                 gLandToolTerrainSurface = type;
                 _floorTexture = type;
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_SIMPLEX_WALL_TEXTURE:
             if (dropdownIndex == -1)
@@ -1010,14 +1014,14 @@ static void window_mapgen_simplex_dropdown(rct_window* w, rct_widgetindex widget
 
             if (gLandToolTerrainEdge == type)
             {
-                gLandToolTerrainEdge = 255;
+                gLandToolTerrainEdge = OBJECT_ENTRY_INDEX_NULL;
             }
             else
             {
                 gLandToolTerrainEdge = type;
                 _wallTexture = type;
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
     }
 }
@@ -1032,8 +1036,8 @@ static void window_mapgen_simplex_update(rct_window* w)
 
 static void window_mapgen_simplex_invalidate(rct_window* w)
 {
-    auto surfaceImage = (uint32_t)SPR_NONE;
-    auto edgeImage = (uint32_t)SPR_NONE;
+    auto surfaceImage = static_cast<uint32_t>(SPR_NONE);
+    auto edgeImage = static_cast<uint32_t>(SPR_NONE);
 
     auto& objManager = GetContext()->GetObjectManager();
     const auto surfaceObj = static_cast<TerrainSurfaceObject*>(
@@ -1043,7 +1047,7 @@ static void window_mapgen_simplex_invalidate(rct_window* w)
         surfaceImage = surfaceObj->IconImageId;
         if (surfaceObj->Colour != 255)
         {
-            surfaceImage |= surfaceObj->Colour << 19 | IMAGE_TYPE_REMAP;
+            surfaceImage |= SPRITE_ID_PALETTE_COLOUR_1(surfaceObj->Colour);
         }
     }
     const auto edgeObj = static_cast<TerrainEdgeObject*>(objManager.GetLoadedObject(OBJECT_TYPE_TERRAIN_EDGE, _wallTexture));
@@ -1089,46 +1093,54 @@ static void window_mapgen_simplex_paint(rct_window* w, rct_drawpixelinfo* dpi)
     const uint8_t textColour = w->colours[1];
 
     gfx_draw_string_left(
-        dpi, STR_MAPGEN_SIMPLEX_NOISE_LOW_, nullptr, textColour, w->x + 5, w->y + w->widgets[WIDX_SIMPLEX_LOW].top + 1);
+        dpi, STR_MAPGEN_SIMPLEX_NOISE_LOW_, nullptr, textColour,
+        w->windowPos + ScreenCoordsXY{ 5, w->widgets[WIDX_SIMPLEX_LOW].top + 1 });
     gfx_draw_string_left(
-        dpi, STR_MAPGEN_SIMPLEX_NOISE_HIGH, nullptr, textColour, w->x + 5, w->y + w->widgets[WIDX_SIMPLEX_HIGH].top + 1);
+        dpi, STR_MAPGEN_SIMPLEX_NOISE_HIGH, nullptr, textColour,
+        w->windowPos + ScreenCoordsXY{ 5, w->widgets[WIDX_SIMPLEX_HIGH].top + 1 });
     gfx_draw_string_left(
-        dpi, STR_MAPGEN_SIMPLEX_NOISE_BASE_FREQUENCY, nullptr, textColour, w->x + 5,
-        w->y + w->widgets[WIDX_SIMPLEX_BASE_FREQ].top + 1);
+        dpi, STR_MAPGEN_SIMPLEX_NOISE_BASE_FREQUENCY, nullptr, textColour,
+        w->windowPos + ScreenCoordsXY{ 5, w->widgets[WIDX_SIMPLEX_BASE_FREQ].top + 1 });
     gfx_draw_string_left(
-        dpi, STR_MAPGEN_SIMPLEX_NOISE_OCTAVES, nullptr, textColour, w->x + 5, w->y + w->widgets[WIDX_SIMPLEX_OCTAVES].top + 1);
-    gfx_draw_string_left(dpi, STR_MAP_SIZE, nullptr, textColour, w->x + 5, w->y + w->widgets[WIDX_SIMPLEX_MAP_SIZE].top + 1);
+        dpi, STR_MAPGEN_SIMPLEX_NOISE_OCTAVES, nullptr, textColour,
+        w->windowPos + ScreenCoordsXY{ 5, w->widgets[WIDX_SIMPLEX_OCTAVES].top + 1 });
     gfx_draw_string_left(
-        dpi, STR_WATER_LEVEL_LABEL, nullptr, textColour, w->x + 5, w->y + w->widgets[WIDX_SIMPLEX_WATER_LEVEL].top + 1);
+        dpi, STR_MAP_SIZE, nullptr, textColour, w->windowPos + ScreenCoordsXY{ 5, w->widgets[WIDX_SIMPLEX_MAP_SIZE].top + 1 });
+    gfx_draw_string_left(
+        dpi, STR_WATER_LEVEL_LABEL, nullptr, textColour,
+        w->windowPos + ScreenCoordsXY{ 5, w->widgets[WIDX_SIMPLEX_WATER_LEVEL].top + 1 });
 
     gfx_draw_string_left(
-        dpi, STR_COMMA16, &_simplex_low, textColour, w->x + w->widgets[WIDX_SIMPLEX_LOW].left + 1,
-        w->y + w->widgets[WIDX_SIMPLEX_LOW].top + 1);
+        dpi, STR_COMMA16, &_simplex_low, textColour,
+        w->windowPos + ScreenCoordsXY{ w->widgets[WIDX_SIMPLEX_LOW].left + 1, w->widgets[WIDX_SIMPLEX_LOW].top + 1 });
     gfx_draw_string_left(
-        dpi, STR_COMMA16, &_simplex_high, textColour, w->x + w->widgets[WIDX_SIMPLEX_HIGH].left + 1,
-        w->y + w->widgets[WIDX_SIMPLEX_HIGH].top + 1);
+        dpi, STR_COMMA16, &_simplex_high, textColour,
+        w->windowPos + ScreenCoordsXY{ w->widgets[WIDX_SIMPLEX_HIGH].left + 1, w->widgets[WIDX_SIMPLEX_HIGH].top + 1 });
     gfx_draw_string_left(
         dpi, STR_WINDOW_OBJECTIVE_VALUE_RATING, &_simplex_base_freq, textColour,
-        w->x + w->widgets[WIDX_SIMPLEX_BASE_FREQ].left + 1, w->y + w->widgets[WIDX_SIMPLEX_BASE_FREQ].top + 1);
+        w->windowPos
+            + ScreenCoordsXY{ w->widgets[WIDX_SIMPLEX_BASE_FREQ].left + 1, w->widgets[WIDX_SIMPLEX_BASE_FREQ].top + 1 });
     gfx_draw_string_left(
-        dpi, STR_COMMA16, &_simplex_octaves, textColour, w->x + w->widgets[WIDX_SIMPLEX_OCTAVES].left + 1,
-        w->y + w->widgets[WIDX_SIMPLEX_OCTAVES].top + 1);
+        dpi, STR_COMMA16, &_simplex_octaves, textColour,
+        w->windowPos + ScreenCoordsXY{ w->widgets[WIDX_SIMPLEX_OCTAVES].left + 1, w->widgets[WIDX_SIMPLEX_OCTAVES].top + 1 });
     gfx_draw_string_left(
-        dpi, STR_TERRAIN_LABEL, nullptr, textColour, w->x + 5, w->y + w->widgets[WIDX_SIMPLEX_RANDOM_TERRAIN_CHECKBOX].top + 1);
+        dpi, STR_TERRAIN_LABEL, nullptr, textColour,
+        w->windowPos + ScreenCoordsXY{ 5, w->widgets[WIDX_SIMPLEX_RANDOM_TERRAIN_CHECKBOX].top + 1 });
     gfx_draw_string_left(
-        dpi, STR_MAPGEN_OPTION_PLACE_TREES, nullptr, textColour, w->x + 5,
-        w->y + w->widgets[WIDX_SIMPLEX_PLACE_TREES_CHECKBOX].top + 1);
+        dpi, STR_MAPGEN_OPTION_PLACE_TREES, nullptr, textColour,
+        w->windowPos + ScreenCoordsXY{ 5, w->widgets[WIDX_SIMPLEX_PLACE_TREES_CHECKBOX].top + 1 });
 
     // The practical map size is 2 lower than the technical map size
-    LocationXY16 mapSizeArgs = MakeXY16(_mapSize - 2, _mapSize - 2);
+    TileCoordsXY mapSizeArgs = { _mapSize - 2, _mapSize - 2 };
     gfx_draw_string_left(
-        dpi, STR_RESOLUTION_X_BY_Y, &mapSizeArgs, textColour, w->x + w->widgets[WIDX_SIMPLEX_MAP_SIZE].left + 1,
-        w->y + w->widgets[WIDX_SIMPLEX_MAP_SIZE].top + 1);
+        dpi, STR_RESOLUTION_X_BY_Y, &mapSizeArgs, textColour,
+        w->windowPos + ScreenCoordsXY{ w->widgets[WIDX_SIMPLEX_MAP_SIZE].left + 1, w->widgets[WIDX_SIMPLEX_MAP_SIZE].top + 1 });
 
     arg = (_waterLevel - 12) / 2;
     gfx_draw_string_left(
-        dpi, STR_COMMA16, &arg, textColour, w->x + w->widgets[WIDX_SIMPLEX_WATER_LEVEL].left + 1,
-        w->y + w->widgets[WIDX_SIMPLEX_WATER_LEVEL].top + 1);
+        dpi, STR_COMMA16, &arg, textColour,
+        w->windowPos
+            + ScreenCoordsXY{ w->widgets[WIDX_SIMPLEX_WATER_LEVEL].left + 1, w->widgets[WIDX_SIMPLEX_WATER_LEVEL].top + 1 });
 }
 
 #pragma endregion
@@ -1227,7 +1239,7 @@ static void window_mapgen_heightmap_mouseup(rct_window* w, rct_widgetindex widge
         {
             auto intent = Intent(WC_LOADSAVE);
             intent.putExtra(INTENT_EXTRA_LOADSAVE_TYPE, LOADSAVETYPE_LOAD | LOADSAVETYPE_HEIGHTMAP);
-            intent.putExtra(INTENT_EXTRA_CALLBACK, (void*)window_mapgen_heightmap_loadsave_callback);
+            intent.putExtra(INTENT_EXTRA_CALLBACK, reinterpret_cast<void*>(window_mapgen_heightmap_loadsave_callback));
             context_open_intent(&intent);
             return;
         }
@@ -1283,35 +1295,42 @@ static void window_mapgen_heightmap_paint(rct_window* w, rct_drawpixelinfo* dpi)
     const uint8_t strengthColour = _heightmapSmoothMap ? enabledColour : disabledColour;
     int16_t strength = _heightmapSmoothStrength;
     gfx_draw_string_left(
-        dpi, STR_MAPGEN_SMOOTH_STRENGTH, nullptr, strengthColour, w->x + 5, w->y + w->widgets[WIDX_HEIGHTMAP_STRENGTH].top + 1);
+        dpi, STR_MAPGEN_SMOOTH_STRENGTH, nullptr, strengthColour,
+        w->windowPos + ScreenCoordsXY{ 5, w->widgets[WIDX_HEIGHTMAP_STRENGTH].top + 1 });
     gfx_draw_string_left(
-        dpi, STR_COMMA16, &strength, strengthColour, w->x + w->widgets[WIDX_HEIGHTMAP_STRENGTH].left + 1,
-        w->y + w->widgets[WIDX_HEIGHTMAP_STRENGTH].top + 1);
+        dpi, STR_COMMA16, &strength, strengthColour,
+        w->windowPos
+            + ScreenCoordsXY{ w->widgets[WIDX_HEIGHTMAP_STRENGTH].left + 1, w->widgets[WIDX_HEIGHTMAP_STRENGTH].top + 1 });
 
     // Low label and value
     const uint8_t labelColour = _heightmapLoaded ? enabledColour : disabledColour;
     int16_t low = _heightmapLow;
     gfx_draw_string_left(
-        dpi, STR_MAPGEN_SIMPLEX_NOISE_LOW_, nullptr, labelColour, w->x + 5, w->y + w->widgets[WIDX_HEIGHTMAP_LOW].top + 1);
+        dpi, STR_MAPGEN_SIMPLEX_NOISE_LOW_, nullptr, labelColour,
+        w->windowPos + ScreenCoordsXY{ 5, w->widgets[WIDX_HEIGHTMAP_LOW].top + 1 });
     gfx_draw_string_left(
-        dpi, STR_COMMA16, &low, labelColour, w->x + w->widgets[WIDX_HEIGHTMAP_LOW].left + 1,
-        w->y + w->widgets[WIDX_HEIGHTMAP_LOW].top + 1);
+        dpi, STR_COMMA16, &low, labelColour,
+        w->windowPos + ScreenCoordsXY{ w->widgets[WIDX_HEIGHTMAP_LOW].left + 1, w->widgets[WIDX_HEIGHTMAP_LOW].top + 1 });
 
     // High label and value
     int16_t high = _heightmapHigh;
     gfx_draw_string_left(
-        dpi, STR_MAPGEN_SIMPLEX_NOISE_HIGH, nullptr, labelColour, w->x + 5, w->y + w->widgets[WIDX_HEIGHTMAP_HIGH].top + 1);
+        dpi, STR_MAPGEN_SIMPLEX_NOISE_HIGH, nullptr, labelColour,
+        w->windowPos + ScreenCoordsXY{ 5, w->widgets[WIDX_HEIGHTMAP_HIGH].top + 1 });
     gfx_draw_string_left(
-        dpi, STR_COMMA16, &high, labelColour, w->x + w->widgets[WIDX_HEIGHTMAP_HIGH].left + 1,
-        w->y + w->widgets[WIDX_HEIGHTMAP_HIGH].top + 1);
+        dpi, STR_COMMA16, &high, labelColour,
+        w->windowPos + ScreenCoordsXY{ w->widgets[WIDX_HEIGHTMAP_HIGH].left + 1, w->widgets[WIDX_HEIGHTMAP_HIGH].top + 1 });
 
     // Water level label and value
     int16_t waterLevel = _waterLevel;
     gfx_draw_string_left(
-        dpi, STR_WATER_LEVEL_LABEL, nullptr, labelColour, w->x + 5, w->y + w->widgets[WIDX_HEIGHTMAP_WATER_LEVEL].top + 1);
+        dpi, STR_WATER_LEVEL_LABEL, nullptr, labelColour,
+        w->windowPos + ScreenCoordsXY{ 5, w->widgets[WIDX_HEIGHTMAP_WATER_LEVEL].top + 1 });
     gfx_draw_string_left(
-        dpi, STR_COMMA16, &waterLevel, labelColour, w->x + w->widgets[WIDX_HEIGHTMAP_WATER_LEVEL].left + 1,
-        w->y + w->widgets[WIDX_HEIGHTMAP_WATER_LEVEL].top + 1);
+        dpi, STR_COMMA16, &waterLevel, labelColour,
+        w->windowPos
+            + ScreenCoordsXY{ w->widgets[WIDX_HEIGHTMAP_WATER_LEVEL].left + 1,
+                              w->widgets[WIDX_HEIGHTMAP_WATER_LEVEL].top + 1 });
 }
 
 #pragma endregion
@@ -1356,7 +1375,7 @@ static void window_mapgen_set_page(rct_window* w, int32_t page)
     }
 
     window_init_scroll_widgets(w);
-    window_invalidate(w);
+    w->Invalidate();
 }
 
 static void window_mapgen_set_pressed_tab(rct_window* w)
@@ -1379,7 +1398,8 @@ static void window_mapgen_draw_tab_image(rct_drawpixelinfo* dpi, rct_window* w, 
             spriteIndex += (frame % TabAnimationFrames[w->page]);
         }
 
-        gfx_draw_sprite(dpi, spriteIndex, w->x + w->widgets[widgetIndex].left, w->y + w->widgets[widgetIndex].top, 0);
+        gfx_draw_sprite(
+            dpi, spriteIndex, w->windowPos.x + w->widgets[widgetIndex].left, w->windowPos.y + w->widgets[widgetIndex].top, 0);
     }
 }
 

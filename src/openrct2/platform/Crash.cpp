@@ -24,9 +24,12 @@
 #        error Breakpad support not implemented yet for this platform
 #    endif
 
+#    include "../Game.h"
+#    include "../OpenRCT2.h"
 #    include "../Version.h"
 #    include "../config/Config.h"
 #    include "../core/Console.hpp"
+#    include "../core/Guard.hpp"
 #    include "../core/String.hpp"
 #    include "../interface/Screenshot.h"
 #    include "../localisation/Language.h"
@@ -58,7 +61,7 @@ static bool UploadMinidump(const std::map<std::wstring, std::wstring>& files, in
         wprintf(L"files[%s] = %s\n", file.first.c_str(), file.second.c_str());
     }
     std::wstring url(L"https://openrct2.sp.backtrace.io:6098/"
-                     L"post?format=minidump&token=27bfc474b8739e7c1df37180727e717a0a95d3bf3f2a8eaaf17ad321fb179c6f");
+                     L"post?format=minidump&token=bbafef6546d0845da6751ea6c28763a749883d94a371d56904a629e73f3b8910");
     std::map<std::wstring, std::wstring> parameters;
     parameters[L"product_name"] = L"openrct2";
     // In case of releases this can be empty
@@ -70,8 +73,15 @@ static bool UploadMinidump(const std::map<std::wstring, std::wstring>& files, in
     {
         parameters[L"commit"] = String::ToWideChar(gVersionInfoFull);
     }
+
+    auto assertMsg = Guard::GetLastAssertMessage();
+    if (assertMsg)
+    {
+        parameters[L"assert_failure"] = String::ToWideChar(*assertMsg);
+    }
+
     int timeout = 10000;
-    bool success = google_breakpad::HTTPUpload::SendRequest(url, parameters, files, &timeout, &response, &error);
+    bool success = google_breakpad::HTTPUpload::SendMultipartPostRequest(url, parameters, files, &timeout, &response, &error);
     wprintf(L"Success = %d, error = %d, response = %s\n", success, error, response.c_str());
     return success;
 }
@@ -100,10 +110,12 @@ static bool OnCrash(
     wchar_t saveFilePath[MAX_PATH];
     wchar_t configFilePath[MAX_PATH];
     wchar_t saveFilePathGZIP[MAX_PATH];
+    wchar_t recordFilePathNew[MAX_PATH];
     swprintf_s(dumpFilePath, std::size(dumpFilePath), L"%s\\%s.dmp", dumpPath, miniDumpId);
     swprintf_s(saveFilePath, std::size(saveFilePath), L"%s\\%s.sv6", dumpPath, miniDumpId);
     swprintf_s(configFilePath, std::size(configFilePath), L"%s\\%s.ini", dumpPath, miniDumpId);
     swprintf_s(saveFilePathGZIP, std::size(saveFilePathGZIP), L"%s\\%s.sv6.gz", dumpPath, miniDumpId);
+    swprintf_s(recordFilePathNew, std::size(recordFilePathNew), L"%s\\%s.sv6r", dumpPath, miniDumpId);
 
     wchar_t dumpFilePathNew[MAX_PATH];
     swprintf_s(
@@ -132,6 +144,8 @@ static bool OnCrash(
         fclose(input);
         fclose(dest);
     }
+
+    bool with_record = stop_silent_record();
 
     // Try to rename the files
     if (_wrename(dumpFilePath, dumpFilePathNew) == 0)
@@ -193,6 +207,20 @@ static bool OnCrash(
         uploadFiles[L"attachment_screenshot.png"] = screenshotPathW;
     }
 
+    if (with_record)
+    {
+        auto sv6rPathW = String::ToWideChar(gSilentRecordingName);
+        bool record_copied = CopyFileW(sv6rPathW.c_str(), recordFilePathNew, true);
+        if (record_copied)
+        {
+            uploadFiles[L"attachment_replay.sv6r"] = recordFilePathNew;
+        }
+        else
+        {
+            with_record = false;
+        }
+    }
+
     if (gOpenRCT2SilentBreakpad)
     {
         int error;
@@ -220,10 +248,13 @@ static bool OnCrash(
         {
             const wchar_t* MessageFormat2 = L"There was a problem while uploading the dump. Please upload it manually to "
                                             L"GitHub. It should be highlighted for you once you close this message.\n"
+                                            L"It might be because you are using outdated build and we have disabled its "
+                                            L"access token. Make sure you are running recent version.\n"
+                                            L"Dump file = %s\n"
                                             L"Please provide following information as well:\n"
                                             L"Error code = %d\n"
                                             L"Response = %s";
-            swprintf_s(message, MessageFormat2, error, response.c_str());
+            swprintf_s(message, MessageFormat2, dumpFilePath, error, response.c_str());
             MessageBoxW(nullptr, message, WSZ(OPENRCT2_NAME), MB_OK | MB_ICONERROR);
         }
         else
@@ -235,16 +266,22 @@ static bool OnCrash(
     if (SUCCEEDED(coInitializeResult))
     {
         LPITEMIDLIST pidl = ILCreateFromPathW(dumpPath);
-        LPITEMIDLIST files[3];
+        LPITEMIDLIST files[6];
         uint32_t numFiles = 0;
 
         files[numFiles++] = ILCreateFromPathW(dumpFilePath);
         // There should be no need to check if this file exists, if it doesn't
         // it simply shouldn't get selected.
         files[numFiles++] = ILCreateFromPathW(dumpFilePathGZIP);
+        files[numFiles++] = ILCreateFromPathW(configFilePath);
         if (savedGameDumped)
         {
             files[numFiles++] = ILCreateFromPathW(saveFilePath);
+            files[numFiles++] = ILCreateFromPathW(saveFilePathGZIP);
+        }
+        if (with_record)
+        {
+            files[numFiles++] = ILCreateFromPathW(recordFilePathNew);
         }
         if (pidl != nullptr)
         {

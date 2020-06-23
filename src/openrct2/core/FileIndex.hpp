@@ -160,8 +160,8 @@ private:
 
                 stats.TotalFiles++;
                 stats.TotalFileSize += fileInfo->Size;
-                stats.FileDateModifiedChecksum ^= (uint32_t)(fileInfo->LastModified >> 32)
-                    ^ (uint32_t)(fileInfo->LastModified & 0xFFFFFFFF);
+                stats.FileDateModifiedChecksum ^= static_cast<uint32_t>(fileInfo->LastModified >> 32)
+                    ^ static_cast<uint32_t>(fileInfo->LastModified & 0xFFFFFFFF);
                 stats.FileDateModifiedChecksum = ror32(stats.FileDateModifiedChecksum, 5);
                 stats.PathChecksum += GetPathChecksum(path);
             }
@@ -246,7 +246,7 @@ private:
         WriteIndexFile(language, scanResult.Stats, allItems);
 
         auto endTime = std::chrono::high_resolution_clock::now();
-        auto duration = (std::chrono::duration<float>)(endTime - startTime);
+        auto duration = std::chrono::duration<float>(endTime - startTime);
         Console::WriteLine("Finished building %s in %.2f seconds.", _name.c_str(), duration.count());
 
         return allItems;
@@ -309,7 +309,7 @@ private:
             header.VersionB = _version;
             header.LanguageId = language;
             header.Stats = stats;
-            header.NumItems = (uint32_t)items.size();
+            header.NumItems = static_cast<uint32_t>(items.size());
             fs.WriteValue(header);
 
             // Write items

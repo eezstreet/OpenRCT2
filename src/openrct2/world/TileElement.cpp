@@ -28,41 +28,49 @@ void TileElementBase::SetType(uint8_t newType)
     this->type |= (newType & TILE_ELEMENT_TYPE_MASK);
 }
 
-uint8_t TileElementBase::GetDirection() const
+Direction TileElementBase::GetDirection() const
 {
     return this->type & TILE_ELEMENT_DIRECTION_MASK;
 }
 
-void TileElementBase::SetDirection(uint8_t direction)
+void TileElementBase::SetDirection(Direction direction)
 {
     this->type &= ~TILE_ELEMENT_DIRECTION_MASK;
     this->type |= (direction & TILE_ELEMENT_DIRECTION_MASK);
 }
 
-uint8_t TileElementBase::GetDirectionWithOffset(uint8_t offset) const
+Direction TileElementBase::GetDirectionWithOffset(uint8_t offset) const
 {
     return ((this->type & TILE_ELEMENT_DIRECTION_MASK) + offset) & TILE_ELEMENT_DIRECTION_MASK;
 }
 
 bool TileElementBase::IsLastForTile() const
 {
-    return (this->flags & TILE_ELEMENT_FLAG_LAST_TILE) != 0;
+    return (this->Flags & TILE_ELEMENT_FLAG_LAST_TILE) != 0;
+}
+
+void TileElementBase::SetLastForTile(bool on)
+{
+    if (on)
+        Flags |= TILE_ELEMENT_FLAG_LAST_TILE;
+    else
+        Flags &= ~TILE_ELEMENT_FLAG_LAST_TILE;
 }
 
 bool TileElementBase::IsGhost() const
 {
-    return (this->flags & TILE_ELEMENT_FLAG_GHOST) != 0;
+    return (this->Flags & TILE_ELEMENT_FLAG_GHOST) != 0;
 }
 
 void TileElementBase::SetGhost(bool isGhost)
 {
     if (isGhost)
     {
-        this->flags |= TILE_ELEMENT_FLAG_GHOST;
+        this->Flags |= TILE_ELEMENT_FLAG_GHOST;
     }
     else
     {
-        this->flags &= ~TILE_ELEMENT_FLAG_GHOST;
+        this->Flags &= ~TILE_ELEMENT_FLAG_GHOST;
     }
 }
 
@@ -123,17 +131,12 @@ void tile_element_set_banner_index(TileElement* tileElement, BannerIndex bannerI
 
 void tile_element_remove_banner_entry(TileElement* tileElement)
 {
-    BannerIndex bannerIndex = tile_element_get_banner_index(tileElement);
-    if (bannerIndex == BANNER_INDEX_NULL)
-        return;
-
+    auto bannerIndex = tile_element_get_banner_index(tileElement);
     auto banner = GetBanner(bannerIndex);
-    if (banner->type != BANNER_NULL)
+    if (banner != nullptr)
     {
-        rct_windownumber windowNumber = bannerIndex;
-        window_close_by_number(WC_BANNER, windowNumber);
-        banner->type = BANNER_NULL;
-        user_string_free(banner->string_idx);
+        window_close_by_number(WC_BANNER, bannerIndex);
+        *banner = {};
     }
 }
 
@@ -155,15 +158,16 @@ uint8_t tile_element_get_ride_index(const TileElement* tileElement)
 void TileElement::ClearAs(uint8_t newType)
 {
     type = newType;
-    flags = 0;
-    base_height = 2;
-    clearance_height = 2;
+    Flags = 0;
+    base_height = MINIMUM_LAND_HEIGHT;
+    clearance_height = MINIMUM_LAND_HEIGHT;
     std::fill_n(pad_04, sizeof(pad_04), 0x00);
+    std::fill_n(pad_08, sizeof(pad_08), 0x00);
 }
 
 void TileElementBase::Remove()
 {
-    tile_element_remove((TileElement*)this);
+    tile_element_remove(static_cast<TileElement*>(this));
 }
 
 // Rotate both of the values amount
@@ -173,7 +177,6 @@ const QuarterTile QuarterTile::Rotate(uint8_t amount) const
     {
         case 0:
             return QuarterTile{ *this };
-            break;
         case 1:
         {
             auto rotVal1 = _val << 1;
@@ -208,4 +211,35 @@ const QuarterTile QuarterTile::Rotate(uint8_t amount) const
             log_error("Tried to rotate QuarterTile invalid amount.");
             return QuarterTile{ 0 };
     }
+}
+
+uint8_t TileElementBase::GetOccupiedQuadrants() const
+{
+    return Flags & TILE_ELEMENT_OCCUPIED_QUADRANTS_MASK;
+}
+
+void TileElementBase::SetOccupiedQuadrants(uint8_t quadrants)
+{
+    Flags &= ~TILE_ELEMENT_OCCUPIED_QUADRANTS_MASK;
+    Flags |= (quadrants & TILE_ELEMENT_OCCUPIED_QUADRANTS_MASK);
+}
+
+int32_t TileElementBase::GetBaseZ() const
+{
+    return base_height * COORDS_Z_STEP;
+}
+
+void TileElementBase::SetBaseZ(int32_t newZ)
+{
+    base_height = (newZ / COORDS_Z_STEP);
+}
+
+int32_t TileElementBase::GetClearanceZ() const
+{
+    return clearance_height * COORDS_Z_STEP;
+}
+
+void TileElementBase::SetClearanceZ(int32_t newZ)
+{
+    clearance_height = (newZ / COORDS_Z_STEP);
 }

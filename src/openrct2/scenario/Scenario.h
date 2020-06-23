@@ -60,7 +60,7 @@ struct rct_scenario_data
     // packed objects
 
     // SC6[3]
-    rct_object_entry objects[OBJECT_ENTRY_COUNT];
+    rct_object_entry objects[RCT2_OBJECT_ENTRY_COUNT];
 
     // SC6[4]
     uint16_t elapsed_months;
@@ -75,8 +75,8 @@ struct rct_scenario_data
     // SC6[6]
     uint32_t next_free_tile_element_pointer_index;
     RCT2Sprite sprites[RCT2_MAX_SPRITES];
-    uint16_t sprite_lists_head[6];
-    uint16_t sprite_lists_count[6];
+    uint16_t sprite_lists_head[SPRITE_LIST_COUNT];
+    uint16_t sprite_lists_count[SPRITE_LIST_COUNT];
     rct_string_id park_name;
     uint8_t pad_013573D6[2];
     uint32_t park_name_args;
@@ -202,7 +202,7 @@ struct rct_scenario_data
     uint8_t last_entrance_style;
     uint8_t rct1_water_colour;
     uint8_t pad_01358842[2];
-    rct_research_item research_items[MAX_RESEARCH_ITEMS];
+    RCT12ResearchItem research_items[MAX_RESEARCH_ITEMS];
     uint16_t map_base_z;
     char scenario_name[64];
     char scenario_description[256];
@@ -224,10 +224,10 @@ struct rct_scenario_data
     uint16_t saved_view_y;
     uint8_t saved_view_zoom;
     uint8_t saved_view_rotation;
-    rct_map_animation map_animations[RCT2_MAX_ANIMATED_OBJECTS];
+    RCT12MapAnimation map_animations[RCT2_MAX_ANIMATED_OBJECTS];
     uint16_t num_map_animations;
     uint8_t pad_0138B582[2];
-    rct_ride_rating_calc_data ride_ratings_calc_data;
+    RCT2RideRatingCalculationData ride_ratings_calc_data;
     uint8_t pad_0138B5D0[60];
     RCT12RideMeasurement ride_measurements[8];
     uint32_t next_guest_index;
@@ -321,6 +321,9 @@ enum
 };
 
 extern rct_scenario_info gS7Info;
+static constexpr money32 COMPANY_VALUE_ON_FAILED_OBJECTIVE = 0x80000001;
+
+bool scenario_create_ducks();
 
 void scenario_remove_trackless_rides(rct_scenario_data* s6);
 void scenario_fix_ghosts(rct_scenario_data* s6);

@@ -18,6 +18,7 @@
 #include "../management/Finance.h"
 #include "../network/network.h"
 #include "../ride/Ride.h"
+#include "../ride/RideData.h"
 #include "../ride/Track.h"
 #include "../windows/Intent.h"
 #include "Map.h"
@@ -32,25 +33,97 @@
 
 static Banner _banners[MAX_BANNERS];
 
+namespace
+{
+    template<uint32_t TFrom, uint32_t TTo> struct CodePointToUtf8
+    {
+        constexpr CodePointToUtf8()
+        {
+            for (uint32_t i = TFrom; i <= TTo; ++i)
+            {
+                utf8_write_codepoint(m_colors[i - TFrom], i);
+            }
+        }
+
+        constexpr auto operator()(uint8_t colourId) const
+        {
+            return m_colors[colourId];
+        }
+
+        using Utf8Colour = utf8[5]; // A 32bit codepoint uses at most 4 bytes in utf8
+        Utf8Colour m_colors[TTo - TFrom + 1]{};
+    };
+} // namespace
+
+static constexpr CodePointToUtf8<FORMAT_COLOUR_CODE_START, FORMAT_COLOUR_CODE_END> colourToUtf8;
+
+std::string Banner::GetText() const
+{
+    uint8_t args[32]{};
+    Formatter ft(args);
+    FormatTextTo(ft);
+    return format_string(STR_STRINGID, args);
+}
+
+void Banner::FormatTextTo(Formatter& ft, bool addColour) const
+{
+    if (addColour)
+    {
+        ft.Add<rct_string_id>(STR_STRING_STRINGID).Add<const char*>(colourToUtf8(text_colour));
+    }
+
+    FormatTextTo(ft);
+}
+
+void Banner::FormatTextTo(Formatter& ft) const
+{
+    if (flags & BANNER_FLAG_NO_ENTRY)
+    {
+        ft.Add<rct_string_id>(STR_NO_ENTRY).NumBytes();
+    }
+    else if (flags & BANNER_FLAG_LINKED_TO_RIDE)
+    {
+        auto ride = get_ride(ride_index);
+        if (ride != nullptr)
+        {
+            ride->FormatNameTo(ft);
+        }
+        else
+        {
+            ft.Add<rct_string_id>(STR_DEFAULT_SIGN).NumBytes();
+        }
+    }
+    else if (text.empty())
+    {
+        ft.Add<rct_string_id>(STR_DEFAULT_SIGN).NumBytes();
+    }
+    else
+    {
+        ft.Add<rct_string_id>(STR_STRING).Add<const char*>(text.c_str()).NumBytes();
+    }
+}
+
 /**
  *
  *  rct2: 0x006B7EAB
  */
-static uint8_t banner_get_ride_index_at(int32_t x, int32_t y, int32_t z)
+static uint8_t banner_get_ride_index_at(const CoordsXYZ& bannerCoords)
 {
-    TileElement* tileElement = map_get_first_element_at(x >> 5, y >> 5);
+    TileElement* tileElement = map_get_first_element_at(bannerCoords);
     ride_id_t resultRideIndex = RIDE_ID_NULL;
+    if (tileElement == nullptr)
+        return resultRideIndex;
     do
     {
         if (tileElement->GetType() != TILE_ELEMENT_TYPE_TRACK)
             continue;
 
         ride_id_t rideIndex = tileElement->AsTrack()->GetRideIndex();
-        Ride* ride = get_ride(rideIndex);
-        if (ride_type_has_flag(ride->type, RIDE_TYPE_FLAG_IS_SHOP))
+        auto ride = get_ride(rideIndex);
+        if (ride == nullptr || ride_type_has_flag(ride->type, RIDE_TYPE_FLAG_IS_SHOP))
             continue;
 
-        if ((tileElement->clearance_height * 8) + 32 <= z)
+        if ((tileElement->GetClearanceZ()) + (4 * COORDS_Z_STEP) <= bannerCoords.z)
             continue;
 
         resultRideIndex = rideIndex;
@@ -63,7 +136,7 @@ static BannerIndex BannerGetNewIndex()
 {
     for (BannerIndex bannerIndex = 0; bannerIndex < MAX_BANNERS; bannerIndex++)
     {
-        if (_banners[bannerIndex].type == BANNER_NULL)
+        if (_banners[bannerIndex].IsNull())
         {
             return bannerIndex;
         }
@@ -79,7 +152,7 @@ void banner_init()
 {
     for (auto& banner : _banners)
     {
-        banner.type = BANNER_NULL;
+        banner = {};
     }
 }
 
@@ -107,7 +180,7 @@ BannerIndex create_new_banner(uint8_t flags)
 
         banner->flags = 0;
         banner->type = 0;
-        banner->string_idx = STR_DEFAULT_SIGN;
+        banner->text = {};
         banner->colour = 2;
         banner->text_colour = 2;
     }
@@ -119,7 +192,7 @@ TileElement* banner_get_tile_element(BannerIndex bannerIndex)
     auto banner = GetBanner(bannerIndex);
     if (banner != nullptr)
     {
-        auto tileElement = map_get_first_element_at(banner->position.x, banner->position.y);
+        auto tileElement = map_get_first_element_at(banner->position.ToCoordsXY());
         if (tileElement != nullptr)
         {
             do
@@ -140,7 +213,7 @@ WallElement* banner_get_scrolling_wall_tile_element(BannerIndex bannerIndex)
     if (banner == nullptr)
         return nullptr;
 
-    auto tileElement = map_get_first_element_at(banner->position.x, banner->position.y);
+    auto tileElement = map_get_first_element_at(banner->position.ToCoordsXY());
     if (tileElement == nullptr)
         return nullptr;
 
@@ -166,45 +239,45 @@ WallElement* banner_get_scrolling_wall_tile_element(BannerIndex bannerIndex)
  *
  *  rct2: 0x006B7D86
  */
-uint8_t banner_get_closest_ride_index(int32_t x, int32_t y, int32_t z)
+uint8_t banner_get_closest_ride_index(const CoordsXYZ& mapPos)
 {
-    Ride* ride;
+    static constexpr const std::array<CoordsXY, 9> NeighbourCheckOrder = { CoordsXY{ COORDS_XY_STEP, 0 },
+                                                                           CoordsXY{ -COORDS_XY_STEP, 0 },
+                                                                           { 0, COORDS_XY_STEP },
+                                                                           CoordsXY{ 0, -COORDS_XY_STEP },
+                                                                           CoordsXY{ -COORDS_XY_STEP, +COORDS_XY_STEP },
+                                                                           CoordsXY{ +COORDS_XY_STEP, -COORDS_XY_STEP },
+                                                                           CoordsXY{ +COORDS_XY_STEP, +COORDS_XY_STEP },
+                                                                           CoordsXY{ -COORDS_XY_STEP, +COORDS_XY_STEP },
+                                                                           CoordsXY{ 0, 0 } };
 
-    static constexpr const LocationXY16 NeighbourCheckOrder[] = { { 32, 0 },    { -32, 0 },   { 0, 32 },
-                                                                  { 0, -32 },   { -32, +32 }, { +32, -32 },
-                                                                  { +32, +32 }, { -32, +32 }, { 0, 0 } };
-
-    for (size_t i = 0; i < std::size(NeighbourCheckOrder); i++)
+    for (const auto& neighhbourCoords : NeighbourCheckOrder)
     {
-        ride_id_t rideIndex = banner_get_ride_index_at(x + NeighbourCheckOrder[i].x, y + NeighbourCheckOrder[i].y, z);
+        ride_id_t rideIndex = banner_get_ride_index_at({ CoordsXY{ mapPos } + neighhbourCoords, mapPos.z });
         if (rideIndex != RIDE_ID_NULL)
         {
             return rideIndex;
         }
     }
 
-    uint8_t index;
-    ride_id_t rideIndex = RIDE_ID_NULL;
-    int32_t resultDistance = std::numeric_limits<int32_t>::max();
-    FOR_ALL_RIDES (index, ride)
+    auto rideIndex = RIDE_ID_NULL;
+    auto resultDistance = std::numeric_limits<int32_t>::max();
+    for (auto& ride : GetRideManager())
     {
-        if (ride_type_has_flag(ride->type, RIDE_TYPE_FLAG_IS_SHOP))
+        if (ride_type_has_flag(ride.type, RIDE_TYPE_FLAG_IS_SHOP))
             continue;
 
-        LocationXY8 location = ride->overall_view;
-        if (location.xy == RCT_XY8_UNDEFINED)
+        auto rideCoords = ride.overall_view;
+        if (rideCoords.isNull())
             continue;
 
-        int32_t rideX = location.x * 32;
-        int32_t rideY = location.y * 32;
-        int32_t distance = abs(x - rideX) + abs(y - rideY);
+        int32_t distance = abs(mapPos.x - rideCoords.x) + abs(mapPos.y - rideCoords.y);
         if (distance < resultDistance)
         {
             resultDistance = distance;
-            rideIndex = index;
+            rideIndex = ride.id;
         }
     }
-
     return rideIndex;
 }
 
@@ -228,7 +301,7 @@ void fix_duplicated_banners()
     {
         for (int x = 0; x < MAXIMUM_MAP_SIZE_TECHNICAL; x++)
         {
-            auto tileElement = map_get_first_element_at(x, y);
+            auto tileElement = map_get_first_element_at(TileCoordsXY{ x, y }.ToCoordsXY());
             if (tileElement != nullptr)
             {
                 do
@@ -245,7 +318,7 @@ void fix_duplicated_banners()
                                 tileElement->base_height);
 
                             // Banner index is already in use by another banner, so duplicate it
-                            BannerIndex newBannerIndex = create_new_banner(GAME_COMMAND_FLAG_APPLY);
+                            auto newBannerIndex = create_new_banner(GAME_COMMAND_FLAG_APPLY);
                             if (newBannerIndex == BANNER_INDEX_NULL)
                             {
                                 log_error("Failed to create new banner.");
@@ -257,21 +330,6 @@ void fix_duplicated_banners()
                             auto& newBanner = *GetBanner(newBannerIndex);
                             newBanner = *GetBanner(bannerIndex);
                             newBanner.position = { x, y };
-
-                            // Duplicate user string too
-                            rct_string_id stringIdx = newBanner.string_idx;
-                            if (is_user_string_id(stringIdx))
-                            {
-                                utf8 buffer[USER_STRING_MAX_LENGTH];
-                                format_string(buffer, USER_STRING_MAX_LENGTH, stringIdx, nullptr);
-                                rct_string_id newStringIdx = user_string_allocate(USER_STRING_DUPLICATION_PERMITTED, buffer);
-                                if (newStringIdx == 0)
-                                {
-                                    log_error("Failed to allocate user string for banner");
-                                    continue;
-                                }
-                                newBanner.string_idx = newStringIdx;
-                            }
 
                             tileElement->AsBanner()->SetIndex(newBannerIndex);
                         }

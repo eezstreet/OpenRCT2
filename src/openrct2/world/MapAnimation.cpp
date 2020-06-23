@@ -25,53 +25,41 @@
 #include "SmallScenery.h"
 #include "Sprite.h"
 
-#include <cstring>
+using map_animation_invalidate_event_handler = bool (*)(const CoordsXYZ& loc);
 
-using map_animation_invalidate_event_handler = bool (*)(int32_t x, int32_t y, int32_t baseZ);
+static std::vector<MapAnimation> _mapAnimations;
 
-static bool map_animation_invalidate(rct_map_animation* obj);
+constexpr size_t MAX_ANIMATED_OBJECTS = 2000;
 
-uint16_t gNumMapAnimations;
-rct_map_animation gAnimatedObjects[MAX_ANIMATED_OBJECTS];
+static bool InvalidateMapAnimation(const MapAnimation& obj);
 
-/**
- *
- *  rct2: 0x0068AF67
- *
- * @param type (dh)
- * @param x (ax)
- * @param y (cx)
- * @param z (dl)
- */
-void map_animation_create(int32_t type, int32_t x, int32_t y, int32_t z)
+static bool DoesAnimationExist(int32_t type, const CoordsXYZ& location)
 {
-    rct_map_animation* aobj = &gAnimatedObjects[0];
-    int32_t numAnimatedObjects = gNumMapAnimations;
-    if (numAnimatedObjects >= MAX_ANIMATED_OBJECTS)
+    for (const auto& a : _mapAnimations)
     {
-        log_error("Exceeded the maximum number of animations");
-        return;
+        if (a.type == type && a.location == location)
+        {
+            // Animation already exists
+            return true;
+        }
     }
-    for (int32_t i = 0; i < numAnimatedObjects; i++, aobj++)
-    {
-        if (aobj->x != x)
-            continue;
-        if (aobj->y != y)
-            continue;
-        if (aobj->baseZ != z)
-            continue;
-        if (aobj->type != type)
-            continue;
-        // Animation already exists
-        return;
-    }
+    return false;
+}
 
-    // Create new animation
-    gNumMapAnimations++;
-    aobj->type = type;
-    aobj->x = x;
-    aobj->y = y;
-    aobj->baseZ = z;
+void map_animation_create(int32_t type, const CoordsXYZ& loc)
+{
+    if (!DoesAnimationExist(type, loc))
+    {
+        if (_mapAnimations.size() < MAX_ANIMATED_OBJECTS)
+        {
+            // Create new animation
+            _mapAnimations.push_back({ static_cast<uint8_t>(type), loc });
+        }
+        else
+        {
+            log_error("Exceeded the maximum number of animations");
+        }
+    }
 }
 
 /**
@@ -80,22 +68,17 @@ void map_animation_create(int32_t type, int32_t x, int32_t y, int32_t z)
  */
 void map_animation_invalidate_all()
 {
-    rct_map_animation* aobj = &gAnimatedObjects[0];
-    int32_t numAnimatedObjects = gNumMapAnimations;
-    while (numAnimatedObjects > 0)
+    auto it = _mapAnimations.begin();
+    while (it != _mapAnimations.end())
     {
-        if (map_animation_invalidate(aobj))
+        if (InvalidateMapAnimation(*it))
         {
-            // Remove animated object
-            gNumMapAnimations--;
-            numAnimatedObjects--;
-            if (numAnimatedObjects > 0)
-                memmove(aobj, aobj + 1, numAnimatedObjects * sizeof(rct_map_animation));
+            // Map animation has finished, remove it
+            it = _mapAnimations.erase(it);
         }
         else
         {
-            numAnimatedObjects--;
-            aobj++;
+            it++;
         }
     }
 }
@@ -104,12 +87,15 @@ void map_animation_invalidate_all()
  *
  *  rct2: 0x00666670
  */
-static bool map_animation_invalidate_ride_entrance(int32_t x, int32_t y, int32_t baseZ)
+static bool map_animation_invalidate_ride_entrance(const CoordsXYZ& loc)
 {
-    auto tileElement = map_get_first_element_at(x >> 5, y >> 5);
+    TileCoordsXYZ tileLoc{ loc };
+    auto tileElement = map_get_first_element_at(loc);
+    if (tileElement == nullptr)
+        return true;
     do
     {
-        if (tileElement->base_height != baseZ)
+        if (tileElement->base_height != tileLoc.z)
             continue;
         if (tileElement->GetType() != TILE_ELEMENT_TYPE_ENTRANCE)
             continue;
@@ -122,8 +108,8 @@ static bool map_animation_invalidate_ride_entrance(int32_t x, int32_t y, int32_t
             auto stationObj = ride_get_station_object(ride);
             if (stationObj != nullptr)
             {
-                int32_t height = (tileElement->base_height * 8) + stationObj->Height + 8;
-                map_invalidate_tile_zoom1(x, y, height, height + 16);
+                int32_t height = loc.z + stationObj->Height + 8;
+                map_invalidate_tile_zoom1({ loc, height, height + 16 });
             }
         }
         return false;
@@ -136,18 +122,21 @@ static bool map_animation_invalidate_ride_entrance(int32_t x, int32_t y, int32_t
  *
  *  rct2: 0x006A7BD4
  */
-static bool map_animation_invalidate_queue_banner(int32_t x, int32_t y, int32_t baseZ)
+static bool map_animation_invalidate_queue_banner(const CoordsXYZ& loc)
 {
+    TileCoordsXYZ tileLoc{ loc };
     TileElement* tileElement;
 
-    tileElement = map_get_first_element_at(x >> 5, y >> 5);
+    tileElement = map_get_first_element_at(loc);
+    if (tileElement == nullptr)
+        return true;
     do
     {
-        if (tileElement->base_height != baseZ)
+        if (tileElement->base_height != tileLoc.z)
             continue;
         if (tileElement->GetType() != TILE_ELEMENT_TYPE_PATH)
             continue;
-        if (!(tileElement->flags & 1))
+        if (!(tileElement->AsPath()->IsQueue()))
             continue;
         if (!tileElement->AsPath()->HasQueueBanner())
             continue;
@@ -155,8 +144,7 @@ static bool map_animation_invalidate_queue_banner(int32_t x, int32_t y, int32_t 
         int32_t direction = (tileElement->AsPath()->GetQueueBannerDirection() + get_current_rotation()) & 3;
         if (direction == TILE_ELEMENT_DIRECTION_NORTH || direction == TILE_ELEMENT_DIRECTION_EAST)
         {
-            baseZ = tileElement->base_height * 8;
-            map_invalidate_tile_zoom1(x, y, baseZ + 16, baseZ + 30);
+            map_invalidate_tile_zoom1({ loc, loc.z + 16, loc.z + 30 });
         }
         return false;
     } while (!(tileElement++)->IsLastForTile());
@@ -168,24 +156,23 @@ static bool map_animation_invalidate_queue_banner(int32_t x, int32_t y, int32_t 
  *
  *  rct2: 0x006E32C9
  */
-static bool map_animation_invalidate_small_scenery(int32_t x, int32_t y, int32_t baseZ)
+static bool map_animation_invalidate_small_scenery(const CoordsXYZ& loc)
 {
-    TileElement* tileElement;
-    rct_scenery_entry* sceneryEntry;
-    rct_sprite* sprite;
-    Peep* peep;
+    TileCoordsXYZ tileLoc{ loc };
 
-    tileElement = map_get_first_element_at(x >> 5, y >> 5);
+    auto tileElement = map_get_first_element_at(loc);
+    if (tileElement == nullptr)
+        return true;
     do
     {
-        if (tileElement->base_height != baseZ)
+        if (tileElement->base_height != tileLoc.z)
             continue;
         if (tileElement->GetType() != TILE_ELEMENT_TYPE_SMALL_SCENERY)
             continue;
         if (tileElement->IsGhost())
             continue;
 
-        sceneryEntry = tileElement->AsSmallScenery()->GetEntry();
+        auto sceneryEntry = tileElement->AsSmallScenery()->GetEntry();
         if (sceneryEntry == nullptr)
             continue;
 
@@ -194,7 +181,7 @@ static bool map_animation_invalidate_small_scenery(int32_t x, int32_t y, int32_t
                 SMALL_SCENERY_FLAG_FOUNTAIN_SPRAY_1 | SMALL_SCENERY_FLAG_FOUNTAIN_SPRAY_4 | SMALL_SCENERY_FLAG_SWAMP_GOO
                     | SMALL_SCENERY_FLAG_HAS_FRAME_OFFSETS))
         {
-            map_invalidate_tile_zoom1(x, y, tileElement->base_height * 8, tileElement->clearance_height * 8);
+            map_invalidate_tile_zoom1({ loc, loc.z, tileElement->GetClearanceZ() });
             return false;
         }
 
@@ -204,33 +191,25 @@ static bool map_animation_invalidate_small_scenery(int32_t x, int32_t y, int32_t
             if (!(gCurrentTicks & 0x3FF) && game_is_not_paused())
             {
                 int32_t direction = tileElement->GetDirection();
-                int32_t x2 = x - CoordsDirectionDelta[direction].x;
-                int32_t y2 = y - CoordsDirectionDelta[direction].y;
-
-                uint16_t spriteIdx = sprite_get_first_in_quadrant(x2, y2);
-                for (; spriteIdx != SPRITE_INDEX_NULL; spriteIdx = sprite->generic.next_in_quadrant)
+                auto quad = EntityTileList<Peep>(CoordsXY{ loc } - CoordsDirectionDelta[direction]);
+                for (auto peep : quad)
                 {
-                    sprite = get_sprite(spriteIdx);
-                    if (sprite->generic.linked_list_index != SPRITE_LIST_PEEP)
+                    if (peep->State != PEEP_STATE_WALKING)
+                        continue;
+                    if (peep->z != loc.z)
+                        continue;
+                    if (peep->Action < PEEP_ACTION_NONE_1)
                         continue;
 
-                    peep = &sprite->peep;
-                    if (peep->state != PEEP_STATE_WALKING)
-                        continue;
-                    if (peep->z != tileElement->base_height * 8)
-                        continue;
-                    if (peep->action < PEEP_ACTION_NONE_1)
-                        continue;
-
-                    peep->action = PEEP_ACTION_CHECK_TIME;
-                    peep->action_frame = 0;
-                    peep->action_sprite_image_offset = 0;
+                    peep->Action = PEEP_ACTION_CHECK_TIME;
+                    peep->ActionFrame = 0;
+                    peep->ActionSpriteImageOffset = 0;
                     peep->UpdateCurrentActionSpriteType();
-                    invalidate_sprite_1((rct_sprite*)peep);
+                    peep->Invalidate1();
                     break;
                 }
             }
-            map_invalidate_tile_zoom1(x, y, tileElement->base_height * 8, tileElement->clearance_height * 8);
+            map_invalidate_tile_zoom1({ loc, loc.z, tileElement->GetClearanceZ() });
             return false;
         }
 
@@ -242,14 +221,17 @@ static bool map_animation_invalidate_small_scenery(int32_t x, int32_t y, int32_t
  *
  *  rct2: 0x00666C63
  */
-static bool map_animation_invalidate_park_entrance(int32_t x, int32_t y, int32_t baseZ)
+static bool map_animation_invalidate_park_entrance(const CoordsXYZ& loc)
 {
+    TileCoordsXYZ tileLoc{ loc };
     TileElement* tileElement;
 
-    tileElement = map_get_first_element_at(x >> 5, y >> 5);
+    tileElement = map_get_first_element_at(loc);
+    if (tileElement == nullptr)
+        return true;
     do
     {
-        if (tileElement->base_height != baseZ)
+        if (tileElement->base_height != tileLoc.z)
             continue;
         if (tileElement->GetType() != TILE_ELEMENT_TYPE_ENTRANCE)
             continue;
@@ -258,8 +240,7 @@ static bool map_animation_invalidate_park_entrance(int32_t x, int32_t y, int32_t
         if (tileElement->AsEntrance()->GetSequenceIndex())
             continue;
 
-        baseZ = tileElement->base_height * 8;
-        map_invalidate_tile_zoom1(x, y, baseZ + 32, baseZ + 64);
+        map_invalidate_tile_zoom1({ loc, loc.z + 32, loc.z + 64 });
         return false;
     } while (!(tileElement++)->IsLastForTile());
 
@@ -270,22 +251,24 @@ static bool map_animation_invalidate_park_entrance(int32_t x, int32_t y, int32_t
  *
  *  rct2: 0x006CE29E
  */
-static bool map_animation_invalidate_track_waterfall(int32_t x, int32_t y, int32_t baseZ)
+static bool map_animation_invalidate_track_waterfall(const CoordsXYZ& loc)
 {
+    TileCoordsXYZ tileLoc{ loc };
     TileElement* tileElement;
 
-    tileElement = map_get_first_element_at(x >> 5, y >> 5);
+    tileElement = map_get_first_element_at(loc);
+    if (tileElement == nullptr)
+        return true;
     do
     {
-        if (tileElement->base_height != baseZ)
+        if (tileElement->base_height != tileLoc.z)
             continue;
         if (tileElement->GetType() != TILE_ELEMENT_TYPE_TRACK)
             continue;
 
         if (tileElement->AsTrack()->GetTrackType() == TRACK_ELEM_WATERFALL)
         {
-            int32_t z = tileElement->base_height * 8;
-            map_invalidate_tile_zoom1(x, y, z + 14, z + 46);
+            map_invalidate_tile_zoom1({ loc, loc.z + 14, loc.z + 46 });
             return false;
         }
     } while (!(tileElement++)->IsLastForTile());
@@ -297,22 +280,24 @@ static bool map_animation_invalidate_track_waterfall(int32_t x, int32_t y, int32
  *
  *  rct2: 0x006CE2F3
  */
-static bool map_animation_invalidate_track_rapids(int32_t x, int32_t y, int32_t baseZ)
+static bool map_animation_invalidate_track_rapids(const CoordsXYZ& loc)
 {
+    TileCoordsXYZ tileLoc{ loc };
     TileElement* tileElement;
 
-    tileElement = map_get_first_element_at(x >> 5, y >> 5);
+    tileElement = map_get_first_element_at(loc);
+    if (tileElement == nullptr)
+        return true;
     do
     {
-        if (tileElement->base_height != baseZ)
+        if (tileElement->base_height != tileLoc.z)
             continue;
         if (tileElement->GetType() != TILE_ELEMENT_TYPE_TRACK)
             continue;
 
         if (tileElement->AsTrack()->GetTrackType() == TRACK_ELEM_RAPIDS)
         {
-            int32_t z = tileElement->base_height * 8;
-            map_invalidate_tile_zoom1(x, y, z + 14, z + 18);
+            map_invalidate_tile_zoom1({ loc, loc.z + 14, loc.z + 18 });
             return false;
         }
     } while (!(tileElement++)->IsLastForTile());
@@ -324,23 +309,24 @@ static bool map_animation_invalidate_track_rapids(int32_t x, int32_t y, int32_t 
  *
  *  rct2: 0x006CE39D
  */
-static bool map_animation_invalidate_track_onridephoto(int32_t x, int32_t y, int32_t baseZ)
+static bool map_animation_invalidate_track_onridephoto(const CoordsXYZ& loc)
 {
+    TileCoordsXYZ tileLoc{ loc };
     TileElement* tileElement;
 
-    tileElement = map_get_first_element_at(x >> 5, y >> 5);
+    tileElement = map_get_first_element_at(loc);
+    if (tileElement == nullptr)
+        return true;
     do
     {
-        if (tileElement == nullptr)
-            break;
-        if (tileElement->base_height != baseZ)
+        if (tileElement->base_height != tileLoc.z)
             continue;
         if (tileElement->GetType() != TILE_ELEMENT_TYPE_TRACK)
             continue;
 
         if (tileElement->AsTrack()->GetTrackType() == TRACK_ELEM_ON_RIDE_PHOTO)
         {
-            map_invalidate_tile_zoom1(x, y, tileElement->base_height * 8, tileElement->clearance_height * 8);
+            map_invalidate_tile_zoom1({ loc, loc.z, tileElement->GetClearanceZ() });
             if (game_is_paused())
             {
                 return false;
@@ -364,22 +350,24 @@ static bool map_animation_invalidate_track_onridephoto(int32_t x, int32_t y, int
  *
  *  rct2: 0x006CE348
  */
-static bool map_animation_invalidate_track_whirlpool(int32_t x, int32_t y, int32_t baseZ)
+static bool map_animation_invalidate_track_whirlpool(const CoordsXYZ& loc)
 {
+    TileCoordsXYZ tileLoc{ loc };
     TileElement* tileElement;
 
-    tileElement = map_get_first_element_at(x >> 5, y >> 5);
+    tileElement = map_get_first_element_at(loc);
+    if (tileElement == nullptr)
+        return true;
     do
     {
-        if (tileElement->base_height != baseZ)
+        if (tileElement->base_height != tileLoc.z)
             continue;
         if (tileElement->GetType() != TILE_ELEMENT_TYPE_TRACK)
             continue;
 
         if (tileElement->AsTrack()->GetTrackType() == TRACK_ELEM_WHIRLPOOL)
         {
-            int32_t z = tileElement->base_height * 8;
-            map_invalidate_tile_zoom1(x, y, z + 14, z + 18);
+            map_invalidate_tile_zoom1({ loc, loc.z + 14, loc.z + 18 });
             return false;
         }
     } while (!(tileElement++)->IsLastForTile());
@@ -391,22 +379,24 @@ static bool map_animation_invalidate_track_whirlpool(int32_t x, int32_t y, int32
  *
  *  rct2: 0x006CE3FA
  */
-static bool map_animation_invalidate_track_spinningtunnel(int32_t x, int32_t y, int32_t baseZ)
+static bool map_animation_invalidate_track_spinningtunnel(const CoordsXYZ& loc)
 {
+    TileCoordsXYZ tileLoc{ loc };
     TileElement* tileElement;
 
-    tileElement = map_get_first_element_at(x >> 5, y >> 5);
+    tileElement = map_get_first_element_at(loc);
+    if (tileElement == nullptr)
+        return true;
     do
     {
-        if (tileElement->base_height != baseZ)
+        if (tileElement->base_height != tileLoc.z)
             continue;
         if (tileElement->GetType() != TILE_ELEMENT_TYPE_TRACK)
             continue;
 
         if (tileElement->AsTrack()->GetTrackType() == TRACK_ELEM_SPINNING_TUNNEL)
         {
-            int32_t z = tileElement->base_height * 8;
-            map_invalidate_tile_zoom1(x, y, z + 14, z + 32);
+            map_invalidate_tile_zoom1({ loc, loc.z + 14, loc.z + 32 });
             return false;
         }
     } while (!(tileElement++)->IsLastForTile());
@@ -418,8 +408,7 @@ static bool map_animation_invalidate_track_spinningtunnel(int32_t x, int32_t y, 
  *
  *  rct2: 0x0068DF8F
  */
-static bool map_animation_invalidate_remove(
-    [[maybe_unused]] int32_t x, [[maybe_unused]] int32_t y, [[maybe_unused]] int32_t baseZ)
+static bool map_animation_invalidate_remove([[maybe_unused]] const CoordsXYZ& loc)
 {
     return true;
 }
@@ -428,20 +417,21 @@ static bool map_animation_invalidate_remove(
  *
  *  rct2: 0x006BA2BB
  */
-static bool map_animation_invalidate_banner(int32_t x, int32_t y, int32_t baseZ)
+static bool map_animation_invalidate_banner(const CoordsXYZ& loc)
 {
+    TileCoordsXYZ tileLoc{ loc };
     TileElement* tileElement;
 
-    tileElement = map_get_first_element_at(x >> 5, y >> 5);
+    tileElement = map_get_first_element_at(loc);
+    if (tileElement == nullptr)
+        return true;
     do
     {
-        if (tileElement->base_height != baseZ)
+        if (tileElement->base_height != tileLoc.z)
             continue;
         if (tileElement->GetType() != TILE_ELEMENT_TYPE_BANNER)
             continue;
-
-        baseZ = tileElement->base_height * 8;
-        map_invalidate_tile_zoom1(x, y, baseZ, baseZ + 16);
+        map_invalidate_tile_zoom1({ loc, loc.z, loc.z + 16 });
         return false;
     } while (!(tileElement++)->IsLastForTile());
 
@@ -452,16 +442,19 @@ static bool map_animation_invalidate_banner(int32_t x, int32_t y, int32_t baseZ)
  *
  *  rct2: 0x006B94EB
  */
-static bool map_animation_invalidate_large_scenery(int32_t x, int32_t y, int32_t baseZ)
+static bool map_animation_invalidate_large_scenery(const CoordsXYZ& loc)
 {
+    TileCoordsXYZ tileLoc{ loc };
     TileElement* tileElement;
     rct_scenery_entry* sceneryEntry;
 
     bool wasInvalidated = false;
-    tileElement = map_get_first_element_at(x >> 5, y >> 5);
+    tileElement = map_get_first_element_at(loc);
+    if (tileElement == nullptr)
+        return true;
     do
     {
-        if (tileElement->base_height != baseZ)
+        if (tileElement->base_height != tileLoc.z)
             continue;
         if (tileElement->GetType() != TILE_ELEMENT_TYPE_LARGE_SCENERY)
             continue;
@@ -469,8 +462,7 @@ static bool map_animation_invalidate_large_scenery(int32_t x, int32_t y, int32_t
         sceneryEntry = tileElement->AsLargeScenery()->GetEntry();
         if (sceneryEntry->large_scenery.flags & LARGE_SCENERY_FLAG_ANIMATED)
         {
-            int32_t z = tileElement->base_height * 8;
-            map_invalidate_tile_zoom1(x, y, z, z + 16);
+            map_invalidate_tile_zoom1({ loc, loc.z, loc.z + 16 });
             wasInvalidated = true;
         }
     } while (!(tileElement++)->IsLastForTile());
@@ -482,8 +474,9 @@ static bool map_animation_invalidate_large_scenery(int32_t x, int32_t y, int32_t
  *
  *  rct2: 0x006E5B50
  */
-static bool map_animation_invalidate_wall_door(int32_t x, int32_t y, int32_t baseZ)
+static bool map_animation_invalidate_wall_door(const CoordsXYZ& loc)
 {
+    TileCoordsXYZ tileLoc{ loc };
     TileElement* tileElement;
     rct_scenery_entry* sceneryEntry;
 
@@ -491,10 +484,12 @@ static bool map_animation_invalidate_wall_door(int32_t x, int32_t y, int32_t bas
         return false;
 
     bool removeAnimation = true;
-    tileElement = map_get_first_element_at(x >> 5, y >> 5);
+    tileElement = map_get_first_element_at(loc);
+    if (tileElement == nullptr)
+        return removeAnimation;
     do
     {
-        if (tileElement->base_height != baseZ)
+        if (tileElement->base_height != tileLoc.z)
             continue;
         if (tileElement->GetType() != TILE_ELEMENT_TYPE_WALL)
             continue;
@@ -533,8 +528,7 @@ static bool map_animation_invalidate_wall_door(int32_t x, int32_t y, int32_t bas
         tileElement->AsWall()->SetAnimationFrame(currentFrame);
         if (invalidate)
         {
-            int32_t z = tileElement->base_height * 8;
-            map_invalidate_tile_zoom1(x, y, z, z + 32);
+            map_invalidate_tile_zoom1({ loc, loc.z, loc.z + 32 });
         }
     } while (!(tileElement++)->IsLastForTile());
 
@@ -545,16 +539,19 @@ static bool map_animation_invalidate_wall_door(int32_t x, int32_t y, int32_t bas
  *
  *  rct2: 0x006E5EE4
  */
-static bool map_animation_invalidate_wall(int32_t x, int32_t y, int32_t baseZ)
+static bool map_animation_invalidate_wall(const CoordsXYZ& loc)
 {
+    TileCoordsXYZ tileLoc{ loc };
     TileElement* tileElement;
     rct_scenery_entry* sceneryEntry;
 
     bool wasInvalidated = false;
-    tileElement = map_get_first_element_at(x >> 5, y >> 5);
+    tileElement = map_get_first_element_at(loc);
+    if (tileElement == nullptr)
+        return true;
     do
     {
-        if (tileElement->base_height != baseZ)
+        if (tileElement->base_height != tileLoc.z)
             continue;
         if (tileElement->GetType() != TILE_ELEMENT_TYPE_WALL)
             continue;
@@ -566,8 +563,7 @@ static bool map_animation_invalidate_wall(int32_t x, int32_t y, int32_t baseZ)
                 && sceneryEntry->wall.scrolling_mode == SCROLLING_MODE_NONE))
             continue;
 
-        int32_t z = tileElement->base_height * 8;
-        map_invalidate_tile_zoom1(x, y, z, z + 16);
+        map_invalidate_tile_zoom1({ loc, loc.z, loc.z + 16 });
         wasInvalidated = true;
     } while (!(tileElement++)->IsLastForTile());
 
@@ -598,9 +594,117 @@ static constexpr const map_animation_invalidate_event_handler _animatedObjectEve
 /**
  * @returns true if the animation should be removed.
  */
-static bool map_animation_invalidate(rct_map_animation* obj)
+static bool InvalidateMapAnimation(const MapAnimation& a)
 {
-    assert(obj->type < MAP_ANIMATION_TYPE_COUNT);
+    if (a.type < std::size(_animatedObjectEventHandlers))
+    {
+        return _animatedObjectEventHandlers[a.type](a.location);
+    }
+    return true;
+}
 
-    return _animatedObjectEventHandlers[obj->type](obj->x, obj->y, obj->baseZ);
+const std::vector<MapAnimation>& GetMapAnimations()
+{
+    return _mapAnimations;
+}
+
+static void ClearMapAnimations()
+{
+    _mapAnimations.clear();
+}
+
+void AutoCreateMapAnimations()
+{
+    ClearMapAnimations();
+
+    tile_element_iterator it;
+    tile_element_iterator_begin(&it);
+    while (tile_element_iterator_next(&it))
+    {
+        auto el = it.element;
+        auto loc = CoordsXYZ{ TileCoordsXY(it.x, it.y).ToCoordsXY(), el->GetBaseZ() };
+        switch (el->GetType())
+        {
+            case TILE_ELEMENT_TYPE_BANNER:
+                map_animation_create(MAP_ANIMATION_TYPE_BANNER, loc);
+                break;
+            case TILE_ELEMENT_TYPE_WALL:
+            {
+                auto wallEl = el->AsWall();
+                auto entry = wallEl->GetEntry();
+                if (entry != nullptr
+                    && ((entry->wall.flags2 & WALL_SCENERY_2_ANIMATED) || entry->wall.scrolling_mode != SCROLLING_MODE_NONE))
+                {
+                    map_animation_create(MAP_ANIMATION_TYPE_WALL, loc);
+                }
+                break;
+            }
+            case TILE_ELEMENT_TYPE_SMALL_SCENERY:
+            {
+                auto sceneryEl = el->AsSmallScenery();
+                auto entry = sceneryEl->GetEntry();
+                if (entry != nullptr && scenery_small_entry_has_flag(entry, SMALL_SCENERY_FLAG_ANIMATED))
+                {
+                    map_animation_create(MAP_ANIMATION_TYPE_SMALL_SCENERY, loc);
+                }
+                break;
+            }
+            case TILE_ELEMENT_TYPE_LARGE_SCENERY:
+            {
+                auto sceneryEl = el->AsLargeScenery();
+                auto entry = sceneryEl->GetEntry();
+                if (entry != nullptr && (entry->large_scenery.flags & LARGE_SCENERY_FLAG_ANIMATED))
+                {
+                    map_animation_create(MAP_ANIMATION_TYPE_LARGE_SCENERY, loc);
+                }
+                break;
+            }
+            case TILE_ELEMENT_TYPE_PATH:
+            {
+                auto path = el->AsPath();
+                if (path->HasQueueBanner())
+                {
+                    map_animation_create(MAP_ANIMATION_TYPE_QUEUE_BANNER, loc);
+                }
+                break;
+            }
+            case TILE_ELEMENT_TYPE_ENTRANCE:
+            {
+                auto entrance = el->AsEntrance();
+                switch (entrance->GetEntranceType())
+                {
+                    case ENTRANCE_TYPE_PARK_ENTRANCE:
+                        if (entrance->GetSequenceIndex() == 0)
+                        {
+                            map_animation_create(MAP_ANIMATION_TYPE_PARK_ENTRANCE, loc);
+                        }
+                        break;
+                    case ENTRANCE_TYPE_RIDE_ENTRANCE:
+                        map_animation_create(MAP_ANIMATION_TYPE_RIDE_ENTRANCE, loc);
+                        break;
+                }
+                break;
+            }
+            case TILE_ELEMENT_TYPE_TRACK:
+            {
+                auto track = el->AsTrack();
+                switch (track->GetTrackType())
+                {
+                    case TRACK_ELEM_WATERFALL:
+                        map_animation_create(MAP_ANIMATION_TYPE_TRACK_WATERFALL, loc);
+                        break;
+                    case TRACK_ELEM_RAPIDS:
+                        map_animation_create(MAP_ANIMATION_TYPE_TRACK_RAPIDS, loc);
+                        break;
+                    case TRACK_ELEM_WHIRLPOOL:
+                        map_animation_create(MAP_ANIMATION_TYPE_TRACK_WHIRLPOOL, loc);
+                        break;
+                    case TRACK_ELEM_SPINNING_TUNNEL:
+                        map_animation_create(MAP_ANIMATION_TYPE_TRACK_SPINNINGTUNNEL, loc);
+                        break;
+                }
+                break;
+            }
+        }
+    }
 }

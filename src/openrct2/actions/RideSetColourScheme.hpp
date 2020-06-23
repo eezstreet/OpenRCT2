@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2019 OpenRCT2 developers
+ * Copyright (c) 2014-2020 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -24,19 +24,24 @@
 DEFINE_GAME_ACTION(RideSetColourSchemeAction, GAME_COMMAND_SET_COLOUR_SCHEME, GameActionResult)
 {
 private:
-    int32_t _x = 0, _y = 0, _z = 0, _direction = 0, _trackType = 0;
+    CoordsXYZD _loc{ 0, 0, 0, 0 };
+    int32_t _trackType = 0;
     uint16_t _newColourScheme = 0;
 
 public:
     RideSetColourSchemeAction() = default;
-    RideSetColourSchemeAction(int32_t x, int32_t y, int32_t z, int32_t direction, int32_t trackType, uint16_t newColourScheme)
-        : _x(x)
-        , _y(y)
-        , _z(z)
-        , _direction(direction)
+    RideSetColourSchemeAction(const CoordsXYZD& location, int32_t trackType, uint16_t newColourScheme)
+        : _loc(location)
         , _trackType(trackType)
         , _newColourScheme(newColourScheme)
     {
+    }
+
+    void AcceptParameters(GameActionParameterVisitor & visitor) override
+    {
+        visitor.Visit(_loc);
+        visitor.Visit("trackType", _trackType);
+        visitor.Visit("colourScheme", _newColourScheme);
     }
 
     uint16_t GetActionFlags() const override
@@ -48,23 +53,25 @@ public:
     {
         GameAction::Serialise(stream);
 
-        stream << DS_TAG(_x) << DS_TAG(_y) << DS_TAG(_z) << DS_TAG(_direction) << DS_TAG(_trackType)
-               << DS_TAG(_newColourScheme);
+        stream << DS_TAG(_loc) << DS_TAG(_trackType) << DS_TAG(_newColourScheme);
     }
 
     GameActionResult::Ptr Query() const override
     {
+        if (!LocationValid(_loc))
+        {
+            return MakeResult(GA_ERROR::INVALID_PARAMETERS, STR_LAND_NOT_OWNED_BY_PARK);
+        }
         return std::make_unique<GameActionResult>();
     }
 
     GameActionResult::Ptr Execute() const override
     {
         GameActionResult::Ptr res = std::make_unique<GameActionResult>();
-        res->ExpenditureType = RCT_EXPENDITURE_TYPE_RIDE_CONSTRUCTION;
+        res->Expenditure = ExpenditureType::RideConstruction;
         res->ErrorTitle = STR_CANT_SET_COLOUR_SCHEME;
 
-        int32_t x = _x, y = _y, z = _z;
-        sub_6C683D(&x, &y, &z, _direction, _trackType, _newColourScheme, nullptr, 4);
+        sub_6C683D(_loc, _trackType, _newColourScheme, nullptr, TRACK_ELEMENT_SET_COLOUR_SCHEME);
 
         return res;
     }

@@ -151,51 +151,31 @@ static constexpr const uint32_t virginia_reel_track_pieces_flat_quarter_turn_1_t
  *  rct2: 0x006D5B48
  */
 void vehicle_visual_virginia_reel(
-    paint_session* session, int32_t x, int32_t imageDirection, int32_t y, int32_t z, const rct_vehicle* vehicle,
+    paint_session* session, int32_t x, int32_t imageDirection, int32_t y, int32_t z, const Vehicle* vehicle,
     const rct_ride_entry_vehicle* vehicleEntry)
 {
-    int32_t image_id;
-    int32_t baseImage_id = imageDirection;
     const uint8_t rotation = session->CurrentRotation;
     int32_t ecx = ((vehicle->spin_sprite / 8) + (rotation * 8)) & 31;
-    int32_t j = 0;
-    if (vehicle->vehicle_sprite_type == 0)
-    {
-        baseImage_id = ecx & 7;
-    }
-    else
-    {
-        if (vehicle->vehicle_sprite_type == 1 || vehicle->vehicle_sprite_type == 5)
+    int32_t baseImage_id = [&] {
+        switch (vehicle->vehicle_sprite_type)
         {
-            if (vehicle->vehicle_sprite_type == 5)
-            {
-                baseImage_id = imageDirection ^ 16;
-            }
-            baseImage_id &= 24;
-            j = (baseImage_id / 8) + 1;
-            baseImage_id += (ecx & 7);
-            baseImage_id += 8;
+            case 1:
+                return (imageDirection & 24) + 8;
+            case 2:
+                return (imageDirection & 24) + 40;
+            case 5:
+                return ((imageDirection ^ 16) & 24) + 8;
+            case 6:
+                return ((imageDirection ^ 16) & 24) + 40;
+            default:
+                return 0;
         }
-        else if (vehicle->vehicle_sprite_type == 2 || vehicle->vehicle_sprite_type == 6)
-        {
-            if (vehicle->vehicle_sprite_type == 6)
-            {
-                baseImage_id = imageDirection ^ 16;
-            }
-            baseImage_id &= 24;
-            j = (baseImage_id / 8) + 5;
-            baseImage_id += (ecx & 7);
-            baseImage_id += 40;
-        }
-        else
-        {
-            baseImage_id = ecx & 7;
-        }
-    }
-    baseImage_id += vehicleEntry->base_image_id;
+    }();
+    baseImage_id += ecx & 7;
+    const vehicle_boundbox* bb = &_virginiaReelBoundbox[baseImage_id >> 3];
 
-    const vehicle_boundbox* bb = &_virginiaReelBoundbox[j];
-    image_id = baseImage_id | SPRITE_ID_PALETTE_COLOUR_2(vehicle->colours.body_colour, vehicle->colours.trim_colour);
+    baseImage_id += vehicleEntry->base_image_id;
+    int32_t image_id = baseImage_id | SPRITE_ID_PALETTE_COLOUR_2(vehicle->colours.body_colour, vehicle->colours.trim_colour);
     if (vehicle->IsGhost())
     {
         image_id = (image_id & 0x7FFFF) | CONSTRUCTION_MARKER;
@@ -241,12 +221,12 @@ static void paint_virginia_reel_track_flat(
     if (direction & 1)
     {
         sub_98197C(session, imageId, 0, 0, 27, 32, 2, height, 2, 0, height);
-        paint_util_push_tunnel_right(session, height, TUNNEL_6);
+        paint_util_push_tunnel_right(session, height, TUNNEL_SQUARE_FLAT);
     }
     else
     {
         sub_98197C(session, imageId, 0, 0, 32, 27, 2, height, 0, 2, height);
-        paint_util_push_tunnel_left(session, height, TUNNEL_6);
+        paint_util_push_tunnel_left(session, height, TUNNEL_SQUARE_FLAT);
     }
 
     wooden_a_supports_paint_setup(session, (direction & 1), 0, height, session->TrackColours[SCHEME_SUPPORTS], nullptr);
@@ -287,19 +267,19 @@ static void paint_virginia_reel_track_25_deg_up(
     {
         case 0:
             wooden_a_supports_paint_setup(session, 0, 9, height, session->TrackColours[SCHEME_SUPPORTS], nullptr);
-            paint_util_push_tunnel_left(session, height - 8, TUNNEL_7);
+            paint_util_push_tunnel_left(session, height - 8, TUNNEL_SQUARE_7);
             break;
         case 1:
             wooden_a_supports_paint_setup(session, 1, 10, height, session->TrackColours[SCHEME_SUPPORTS], nullptr);
-            paint_util_push_tunnel_right(session, height + 8, TUNNEL_8);
+            paint_util_push_tunnel_right(session, height + 8, TUNNEL_SQUARE_8);
             break;
         case 2:
             wooden_a_supports_paint_setup(session, 0, 11, height, session->TrackColours[SCHEME_SUPPORTS], nullptr);
-            paint_util_push_tunnel_left(session, height + 8, TUNNEL_8);
+            paint_util_push_tunnel_left(session, height + 8, TUNNEL_SQUARE_8);
             break;
         case 3:
             wooden_a_supports_paint_setup(session, 1, 12, height, session->TrackColours[SCHEME_SUPPORTS], nullptr);
-            paint_util_push_tunnel_right(session, height - 8, TUNNEL_7);
+            paint_util_push_tunnel_right(session, height - 8, TUNNEL_SQUARE_7);
             break;
     }
 
@@ -326,27 +306,27 @@ static void paint_virginia_reel_track_flat_to_25_deg_up(
             sub_98197C(session, imageId, 0, 0, 32, 27, 2, height, 0, 2, height);
 
             wooden_a_supports_paint_setup(session, 0, 1, height, session->TrackColours[SCHEME_SUPPORTS], nullptr);
-            paint_util_push_tunnel_left(session, height, TUNNEL_6);
+            paint_util_push_tunnel_left(session, height, TUNNEL_SQUARE_FLAT);
             break;
         case 1:
             ps = sub_98197C(session, imageId, 0, 0, 27, 32, 2, height, 2, 0, height);
             session->WoodenSupportsPrependTo = ps;
 
             wooden_a_supports_paint_setup(session, 1, 2, height, session->TrackColours[SCHEME_SUPPORTS], nullptr);
-            paint_util_push_tunnel_right(session, height, TUNNEL_8);
+            paint_util_push_tunnel_right(session, height, TUNNEL_SQUARE_8);
             break;
         case 2:
             ps = sub_98197C(session, imageId, 0, 0, 32, 27, 2, height, 0, 2, height);
             session->WoodenSupportsPrependTo = ps;
 
             wooden_a_supports_paint_setup(session, 0, 3, height, session->TrackColours[SCHEME_SUPPORTS], nullptr);
-            paint_util_push_tunnel_left(session, height, TUNNEL_8);
+            paint_util_push_tunnel_left(session, height, TUNNEL_SQUARE_8);
             break;
         case 3:
             sub_98197C(session, imageId, 0, 0, 27, 32, 2, height, 2, 0, height);
 
             wooden_a_supports_paint_setup(session, 1, 4, height, session->TrackColours[SCHEME_SUPPORTS], nullptr);
-            paint_util_push_tunnel_right(session, height, TUNNEL_6);
+            paint_util_push_tunnel_right(session, height, TUNNEL_SQUARE_FLAT);
             break;
     }
 
@@ -386,7 +366,7 @@ static void paint_virginia_reel_track_25_deg_up_to_flat(
     {
         case 0:
             wooden_a_supports_paint_setup(session, 0, 5, height, session->TrackColours[SCHEME_SUPPORTS], nullptr);
-            paint_util_push_tunnel_left(session, height - 8, TUNNEL_6);
+            paint_util_push_tunnel_left(session, height - 8, TUNNEL_SQUARE_FLAT);
             break;
         case 1:
             wooden_a_supports_paint_setup(session, 1, 6, height, session->TrackColours[SCHEME_SUPPORTS], nullptr);
@@ -398,7 +378,7 @@ static void paint_virginia_reel_track_25_deg_up_to_flat(
             break;
         case 3:
             wooden_a_supports_paint_setup(session, 1, 8, height, session->TrackColours[SCHEME_SUPPORTS], nullptr);
-            paint_util_push_tunnel_right(session, height - 8, TUNNEL_6);
+            paint_util_push_tunnel_right(session, height - 8, TUNNEL_SQUARE_FLAT);
             break;
     }
 
@@ -445,7 +425,7 @@ static void paint_virginia_reel_station(
         imageId = SPR_VIRGINIA_REEL_FLAT_SW_NE | session->TrackColours[SCHEME_TRACK];
         sub_98199C(session, imageId, 0, 0, 32, 20, 2, height, 0, 0, height);
 
-        paint_util_push_tunnel_left(session, height, TUNNEL_6);
+        paint_util_push_tunnel_left(session, height, TUNNEL_SQUARE_FLAT);
     }
     else if (direction == 1 || direction == 3)
     {
@@ -455,7 +435,7 @@ static void paint_virginia_reel_station(
         imageId = SPR_VIRGINIA_REEL_FLAT_NW_SE | session->TrackColours[SCHEME_TRACK];
         sub_98199C(session, imageId, 0, 0, 20, 32, 2, height, 0, 0, height);
 
-        paint_util_push_tunnel_right(session, height, TUNNEL_6);
+        paint_util_push_tunnel_right(session, height, TUNNEL_SQUARE_FLAT);
     }
 
     wooden_a_supports_paint_setup(session, (direction & 1), 0, height, session->TrackColours[SCHEME_SUPPORTS], nullptr);
@@ -475,7 +455,7 @@ static void paint_virginia_reel_track_left_quarter_turn_3_tiles(
     track_paint_util_left_quarter_turn_3_tiles_paint(
         session, 2, height, direction, trackSequence, session->TrackColours[SCHEME_TRACK],
         virginia_reel_track_pieces_flat_quarter_turn_3_tiles);
-    track_paint_util_left_quarter_turn_3_tiles_tunnel(session, height, TUNNEL_6, direction, trackSequence);
+    track_paint_util_left_quarter_turn_3_tiles_tunnel(session, height, TUNNEL_SQUARE_FLAT, direction, trackSequence);
 
     switch (trackSequence)
     {
@@ -520,19 +500,19 @@ static void paint_virginia_reel_track_left_quarter_turn_1_tile(
     {
         case 0:
             wooden_a_supports_paint_setup(session, 5, 0, height, session->TrackColours[SCHEME_SUPPORTS], nullptr);
-            paint_util_push_tunnel_left(session, height, TUNNEL_6);
+            paint_util_push_tunnel_left(session, height, TUNNEL_SQUARE_FLAT);
             break;
         case 1:
             wooden_a_supports_paint_setup(session, 2, 0, height, session->TrackColours[SCHEME_SUPPORTS], nullptr);
             break;
         case 2:
             wooden_a_supports_paint_setup(session, 3, 0, height, session->TrackColours[SCHEME_SUPPORTS], nullptr);
-            paint_util_push_tunnel_right(session, height, TUNNEL_6);
+            paint_util_push_tunnel_right(session, height, TUNNEL_SQUARE_FLAT);
             break;
         case 3:
             wooden_a_supports_paint_setup(session, 4, 0, height, session->TrackColours[SCHEME_SUPPORTS], nullptr);
-            paint_util_push_tunnel_right(session, height, TUNNEL_6);
-            paint_util_push_tunnel_left(session, height, TUNNEL_6);
+            paint_util_push_tunnel_right(session, height, TUNNEL_SQUARE_FLAT);
+            paint_util_push_tunnel_left(session, height, TUNNEL_SQUARE_FLAT);
             break;
     }
 

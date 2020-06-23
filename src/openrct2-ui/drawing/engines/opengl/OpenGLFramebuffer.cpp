@@ -23,7 +23,7 @@ OpenGLFramebuffer::OpenGLFramebuffer(SDL_Window* window)
     _id = BACKBUFFER_ID;
     _texture = 0;
     _depth = 0;
-    SDL_GetWindowSize(window, &_width, &_height);
+    SDL_GL_GetDrawableSize(window, &_width, &_height);
 }
 
 OpenGLFramebuffer::OpenGLFramebuffer(int32_t width, int32_t height, bool depth, bool integer)
@@ -72,7 +72,7 @@ OpenGLFramebuffer::~OpenGLFramebuffer()
 void OpenGLFramebuffer::Bind() const
 {
     glBindFramebuffer(GL_FRAMEBUFFER, _id);
-    glViewport(0, 0, (GLsizei)_width, (GLsizei)_height);
+    glViewport(0, 0, static_cast<GLsizei>(_width), static_cast<GLsizei>(_height));
 }
 
 void OpenGLFramebuffer::BindDraw() const

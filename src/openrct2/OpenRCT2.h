@@ -34,14 +34,11 @@ enum
     SCREEN_FLAGS_EDITOR = (SCREEN_FLAGS_SCENARIO_EDITOR | SCREEN_FLAGS_TRACK_DESIGNER | SCREEN_FLAGS_TRACK_MANAGER),
 };
 
-/** The exit code for OpenRCT2 when it exits. */
-extern int32_t gExitCode;
-
 extern int32_t gOpenRCT2StartupAction;
 extern utf8 gOpenRCT2StartupActionPath[512];
 extern utf8 gExePath[MAX_PATH];
 extern utf8 gCustomUserDataPath[MAX_PATH];
-extern utf8 gCustomOpenrctDataPath[MAX_PATH];
+extern utf8 gCustomOpenRCT2DataPath[MAX_PATH];
 extern utf8 gCustomRCT1DataPath[MAX_PATH];
 extern utf8 gCustomRCT2DataPath[MAX_PATH];
 extern utf8 gCustomPassword[MAX_PATH];
@@ -49,6 +46,7 @@ extern bool gOpenRCT2Headless;
 extern bool gOpenRCT2NoGraphics;
 extern bool gOpenRCT2ShowChangelog;
 extern bool gOpenRCT2SilentBreakpad;
+extern utf8 gSilentRecordingName[MAX_PATH];
 
 #ifndef DISABLE_NETWORK
 extern int32_t gNetworkStart;

@@ -20,6 +20,7 @@
 #include "actions/LandSetRightsAction.hpp"
 #include "audio/audio.h"
 #include "interface/Viewport.h"
+#include "interface/Window_internal.h"
 #include "localisation/Localisation.h"
 #include "localisation/LocalisationService.h"
 #include "management/NewsItem.h"
@@ -86,7 +87,7 @@ namespace Editor
         gS7Info.category = SCENARIO_CATEGORY_OTHER;
         viewport_init_all();
         rct_window* mainWindow = context_open_window_view(WV_EDITOR_MAIN);
-        window_set_location(mainWindow, 2400, 2400, 112);
+        mainWindow->SetLocation(2400, 2400, 112);
         load_palette();
         gScreenAge = 0;
         gScenarioName = language_get_string(STR_MY_NEW_SCENARIO);
@@ -101,7 +102,7 @@ namespace Editor
         tool_cancel();
         auto intent = Intent(WC_LOADSAVE);
         intent.putExtra(INTENT_EXTRA_LOADSAVE_TYPE, LOADSAVETYPE_LOAD | LOADSAVETYPE_GAME);
-        intent.putExtra(INTENT_EXTRA_CALLBACK, (void*)ConvertSaveToScenarioCallback);
+        intent.putExtra(INTENT_EXTRA_CALLBACK, reinterpret_cast<void*>(ConvertSaveToScenarioCallback));
         context_open_intent(&intent);
     }
 
@@ -162,7 +163,7 @@ namespace Editor
         gS7Info.editor_step = EDITOR_STEP_OBJECT_SELECTION;
         viewport_init_all();
         rct_window* mainWindow = context_open_window_view(WV_EDITOR_MAIN);
-        window_set_location(mainWindow, 2400, 2400, 112);
+        mainWindow->SetLocation(2400, 2400, 112);
         load_palette();
     }
 
@@ -183,7 +184,7 @@ namespace Editor
         gS7Info.editor_step = EDITOR_STEP_OBJECT_SELECTION;
         viewport_init_all();
         rct_window* mainWindow = context_open_window_view(WV_EDITOR_MAIN);
-        window_set_location(mainWindow, 2400, 2400, 112);
+        mainWindow->SetLocation(2400, 2400, 112);
         load_palette();
     }
 
@@ -297,19 +298,9 @@ namespace Editor
         for (BannerIndex i = 0; i < MAX_BANNERS; i++)
         {
             auto banner = GetBanner(i);
-            if (banner->type == BANNER_NULL)
+            if (banner->IsNull())
             {
                 banner->flags &= ~BANNER_FLAG_LINKED_TO_RIDE;
-            }
-        }
-
-        //
-        {
-            int32_t i;
-            Ride* ride;
-            FOR_ALL_RIDES (i, ride)
-            {
-                user_string_free(ride->name);
             }
         }
 
@@ -318,10 +309,10 @@ namespace Editor
         //
         for (int32_t i = 0; i < MAX_SPRITES; i++)
         {
-            auto peep = get_sprite(i)->AsPeep();
+            auto peep = GetEntity<Peep>(i);
             if (peep != nullptr)
             {
-                user_string_free(peep->name_string_idx);
+                peep->SetName({});
             }
         }
 
@@ -356,7 +347,8 @@ namespace Editor
 
             gParkFlags &= ~PARK_FLAGS_SPRITES_INITIALISED;
 
-            gGuestInitialCash = std::clamp(gGuestInitialCash, (money16)MONEY(10, 00), (money16)MAX_ENTRANCE_FEE);
+            gGuestInitialCash = std::clamp(
+                gGuestInitialCash, static_cast<money16>(MONEY(10, 00)), static_cast<money16>(MAX_ENTRANCE_FEE));
 
             gInitialCash = std::min(gInitialCash, 100000);
             finance_reset_cash_to_initial();
@@ -434,7 +426,7 @@ namespace Editor
     static void FinaliseMainView()
     {
         auto windowManager = GetContext()->GetUiContext()->GetWindowManager();
-        windowManager->SetMainView(gSavedViewX, gSavedViewY, gSavedViewZoom, gSavedViewRotation);
+        windowManager->SetMainView(gSavedView, gSavedViewZoom, gSavedViewRotation);
 
         reset_all_sprite_quadrant_placements();
         scenery_set_default_placement_configuration();
@@ -509,12 +501,9 @@ namespace Editor
 
         for (const auto& parkEntrance : gParkEntrances)
         {
-            int32_t x = parkEntrance.x;
-            int32_t y = parkEntrance.y;
-            int32_t z = parkEntrance.z / 8;
             int32_t direction = direction_reverse(parkEntrance.direction);
 
-            switch (footpath_is_connected_to_map_edge(x, y, z, direction, 0))
+            switch (footpath_is_connected_to_map_edge(parkEntrance, direction, 0))
             {
                 case FOOTPATH_SEARCH_NOT_FOUND:
                     gGameCommandErrorText = STR_PARK_ENTRANCE_WRONG_DIRECTION_OR_NO_PATH;
@@ -525,7 +514,7 @@ namespace Editor
                     return false;
                 case FOOTPATH_SEARCH_SUCCESS:
                     // Run the search again and unown the path
-                    footpath_is_connected_to_map_edge(x, y, z, direction, (1 << 5));
+                    footpath_is_connected_to_map_edge(parkEntrance, direction, (1 << 5));
                     break;
             }
         }

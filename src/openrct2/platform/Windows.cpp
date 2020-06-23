@@ -7,7 +7,7 @@
  * OpenRCT2 is licensed under the GNU General Public License version 3.
  *****************************************************************************/
 
-#ifdef __MINGW32__
+#if defined(__MINGW32__) && !defined(WINVER) && !defined(_WIN32_WINNT)
 // 0x0600 == vista
 #    define WINVER 0x0600
 #    define _WIN32_WINNT 0x0600
@@ -49,6 +49,10 @@
 #    define SINGLE_INSTANCE_MUTEX_NAME "RollerCoaster Tycoon 2_GSKMUTEX"
 
 #    define OPENRCT2_DLL_MODULE_NAME "openrct2.dll"
+
+#    if _WIN32_WINNT < 0x600
+#        define swprintf_s(a, b, c, d, ...) swprintf(a, b, c, ##__VA_ARGS__)
+#    endif
 
 static HMODULE _dllModule = nullptr;
 
@@ -105,19 +109,6 @@ bool platform_original_game_data_exists(const utf8* path)
     safe_strcat_path(checkPath, "Data", MAX_PATH);
     safe_strcat_path(checkPath, "g1.dat", MAX_PATH);
     return platform_file_exists(checkPath);
-}
-
-bool platform_original_rct1_data_exists(const utf8* path)
-{
-    char checkPath[MAX_PATH];
-    char checkPath2[MAX_PATH];
-    safe_strcpy(checkPath, path, MAX_PATH);
-    safe_strcpy(checkPath2, path, MAX_PATH);
-    safe_strcat_path(checkPath, "Data", MAX_PATH);
-    safe_strcat_path(checkPath2, "Data", MAX_PATH);
-    safe_strcat_path(checkPath, "csg1.dat", MAX_PATH);
-    safe_strcat_path(checkPath2, "csg1.1", MAX_PATH);
-    return platform_file_exists(checkPath) || platform_file_exists(checkPath2);
 }
 
 bool platform_ensure_directory_exists(const utf8* path)
@@ -394,6 +385,7 @@ uint8_t platform_get_locale_temperature_format()
 
 uint8_t platform_get_locale_date_format()
 {
+#    if _WIN32_WINNT >= 0x0600
     // Retrieve short date format, eg "MM/dd/yyyy"
     wchar_t dateFormat[20];
     if (GetLocaleInfoEx(LOCALE_NAME_USER_DEFAULT, LOCALE_SSHORTDATE, dateFormat, (int)std::size(dateFormat)) == 0)
@@ -410,8 +402,8 @@ uint8_t platform_get_locale_date_format()
     wchar_t first[sizeof(dateFormat)];
     wchar_t second[sizeof(dateFormat)];
     if (swscanf_s(
-            dateFormat, L"%l[dyM]%*l[^dyM]%l[dyM]%*l[^dyM]%*l[dyM]", first, (uint32_t)std::size(first), second,
-            (uint32_t)std::size(second))
+            dateFormat, L"%l[dyM]%*l[^dyM]%l[dyM]%*l[^dyM]%*l[dyM]", first, static_cast<uint32_t>(std::size(first)), second,
+            static_cast<uint32_t>(std::size(second)))
         != 2)
     {
         return DATE_FORMAT_DAY_MONTH_YEAR;
@@ -437,6 +429,7 @@ uint8_t platform_get_locale_date_format()
             return DATE_FORMAT_YEAR_MONTH_DAY;
         }
     }
+#    endif
 
     // Default fallback
     return DATE_FORMAT_DAY_MONTH_YEAR;
@@ -640,6 +633,7 @@ fail:
 
 static void windows_remove_file_association(const utf8* extension)
 {
+#    if _WIN32_WINNT >= 0x0600
     // [HKEY_CURRENT_USER\Software\Classes]
     HKEY hRootKey;
     if (RegOpenKeyW(HKEY_CURRENT_USER, SOFTWARE_CLASSES, &hRootKey) == ERROR_SUCCESS)
@@ -653,6 +647,7 @@ static void windows_remove_file_association(const utf8* extension)
 
         RegCloseKey(hRootKey);
     }
+#    endif
 }
 
 void platform_setup_file_associations()
@@ -695,6 +690,7 @@ void platform_remove_file_associations()
 
 bool platform_setup_uri_protocol()
 {
+#    if _WIN32_WINNT >= 0x0600
     log_verbose("Setting up URI protocol...");
 
     // [HKEY_CURRENT_USER\Software\Classes]
@@ -736,6 +732,7 @@ bool platform_setup_uri_protocol()
             }
         }
     }
+#    endif
 
     log_verbose("URI protocol setup failed");
     return false;

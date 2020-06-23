@@ -95,7 +95,6 @@ void platform_get_time_local(rct2_time* out_time);
 bool platform_file_exists(const utf8* path);
 bool platform_directory_exists(const utf8* path);
 bool platform_original_game_data_exists(const utf8* path);
-bool platform_original_rct1_data_exists(const utf8* path);
 time_t platform_file_get_modified_time(const utf8* path);
 bool platform_ensure_directory_exists(const utf8* path);
 bool platform_directory_delete(const utf8* path);
@@ -111,7 +110,7 @@ bool platform_file_move(const utf8* srcPath, const utf8* dstPath);
 bool platform_file_delete(const utf8* path);
 uint32_t platform_get_ticks();
 void platform_sleep(uint32_t ms);
-void platform_get_openrct_data_path(utf8* outPath, size_t outSize);
+void platform_get_openrct2_data_path(utf8* outPath, size_t outSize);
 void platform_get_user_directory(utf8* outPath, const utf8* subDirectory, size_t outSize);
 std::string platform_get_username();
 bool platform_open_common_file_dialog(utf8* outFilename, file_dialog_desc* desc, size_t outSize);
@@ -157,13 +156,8 @@ void platform_remove_file_associations();
 bool platform_setup_uri_protocol();
 // This function cannot be marked as 'static', even though it may seem to be,
 // as it requires external linkage, which 'static' prevents
-__declspec(dllexport) int32_t StartOpenRCT(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int32_t nCmdShow);
+__declspec(dllexport) int32_t StartOpenRCT2(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int32_t nCmdShow);
 #endif // _WIN32
-
-#if defined(__APPLE__) && defined(__MACH__)
-void macos_disallow_automatic_window_tabbing();
-utf8* macos_str_decomp_to_precomp(utf8* input);
-#endif
 
 #ifdef __ANDROID__
 class AndroidClassLoader

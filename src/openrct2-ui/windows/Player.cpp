@@ -210,7 +210,7 @@ rct_window* window_player_open(uint8_t id)
     }
 
     window->page = 0;
-    window_invalidate(window);
+    window->Invalidate();
 
     window->widgets = window_player_page_widgets[WINDOW_PLAYER_PAGE_OVERVIEW];
     window->enabled_widgets = window_player_page_enabled_widgets[WINDOW_PLAYER_PAGE_OVERVIEW];
@@ -228,7 +228,7 @@ static void window_player_overview_show_group_dropdown(rct_window* w, rct_widget
 {
     rct_widget* dropdownWidget;
     int32_t numItems, i;
-    int32_t player = network_get_player_index((uint8_t)w->number);
+    int32_t player = network_get_player_index(static_cast<uint8_t>(w->number));
     if (player == -1)
     {
         return;
@@ -239,13 +239,13 @@ static void window_player_overview_show_group_dropdown(rct_window* w, rct_widget
     numItems = network_get_num_groups();
 
     window_dropdown_show_text_custom_width(
-        w->x + dropdownWidget->left, w->y + dropdownWidget->top, dropdownWidget->bottom - dropdownWidget->top + 1,
-        w->colours[1], 0, 0, numItems, widget->right - dropdownWidget->left);
+        { w->windowPos.x + dropdownWidget->left, w->windowPos.y + dropdownWidget->top },
+        dropdownWidget->bottom - dropdownWidget->top + 1, w->colours[1], 0, 0, numItems, widget->right - dropdownWidget->left);
 
     for (i = 0; i < network_get_num_groups(); i++)
     {
         gDropdownItemsFormat[i] = STR_OPTIONS_DROPDOWN_ITEM;
-        gDropdownItemsArgs[i] = (uintptr_t)network_get_group_name(i);
+        gDropdownItemsArgs[i] = reinterpret_cast<uintptr_t>(network_get_group_name(i));
     }
 
     dropdown_set_checked(network_get_group_index(network_get_player_group(player)), true);
@@ -271,12 +271,12 @@ void window_player_overview_mouse_up(rct_window* w, rct_widgetindex widgetIndex)
             rct_window* mainWindow = window_get_main();
             if (mainWindow != nullptr)
             {
-                int32_t player = network_get_player_index((uint8_t)w->number);
+                int32_t player = network_get_player_index(static_cast<uint8_t>(w->number));
                 if (player == -1)
                 {
                     return;
                 }
-                LocationXYZ16 coord = network_get_player_last_action_coord(player);
+                auto coord = network_get_player_last_action_coord(player);
                 if (coord.x || coord.y || coord.z)
                 {
                     window_scroll_to_location(mainWindow, coord.x, coord.y, coord.z);
@@ -305,7 +305,7 @@ void window_player_overview_mouse_down(rct_window* w, rct_widgetindex widgetInde
 
 void window_player_overview_dropdown(rct_window* w, rct_widgetindex widgetIndex, int32_t dropdownIndex)
 {
-    int32_t player = network_get_player_index((uint8_t)w->number);
+    int32_t player = network_get_player_index(static_cast<uint8_t>(w->number));
     if (player == -1)
     {
         return;
@@ -319,7 +319,7 @@ void window_player_overview_dropdown(rct_window* w, rct_widgetindex widgetIndex,
     playerSetGroupAction.SetCallback([=](const GameAction* ga, const GameActionResult* result) {
         if (result->Error == GA_ERROR::OK)
         {
-            window_invalidate(w);
+            w->Invalidate();
         }
     });
     GameActions::Execute(&playerSetGroupAction);
@@ -335,7 +335,7 @@ void window_player_overview_update(rct_window* w)
     w->frame_no++;
     widget_invalidate(w, WIDX_TAB_1 + w->page);
 
-    if (network_get_player_index((uint8_t)w->number) == -1)
+    if (network_get_player_index(static_cast<uint8_t>(w->number)) == -1)
     {
         window_close(w);
         return;
@@ -358,7 +358,7 @@ void window_player_overview_paint(rct_window* w, rct_drawpixelinfo* dpi)
     window_draw_widgets(w, dpi);
     window_player_draw_tab_images(dpi, w);
 
-    int32_t player = network_get_player_index((uint8_t)w->number);
+    int32_t player = network_get_player_index(static_cast<uint8_t>(w->number));
     if (player == -1)
     {
         return;
@@ -374,34 +374,39 @@ void window_player_overview_paint(rct_window* w, rct_drawpixelinfo* dpi)
         lineCh = buffer;
         lineCh = utf8_write_codepoint(lineCh, FORMAT_WINDOW_COLOUR_2);
         safe_strcpy(lineCh, network_get_group_name(groupindex), sizeof(buffer) - (lineCh - buffer));
-        set_format_arg(0, const char*, buffer);
+        auto ft = Formatter::Common();
+        ft.Add<const char*>(buffer);
 
         gfx_draw_string_centred_clipped(
-            dpi, STR_STRING, gCommonFormatArgs, COLOUR_BLACK, w->x + (widget->left + widget->right - 11) / 2,
-            w->y + widget->top, widget->right - widget->left - 8);
+            dpi, STR_STRING, gCommonFormatArgs, COLOUR_BLACK,
+            w->windowPos + ScreenCoordsXY{ (widget->left + widget->right - 11) / 2, widget->top },
+            widget->right - widget->left - 8);
     }
 
     // Draw ping
-    int32_t x = w->x + 90;
-    int32_t y = w->y + 24;
+    auto screenCoords = w->windowPos + ScreenCoordsXY{ 90, 24 };
 
-    set_format_arg(0, rct_string_id, STR_PING);
-    gfx_draw_string_left(dpi, STR_WINDOW_COLOUR_2_STRINGID, gCommonFormatArgs, 0, x, y);
+    auto ft = Formatter::Common();
+    ft.Add<rct_string_id>(STR_PING);
+    gfx_draw_string_left(dpi, STR_WINDOW_COLOUR_2_STRINGID, gCommonFormatArgs, 0, screenCoords);
     char ping[64];
     snprintf(ping, 64, "%d ms", network_get_player_ping(player));
-    gfx_draw_string(dpi, ping, w->colours[2], x + 30, y);
+    gfx_draw_string(dpi, ping, w->colours[2], screenCoords + ScreenCoordsXY(30, 0));
 
     // Draw last action
-    x = w->x + (w->width / 2);
-    y = w->y + w->height - 13;
+    screenCoords = w->windowPos + ScreenCoordsXY{ w->width / 2, w->height - 13 };
     int32_t width = w->width - 8;
     int32_t lastaction = network_get_player_last_action(player, 0);
-    set_format_arg(0, rct_string_id, STR_ACTION_NA);
+    ft = Formatter::Common();
     if (lastaction != -999)
     {
-        set_format_arg(0, rct_string_id, network_get_action_name_string_id(lastaction));
+        ft.Add<rct_string_id>(network_get_action_name_string_id(lastaction));
     }
-    gfx_draw_string_centred_clipped(dpi, STR_LAST_ACTION_RAN, gCommonFormatArgs, COLOUR_BLACK, x, y, width);
+    else
+    {
+        ft.Add<rct_string_id>(STR_ACTION_NA);
+    }
+    gfx_draw_string_centred_clipped(dpi, STR_LAST_ACTION_RAN, gCommonFormatArgs, COLOUR_BLACK, screenCoords, width);
 
     if (w->viewport != nullptr && w->var_492 != -1)
     {
@@ -411,7 +416,7 @@ void window_player_overview_paint(rct_window* w, rct_drawpixelinfo* dpi)
 
 void window_player_overview_invalidate(rct_window* w)
 {
-    int32_t playerIndex = network_get_player_index((uint8_t)w->number);
+    int32_t playerIndex = network_get_player_index(static_cast<uint8_t>(w->number));
     if (playerIndex == -1)
     {
         return;
@@ -456,12 +461,11 @@ void window_player_overview_invalidate(rct_window* w)
     {
         rct_widget* viewportWidget = &window_player_overview_widgets[WIDX_VIEWPORT];
 
-        viewport->x = w->x + viewportWidget->left;
-        viewport->y = w->y + viewportWidget->top;
+        viewport->pos = w->windowPos + ScreenCoordsXY{ viewportWidget->left, viewportWidget->top };
         viewport->width = viewportWidget->right - viewportWidget->left;
         viewport->height = viewportWidget->bottom - viewportWidget->top;
-        viewport->view_width = viewport->width << viewport->zoom;
-        viewport->view_height = viewport->height << viewport->zoom;
+        viewport->view_width = viewport->width * viewport->zoom;
+        viewport->view_height = viewport->height * viewport->zoom;
     }
 
     // Only enable kick button for other players
@@ -475,7 +479,6 @@ void window_player_statistics_close(rct_window* w)
 {
     if (w->error.var_480)
     {
-        user_string_free(w->error.var_480);
         w->error.var_480 = 0;
     }
 }
@@ -504,7 +507,7 @@ void window_player_statistics_update(rct_window* w)
     w->frame_no++;
     widget_invalidate(w, WIDX_TAB_1 + w->page);
 
-    if (network_get_player_index((uint8_t)w->number) == -1)
+    if (network_get_player_index(static_cast<uint8_t>(w->number)) == -1)
     {
         window_close(w);
     }
@@ -540,22 +543,25 @@ void window_player_statistics_paint(rct_window* w, rct_drawpixelinfo* dpi)
     window_draw_widgets(w, dpi);
     window_player_draw_tab_images(dpi, w);
 
-    int32_t player = network_get_player_index((uint8_t)w->number);
+    int32_t player = network_get_player_index(static_cast<uint8_t>(w->number));
     if (player == -1)
     {
         return;
     }
 
-    int32_t x = w->x + window_player_overview_widgets[WIDX_PAGE_BACKGROUND].left + 4;
-    int32_t y = w->y + window_player_overview_widgets[WIDX_PAGE_BACKGROUND].top + 4;
+    auto screenCoords = w->windowPos
+        + ScreenCoordsXY{ window_player_overview_widgets[WIDX_PAGE_BACKGROUND].left + 4,
+                          window_player_overview_widgets[WIDX_PAGE_BACKGROUND].top + 4 };
 
-    set_format_arg(0, uint32_t, network_get_player_commands_ran(player));
-    gfx_draw_string_left(dpi, STR_COMMANDS_RAN, gCommonFormatArgs, COLOUR_BLACK, x, y);
+    auto ft = Formatter::Common();
+    ft.Add<uint32_t>(network_get_player_commands_ran(player));
+    gfx_draw_string_left(dpi, STR_COMMANDS_RAN, gCommonFormatArgs, COLOUR_BLACK, screenCoords);
 
-    y += LIST_ROW_HEIGHT;
+    screenCoords.y += LIST_ROW_HEIGHT;
 
-    set_format_arg(0, uint32_t, network_get_player_money_spent(player));
-    gfx_draw_string_left(dpi, STR_MONEY_SPENT, gCommonFormatArgs, COLOUR_BLACK, x, y);
+    ft = Formatter::Common();
+    ft.Add<uint32_t>(network_get_player_money_spent(player));
+    gfx_draw_string_left(dpi, STR_MONEY_SPENT, gCommonFormatArgs, COLOUR_BLACK, screenCoords);
 }
 
 static void window_player_set_page(rct_window* w, int32_t page)
@@ -572,17 +578,18 @@ static void window_player_set_page(rct_window* w, int32_t page)
     w->event_handlers = window_player_page_events[page];
     w->pressed_widgets = 0;
     w->widgets = window_player_page_widgets[page];
-    window_invalidate(w);
+    w->Invalidate();
     window_event_resize_call(w);
     window_event_invalidate_call(w);
     window_init_scroll_widgets(w);
-    window_invalidate(w);
+    w->Invalidate();
 
     if (page == WINDOW_PLAYER_PAGE_OVERVIEW)
     {
         if (w->viewport == nullptr)
         {
-            viewport_create(w, w->x, w->y, w->width, w->height, 0, 128 * 32, 128 * 32, 0, 1, SPRITE_INDEX_NULL);
+            viewport_create(
+                w, w->windowPos, w->width, w->height, 0, TileCoordsXYZ(128, 128, 0).ToCoordsXYZ(), 1, SPRITE_INDEX_NULL);
             w->flags |= WF_NO_SCROLLING;
             window_event_invalidate_call(w);
             window_player_update_viewport(w, false);
@@ -612,8 +619,8 @@ static void window_player_draw_tab_images(rct_drawpixelinfo* dpi, rct_window* w)
     if (!widget_is_disabled(w, WIDX_TAB_1))
     {
         widget = &w->widgets[WIDX_TAB_1];
-        x = widget->left + w->x;
-        y = widget->top + w->y;
+        x = widget->left + w->windowPos.x;
+        y = widget->top + w->windowPos.y;
         imageId = SPR_PEEP_LARGE_FACE_NORMAL;
         gfx_draw_sprite(dpi, imageId, x, y, 0);
     }
@@ -622,8 +629,8 @@ static void window_player_draw_tab_images(rct_drawpixelinfo* dpi, rct_window* w)
     if (!widget_is_disabled(w, WIDX_TAB_2))
     {
         widget = &w->widgets[WIDX_TAB_2];
-        x = widget->left + w->x;
-        y = widget->top + w->y;
+        x = widget->left + w->windowPos.x;
+        y = widget->top + w->windowPos.y;
         imageId = SPR_TAB_FINANCES_SUMMARY_0;
 
         if (w->page == WINDOW_PLAYER_PAGE_STATISTICS)
@@ -637,7 +644,7 @@ static void window_player_draw_tab_images(rct_drawpixelinfo* dpi, rct_window* w)
 
 static void window_player_update_viewport(rct_window* w, bool scroll)
 {
-    int32_t playerIndex = network_get_player_index((uint8_t)w->number);
+    int32_t playerIndex = network_get_player_index(static_cast<uint8_t>(w->number));
     if (playerIndex == -1)
     {
         return;
@@ -646,27 +653,27 @@ static void window_player_update_viewport(rct_window* w, bool scroll)
     rct_viewport* viewport = w->viewport;
     if (viewport != nullptr)
     {
-        LocationXYZ16 coord = network_get_player_last_action_coord(playerIndex);
+        auto coord = network_get_player_last_action_coord(playerIndex);
         if (coord.x != 0 || coord.y != 0 || coord.z != 0)
         {
-            int32_t viewX, viewY;
-            centre_2d_coordinates(coord.x, coord.y, coord.z, &viewX, &viewY, viewport);
-
+            auto centreLoc = centre_2d_coordinates(coord, viewport);
+            if (!centreLoc)
+            {
+                return;
+            }
             // Don't scroll if the view was originally undefined
             if (w->var_492 == -1)
             {
                 scroll = false;
             }
 
-            if (!scroll || w->saved_view_x != viewX || w->saved_view_y != viewY)
+            if (!scroll || w->savedViewPos != centreLoc)
             {
                 w->flags |= WF_SCROLLING_TO_LOCATION;
-                w->saved_view_x = viewX;
-                w->saved_view_y = viewY;
+                w->savedViewPos = *centreLoc;
                 if (!scroll)
                 {
-                    w->viewport->view_x = viewX;
-                    w->viewport->view_y = viewY;
+                    w->viewport->viewPos = *centreLoc;
                 }
                 widget_invalidate(w, WIDX_VIEWPORT);
             }
@@ -684,13 +691,14 @@ static void window_player_update_viewport(rct_window* w, bool scroll)
 
 static void window_player_update_title(rct_window* w)
 {
-    int32_t player = network_get_player_index((uint8_t)w->number);
+    auto ft = Formatter::Common();
+    int32_t player = network_get_player_index(static_cast<uint8_t>(w->number));
     if (player != -1)
     {
-        set_format_arg(0, const char*, network_get_player_name(player)); // set title caption to player name
+        ft.Add<const char*>(network_get_player_name(player)); // set title caption to player name
     }
     else
     {
-        set_format_arg(0, const char*, "");
+        ft.Add<const char*>("");
     }
 }

@@ -11,6 +11,7 @@
 
 #include "../common.h"
 #include "../core/Endianness.h"
+#include "../ride/RideTypes.h"
 
 enum
 {
@@ -67,6 +68,7 @@ enum NETWORK_COMMAND
     NETWORK_COMMAND_PLAYERINFO,
     NETWORK_COMMAND_REQUEST_GAMESTATE,
     NETWORK_COMMAND_GAMESTATE,
+    NETWORK_COMMAND_SCRIPTS,
     NETWORK_COMMAND_MAX,
     NETWORK_COMMAND_INVALID = -1
 };
@@ -113,7 +115,7 @@ template<typename T, size_t _TypeID> struct NetworkObjectId_t
 // NOTE: When adding new types make sure to have no duplicate _TypeID's otherwise
 // there is no way to specialize templates if they have the exact symbol.
 using NetworkPlayerId_t = NetworkObjectId_t<int32_t, 0>;
-using NetworkRideId_t = NetworkObjectId_t<int32_t, 1>;
+using NetworkRideId_t = NetworkObjectId_t<ride_id_t, 1>;
 using NetworkCheatType_t = NetworkObjectId_t<int32_t, 2>;
 
 enum NetworkStatisticsGroup

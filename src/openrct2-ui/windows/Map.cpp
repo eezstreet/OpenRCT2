@@ -19,6 +19,8 @@
 #include <openrct2/Input.h>
 #include <openrct2/OpenRCT2.h>
 #include <openrct2/actions/LandSetRightsAction.hpp>
+#include <openrct2/actions/PlaceParkEntranceAction.hpp>
+#include <openrct2/actions/PlacePeepSpawnAction.hpp>
 #include <openrct2/actions/SurfaceSetStyleAction.hpp>
 #include <openrct2/audio/audio.h>
 #include <openrct2/localisation/Localisation.h>
@@ -34,7 +36,11 @@
 #define MAP_COLOUR(colour) MAP_COLOUR_2(colour, colour)
 #define MAP_COLOUR_UNOWNED(colour) (PALETTE_INDEX_10 | ((colour)&0xFF00))
 
-#define MAP_WINDOW_MAP_SIZE (MAXIMUM_MAP_SIZE_TECHNICAL * 2)
+constexpr int32_t MAP_WINDOW_MAP_SIZE = MAXIMUM_MAP_SIZE_TECHNICAL * 2;
+
+static constexpr const rct_string_id WINDOW_TITLE = STR_MAP_LABEL;
+static constexpr const int32_t WH = 259;
+static constexpr const int32_t WW = 245;
 
 // Some functions manipulate coordinates on the map. These are the coordinates of the pixels in the
 // minimap. In order to distinguish those from actual coordinates, we use a separate name.
@@ -74,9 +80,7 @@ enum WINDOW_MAP_WIDGET_IDX {
 validate_global_widx(WC_MAP, WIDX_ROTATE_90);
 
 static rct_widget window_map_widgets[] = {
-    { WWT_FRAME,            0,  0,      244,    0,      258,    STR_NONE,                               STR_NONE },
-    { WWT_CAPTION,          0,  1,      243,    1,      14,     STR_MAP_LABEL,                          STR_WINDOW_TITLE_TIP },
-    { WWT_CLOSEBOX,         0,  232,    242,    2,      13,     STR_CLOSE_X,                            STR_CLOSE_WINDOW_TIP },
+    WINDOW_SHIM(WINDOW_TITLE, WW, WH),
     { WWT_RESIZE,           1,  0,      244,    43,     257,    STR_NONE,                               STR_NONE },
     { WWT_COLOURBTN,        1,  3,      33,     17,     43,     IMAGE_TYPE_REMAP | SPR_TAB,                   STR_SHOW_PEOPLE_ON_MAP_TIP },
     { WWT_COLOURBTN,        1,  34,     64,     17,     43,     IMAGE_TYPE_REMAP | SPR_TAB,                   STR_SHOW_RIDES_STALLS_ON_MAP_TIP },
@@ -84,7 +88,7 @@ static rct_widget window_map_widgets[] = {
       SPINNER_WIDGETS      (1,  104,    198,    229,    240,    STR_MAP_SIZE_VALUE,                     STR_NONE), // NB: 3 widgets
     { WWT_FLATBTN,          1,  4,      27,     1,      24,     SPR_BUY_LAND_RIGHTS,                    STR_SELECT_PARK_OWNED_LAND_TIP },
     { WWT_FLATBTN,          1,  4,      27,     1,      24,     SPR_PARK_ENTRANCE,                      STR_BUILD_PARK_ENTRANCE_TIP },
-    { WWT_FLATBTN,          1,  28,     51,     1,      24,     (uint32_t) SPR_NONE,                      STR_SET_STARTING_POSITIONS_TIP },
+    { WWT_FLATBTN,          1,  28,     51,     1,      24,     static_cast<uint32_t>(SPR_NONE),        STR_SET_STARTING_POSITIONS_TIP },
     { WWT_IMGBTN,           1,  4,      47,     17,     48,     SPR_LAND_TOOL_SIZE_0,                   STR_NONE },
     { WWT_TRNBTN,           1,  5,      20,     18,     33,     IMAGE_TYPE_REMAP | SPR_LAND_TOOL_DECREASE,    STR_ADJUST_SMALLER_LAND_TIP },
     { WWT_TRNBTN,           1,  31,     46,     32,     47,     IMAGE_TYPE_REMAP | SPR_LAND_TOOL_INCREASE,    STR_ADJUST_LARGER_LAND_TIP },
@@ -93,13 +97,13 @@ static rct_widget window_map_widgets[] = {
     { WWT_CHECKBOX,         1,  58,     241,    197,    208,    STR_LAND_SALE,                          STR_SET_LAND_TO_BE_AVAILABLE_TIP },
     { WWT_CHECKBOX,         1,  58,     231,    197,    208,    STR_CONSTRUCTION_RIGHTS_SALE,           STR_SET_CONSTRUCTION_RIGHTS_TO_BE_AVAILABLE_TIP },
     { WWT_FLATBTN,          1,  218,    241,    45,     68,     SPR_ROTATE_ARROW,                       STR_ROTATE_OBJECTS_90 },
-    { WWT_BUTTON,           1,  110,    240,    190,    201,    STR_MAPGEN_WINDOW_TITLE,                STR_MAP_GENERATOR_TIP},
+    { WWT_BUTTON,           1,  110,    240,    189,    202,    STR_MAPGEN_WINDOW_TITLE,                STR_MAP_GENERATOR_TIP},
     { WIDGETS_END },
 };
 
 // used in transforming viewport view coordinates to minimap coordinates
 // rct2: 0x00981BBC
-static constexpr const LocationXY16 MiniMapOffsets[] = {
+static constexpr const ScreenCoordsXY MiniMapOffsets[] = {
     {     MAXIMUM_MAP_SIZE_TECHNICAL - 8,                              0 },
     { 2 * MAXIMUM_MAP_SIZE_TECHNICAL - 8,     MAXIMUM_MAP_SIZE_TECHNICAL },
     {     MAXIMUM_MAP_SIZE_TECHNICAL - 8, 2 * MAXIMUM_MAP_SIZE_TECHNICAL },
@@ -123,12 +127,12 @@ static void window_map_resize(rct_window *w);
 static void window_map_mouseup(rct_window *w, rct_widgetindex widgetIndex);
 static void window_map_mousedown(rct_window *w, rct_widgetindex widgetIndex, rct_widget* widget);
 static void window_map_update(rct_window *w);
-static void window_map_toolupdate(rct_window* w, rct_widgetindex widgetIndex, int32_t x, int32_t y);
-static void window_map_tooldown(rct_window* w, rct_widgetindex widgetIndex, int32_t x, int32_t y);
-static void window_map_tooldrag(rct_window* w, rct_widgetindex widgetIndex, int32_t x, int32_t y);
+static void window_map_toolupdate(rct_window* w, rct_widgetindex widgetIndex, const ScreenCoordsXY& screenCoords);
+static void window_map_tooldown(rct_window* w, rct_widgetindex widgetIndex, const ScreenCoordsXY& screenCoords);
+static void window_map_tooldrag(rct_window* w, rct_widgetindex widgetIndex, const ScreenCoordsXY& screenCoords);
 static void window_map_toolabort(rct_window *w, rct_widgetindex widgetIndex);
 static void window_map_scrollgetsize(rct_window *w, int32_t scrollIndex, int32_t *width, int32_t *height);
-static void window_map_scrollmousedown(rct_window *w, int32_t scrollIndex, int32_t x, int32_t y);
+static void window_map_scrollmousedown(rct_window *w, int32_t scrollIndex, const ScreenCoordsXY& screenCoords);
 static void window_map_textinput(rct_window *w, rct_widgetindex widgetIndex, char *text);
 static void window_map_invalidate(rct_window *w);
 static void window_map_paint(rct_window *w, rct_drawpixelinfo *dpi);
@@ -187,16 +191,16 @@ static void window_map_paint_hud_rectangle(rct_drawpixelinfo* dpi);
 static void window_map_inputsize_land(rct_window* w);
 static void window_map_inputsize_map(rct_window* w);
 
-static void window_map_set_land_rights_tool_update(int32_t x, int32_t y);
-static void window_map_place_park_entrance_tool_update(int32_t x, int32_t y);
-static void window_map_set_peep_spawn_tool_update(int32_t x, int32_t y);
-static void window_map_place_park_entrance_tool_down(int32_t x, int32_t y);
-static void window_map_set_peep_spawn_tool_down(int32_t x, int32_t y);
+static void window_map_set_land_rights_tool_update(const ScreenCoordsXY& screenCoords);
+static void window_map_place_park_entrance_tool_update(const ScreenCoordsXY& screenCoords);
+static void window_map_set_peep_spawn_tool_update(const ScreenCoordsXY& screenCoords);
+static void window_map_place_park_entrance_tool_down(const ScreenCoordsXY& screenCoords);
+static void window_map_set_peep_spawn_tool_down(const ScreenCoordsXY& screenCoords);
 static void map_window_increase_map_size();
 static void map_window_decrease_map_size();
 static void map_window_set_pixels(rct_window* w);
 
-static CoordsXY map_window_screen_to_map(int32_t screenX, int32_t screenY);
+static CoordsXY map_window_screen_to_map(ScreenCoordsXY screenCoords);
 
 /**
  *
@@ -292,7 +296,7 @@ static void window_map_mouseup(rct_window* w, rct_widgetindex widgetIndex)
             window_close(w);
             break;
         case WIDX_SET_LAND_RIGHTS:
-            window_invalidate(w);
+            w->Invalidate();
             if (tool_set(w, widgetIndex, TOOL_UP_ARROW))
                 break;
             _activeTool = 2;
@@ -308,7 +312,7 @@ static void window_map_mouseup(rct_window* w, rct_widgetindex widgetIndex)
             if (_activeTool & 2)
                 _activeTool &= 0xF2;
 
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_LAND_SALE_CHECKBOX:
             _activeTool ^= 8;
@@ -316,7 +320,7 @@ static void window_map_mouseup(rct_window* w, rct_widgetindex widgetIndex)
             if (_activeTool & 8)
                 _activeTool &= 0xF8;
 
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_CONSTRUCTION_RIGHTS_OWNED_CHECKBOX:
             _activeTool ^= 1;
@@ -324,7 +328,7 @@ static void window_map_mouseup(rct_window* w, rct_widgetindex widgetIndex)
             if (_activeTool & 1)
                 _activeTool &= 0xF1;
 
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_CONSTRUCTION_RIGHTS_SALE_CHECKBOX:
             _activeTool ^= 4;
@@ -332,10 +336,10 @@ static void window_map_mouseup(rct_window* w, rct_widgetindex widgetIndex)
             if (_activeTool & 4)
                 _activeTool &= 0xF4;
 
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_BUILD_PARK_ENTRANCE:
-            window_invalidate(w);
+            w->Invalidate();
             if (tool_set(w, widgetIndex, TOOL_UP_ARROW))
                 break;
 
@@ -410,13 +414,13 @@ static void window_map_mousedown(rct_window* w, rct_widgetindex widgetIndex, rct
             // Decrement land rights tool size
             _landRightsToolSize = std::max(MINIMUM_TOOL_SIZE, _landRightsToolSize - 1);
 
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_LAND_TOOL_LARGER:
             // Increment land rights tool size
             _landRightsToolSize = std::min(MAXIMUM_TOOL_SIZE, _landRightsToolSize + 1);
 
-            window_invalidate(w);
+            w->Invalidate();
             break;
     }
 }
@@ -437,7 +441,7 @@ static void window_map_update(rct_window* w)
     for (int32_t i = 0; i < 16; i++)
         map_window_set_pixels(w);
 
-    window_invalidate(w);
+    w->Invalidate();
 
     // Update tab animations
     w->list_information_type++;
@@ -462,18 +466,18 @@ static void window_map_update(rct_window* w)
  *
  *  rct2: 0x0068D093
  */
-static void window_map_toolupdate(rct_window* w, rct_widgetindex widgetIndex, int32_t x, int32_t y)
+static void window_map_toolupdate(rct_window* w, rct_widgetindex widgetIndex, const ScreenCoordsXY& screenCoords)
 {
     switch (widgetIndex)
     {
         case WIDX_SET_LAND_RIGHTS:
-            window_map_set_land_rights_tool_update(x, y);
+            window_map_set_land_rights_tool_update(screenCoords);
             break;
         case WIDX_BUILD_PARK_ENTRANCE:
-            window_map_place_park_entrance_tool_update(x, y);
+            window_map_place_park_entrance_tool_update(screenCoords);
             break;
         case WIDX_PEOPLE_STARTING_POSITION:
-            window_map_set_peep_spawn_tool_update(x, y);
+            window_map_set_peep_spawn_tool_update(screenCoords);
             break;
     }
 }
@@ -482,15 +486,15 @@ static void window_map_toolupdate(rct_window* w, rct_widgetindex widgetIndex, in
  *
  *  rct2: 0x0068D074
  */
-static void window_map_tooldown(rct_window* w, rct_widgetindex widgetIndex, int32_t x, int32_t y)
+static void window_map_tooldown(rct_window* w, rct_widgetindex widgetIndex, const ScreenCoordsXY& screenCoords)
 {
     switch (widgetIndex)
     {
         case WIDX_BUILD_PARK_ENTRANCE:
-            window_map_place_park_entrance_tool_down(x, y);
+            window_map_place_park_entrance_tool_down(screenCoords);
             break;
         case WIDX_PEOPLE_STARTING_POSITION:
-            window_map_set_peep_spawn_tool_down(x, y);
+            window_map_set_peep_spawn_tool_down(screenCoords);
             break;
     }
 }
@@ -499,7 +503,7 @@ static void window_map_tooldown(rct_window* w, rct_widgetindex widgetIndex, int3
  *
  *  rct2: 0x0068D088
  */
-static void window_map_tooldrag(rct_window* w, rct_widgetindex widgetIndex, int32_t x, int32_t y)
+static void window_map_tooldrag(rct_window* w, rct_widgetindex widgetIndex, const ScreenCoordsXY& screenCoords)
 {
     switch (widgetIndex)
     {
@@ -524,20 +528,20 @@ static void window_map_toolabort(rct_window* w, rct_widgetindex widgetIndex)
     switch (widgetIndex)
     {
         case WIDX_SET_LAND_RIGHTS:
-            window_invalidate(w);
+            w->Invalidate();
             hide_gridlines();
             hide_land_rights();
             hide_construction_rights();
             break;
         case WIDX_BUILD_PARK_ENTRANCE:
             park_entrance_remove_ghost();
-            window_invalidate(w);
+            w->Invalidate();
             hide_gridlines();
             hide_land_rights();
             hide_construction_rights();
             break;
         case WIDX_PEOPLE_STARTING_POSITION:
-            window_invalidate(w);
+            w->Invalidate();
             hide_gridlines();
             hide_land_rights();
             hide_construction_rights();
@@ -561,12 +565,12 @@ static void window_map_scrollgetsize(rct_window* w, int32_t scrollIndex, int32_t
  *
  *  rct2: 0x0068D726
  */
-static void window_map_scrollmousedown(rct_window* w, int32_t scrollIndex, int32_t x, int32_t y)
+static void window_map_scrollmousedown(rct_window* w, int32_t scrollIndex, const ScreenCoordsXY& screenCoords)
 {
-    CoordsXY c = map_window_screen_to_map(x, y);
-    int32_t mapX = std::clamp(c.x, 0, MAXIMUM_MAP_SIZE_TECHNICAL * 32 - 1);
-    int32_t mapY = std::clamp(c.y, 0, MAXIMUM_MAP_SIZE_TECHNICAL * 32 - 1);
-    int32_t mapZ = tile_element_height(x, y);
+    CoordsXY c = map_window_screen_to_map(screenCoords);
+    int32_t mapX = std::clamp(c.x, 0, MAXIMUM_MAP_SIZE_BIG - 1);
+    int32_t mapY = std::clamp(c.y, 0, MAXIMUM_MAP_SIZE_BIG - 1);
+    int32_t mapZ = tile_element_height({ mapX, mapY });
 
     rct_window* mainWindow = window_get_main();
     if (mainWindow != nullptr)
@@ -638,7 +642,7 @@ static void window_map_textinput(rct_window* w, rct_widgetindex widgetIndex, cha
             {
                 size = std::clamp(size, MINIMUM_TOOL_SIZE, MAXIMUM_TOOL_SIZE);
                 _landRightsToolSize = size;
-                window_invalidate(w);
+                w->Invalidate();
             }
             break;
         case WIDX_MAP_SIZE_SPINNER:
@@ -660,7 +664,7 @@ static void window_map_textinput(rct_window* w, rct_widgetindex widgetIndex, cha
                     map_window_increase_map_size();
                     currentSize++;
                 }
-                window_invalidate(w);
+                w->Invalidate();
             }
             break;
     }
@@ -743,7 +747,7 @@ static void window_map_invalidate(rct_window* w)
     w->widgets[WIDX_LAND_TOOL_LARGER].bottom = w->height - 27 + 15;
 
     w->widgets[WIDX_MAP_GENERATOR].top = w->height - 69;
-    w->widgets[WIDX_MAP_GENERATOR].bottom = w->height - 69 + 11;
+    w->widgets[WIDX_MAP_GENERATOR].bottom = w->height - 69 + 13;
 
     // Land tool mode (4 checkboxes)
     height = w->height - 55;
@@ -810,24 +814,27 @@ static void window_map_paint(rct_window* w, rct_drawpixelinfo* dpi)
     window_draw_widgets(w, dpi);
     window_map_draw_tab_images(w, dpi);
 
-    int32_t x = w->x + (window_map_widgets[WIDX_LAND_TOOL].left + window_map_widgets[WIDX_LAND_TOOL].right) / 2;
-    int32_t y = w->y + (window_map_widgets[WIDX_LAND_TOOL].top + window_map_widgets[WIDX_LAND_TOOL].bottom) / 2;
+    auto screenCoords = w->windowPos
+        + ScreenCoordsXY{ (window_map_widgets[WIDX_LAND_TOOL].left + window_map_widgets[WIDX_LAND_TOOL].right) / 2,
+                          (window_map_widgets[WIDX_LAND_TOOL].top + window_map_widgets[WIDX_LAND_TOOL].bottom) / 2 };
 
     // Draw land tool size
     if (widget_is_active_tool(w, WIDX_SET_LAND_RIGHTS) && _landRightsToolSize > MAX_TOOL_SIZE_WITH_SPRITE)
     {
-        gfx_draw_string_centred(dpi, STR_LAND_TOOL_SIZE_VALUE, x, y - 2, COLOUR_BLACK, &_landRightsToolSize);
+        gfx_draw_string_centred(
+            dpi, STR_LAND_TOOL_SIZE_VALUE, screenCoords - ScreenCoordsXY{ 0, 2 }, COLOUR_BLACK, &_landRightsToolSize);
     }
-    y = w->y + window_map_widgets[WIDX_LAND_TOOL].bottom + 5;
+    screenCoords.y = w->windowPos.y + window_map_widgets[WIDX_LAND_TOOL].bottom + 5;
 
     // People starting position (scenario editor only)
     if (w->widgets[WIDX_PEOPLE_STARTING_POSITION].type != WWT_EMPTY)
     {
-        x = w->x + w->widgets[WIDX_PEOPLE_STARTING_POSITION].left + 12;
-        y = w->y + w->widgets[WIDX_PEOPLE_STARTING_POSITION].top + 18;
+        screenCoords = w->windowPos
+            + ScreenCoordsXY{ w->widgets[WIDX_PEOPLE_STARTING_POSITION].left + 12,
+                              w->widgets[WIDX_PEOPLE_STARTING_POSITION].top + 18 };
         gfx_draw_sprite(
             dpi, IMAGE_TYPE_REMAP | IMAGE_TYPE_REMAP_2_PLUS | (COLOUR_LIGHT_BROWN << 24) | (COLOUR_BRIGHT_RED << 19) | SPR_6410,
-            x, y, 0);
+            screenCoords.x, screenCoords.y, 0);
     }
 
     if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) && !gCheatsSandboxMode)
@@ -835,8 +842,7 @@ static void window_map_paint(rct_window* w, rct_drawpixelinfo* dpi)
         // Render the map legend
         if (w->selected_tab == PAGE_RIDES)
         {
-            x = w->x + 4;
-            y = w->y + w->widgets[WIDX_MAP].bottom + 2;
+            screenCoords = w->windowPos + ScreenCoordsXY{ 4, w->widgets[WIDX_MAP].bottom + 2 };
 
             static rct_string_id mapLabels[] = {
                 STR_MAP_RIDE,       STR_MAP_FOOD_STALL, STR_MAP_DRINK_STALL,  STR_MAP_SOUVENIR_STALL,
@@ -845,13 +851,13 @@ static void window_map_paint(rct_window* w, rct_drawpixelinfo* dpi)
 
             for (uint32_t i = 0; i < std::size(RideKeyColours); i++)
             {
-                gfx_fill_rect(dpi, x, y + 2, x + 6, y + 8, RideKeyColours[i]);
-                gfx_draw_string_left(dpi, mapLabels[i], w, COLOUR_BLACK, x + LIST_ROW_HEIGHT, y);
-                y += LIST_ROW_HEIGHT;
+                gfx_fill_rect(
+                    dpi, screenCoords.x, screenCoords.y + 2, screenCoords.x + 6, screenCoords.y + 8, RideKeyColours[i]);
+                gfx_draw_string_left(dpi, mapLabels[i], w, COLOUR_BLACK, screenCoords + ScreenCoordsXY{ LIST_ROW_HEIGHT, 0 });
+                screenCoords.y += LIST_ROW_HEIGHT;
                 if (i == 3)
                 {
-                    x += 118;
-                    y -= LIST_ROW_HEIGHT * 4;
+                    screenCoords += { 118, -(LIST_ROW_HEIGHT * 4) };
                 }
             }
         }
@@ -859,7 +865,8 @@ static void window_map_paint(rct_window* w, rct_drawpixelinfo* dpi)
     else if (!widget_is_active_tool(w, WIDX_SET_LAND_RIGHTS))
     {
         gfx_draw_string_left(
-            dpi, STR_MAP_SIZE, nullptr, w->colours[1], w->x + 4, w->y + w->widgets[WIDX_MAP_SIZE_SPINNER].top + 1);
+            dpi, STR_MAP_SIZE, nullptr, w->colours[1],
+            w->windowPos + ScreenCoordsXY{ 4, w->widgets[WIDX_MAP_SIZE_SPINNER].top + 1 });
     }
 }
 
@@ -920,12 +927,12 @@ static void window_map_centre_on_view_point()
     if (w_map == nullptr)
         return;
 
-    LocationXY16 offset = MiniMapOffsets[get_current_rotation()];
+    auto offset = MiniMapOffsets[get_current_rotation()];
 
     // calculate centre view point of viewport and transform it to minimap coordinates
 
-    cx = ((w->viewport->view_width >> 1) + w->viewport->view_x) >> 5;
-    dx = ((w->viewport->view_height >> 1) + w->viewport->view_y) >> 4;
+    cx = ((w->viewport->view_width >> 1) + w->viewport->viewPos.x) >> 5;
+    dx = ((w->viewport->view_height >> 1) + w->viewport->viewPos.y) >> 4;
     cx += offset.x;
     dx += offset.y;
 
@@ -971,7 +978,9 @@ static void window_map_show_default_scenario_editor_buttons(rct_window* w)
     if (gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR)
         w->widgets[WIDX_MAP_GENERATOR].type = WWT_BUTTON;
 
-    set_format_arg(2, uint16_t, gMapSize - 2);
+    auto ft = Formatter::Common();
+    ft.Increment(2);
+    ft.Add<uint16_t>(gMapSize - 2);
 }
 
 static void window_map_inputsize_land(rct_window* w)
@@ -997,14 +1006,16 @@ static void window_map_draw_tab_images(rct_window* w, rct_drawpixelinfo* dpi)
     if (w->selected_tab == PAGE_PEEPS)
         image += w->list_information_type / 4;
 
-    gfx_draw_sprite(dpi, image, w->x + w->widgets[WIDX_PEOPLE_TAB].left, w->y + w->widgets[WIDX_PEOPLE_TAB].top, 0);
+    gfx_draw_sprite(
+        dpi, image, w->windowPos.x + w->widgets[WIDX_PEOPLE_TAB].left, w->windowPos.y + w->widgets[WIDX_PEOPLE_TAB].top, 0);
 
     // Ride/stall tab image (animated)
     image = SPR_TAB_RIDE_0;
     if (w->selected_tab == PAGE_RIDES)
         image += w->list_information_type / 4;
 
-    gfx_draw_sprite(dpi, image, w->x + w->widgets[WIDX_RIDES_TAB].left, w->y + w->widgets[WIDX_RIDES_TAB].top, 0);
+    gfx_draw_sprite(
+        dpi, image, w->windowPos.x + w->widgets[WIDX_RIDES_TAB].left, w->windowPos.y + w->widgets[WIDX_RIDES_TAB].top, 0);
 }
 
 /**
@@ -1019,15 +1030,15 @@ static MapCoordsXY window_map_transform_to_map_coords(CoordsXY c)
     {
         case 3:
             std::swap(x, y);
-            x = MAXIMUM_MAP_SIZE_TECHNICAL * 32 - 1 - x;
+            x = MAXIMUM_MAP_SIZE_BIG - 1 - x;
             break;
         case 2:
-            x = MAXIMUM_MAP_SIZE_TECHNICAL * 32 - 1 - x;
-            y = MAXIMUM_MAP_SIZE_TECHNICAL * 32 - 1 - y;
+            x = MAXIMUM_MAP_SIZE_BIG - 1 - x;
+            y = MAXIMUM_MAP_SIZE_BIG - 1 - y;
             break;
         case 1:
             std::swap(x, y);
-            y = MAXIMUM_MAP_SIZE_TECHNICAL * 32 - 1 - y;
+            y = MAXIMUM_MAP_SIZE_BIG - 1 - y;
             break;
         case 0:
             break;
@@ -1044,10 +1055,7 @@ static MapCoordsXY window_map_transform_to_map_coords(CoordsXY c)
  */
 static void window_map_paint_peep_overlay(rct_drawpixelinfo* dpi)
 {
-    Peep* peep;
-    uint16_t spriteIndex;
-
-    FOR_ALL_PEEPS (spriteIndex, peep)
+    for (auto peep : EntityList<Peep>(SPRITE_LIST_PEEP))
     {
         if (peep->x == LOCATION_NULL)
             continue;
@@ -1061,9 +1069,9 @@ static void window_map_paint_peep_overlay(rct_drawpixelinfo* dpi)
 
         int16_t colour = PALETTE_INDEX_20;
 
-        if (sprite_get_flashing((rct_sprite*)peep))
+        if (sprite_get_flashing(peep))
         {
-            if (peep->type == PEEP_TYPE_STAFF)
+            if (peep->AssignedPeepType == PEEP_TYPE_STAFF)
             {
                 if ((gWindowMapFlashingFlags & (1 << 3)) != 0)
                 {
@@ -1094,13 +1102,11 @@ static void window_map_paint_peep_overlay(rct_drawpixelinfo* dpi)
  */
 static void window_map_paint_train_overlay(rct_drawpixelinfo* dpi)
 {
-    rct_vehicle *train, *vehicle;
-    uint16_t train_index, vehicle_index;
-
-    for (train_index = gSpriteListHead[SPRITE_LIST_VEHICLE_HEAD]; train_index != SPRITE_INDEX_NULL; train_index = train->next)
+    for (auto train : EntityList<Vehicle>(SPRITE_LIST_TRAIN_HEAD))
     {
-        train = GET_VEHICLE(train_index);
-        for (vehicle_index = train_index; vehicle_index != SPRITE_INDEX_NULL; vehicle_index = vehicle->next_vehicle_on_train)
+        Vehicle* vehicle = nullptr;
+        for (auto vehicle_index = train->sprite_index; vehicle_index != SPRITE_INDEX_NULL;
+             vehicle_index = vehicle->next_vehicle_on_train)
         {
             vehicle = GET_VEHICLE(vehicle_index);
             if (vehicle->x == LOCATION_NULL)
@@ -1129,11 +1135,11 @@ static void window_map_paint_hud_rectangle(rct_drawpixelinfo* dpi)
     if (viewport == nullptr)
         return;
 
-    LocationXY16 offset = MiniMapOffsets[get_current_rotation()];
-    int16_t left = (viewport->view_x >> 5) + offset.x;
-    int16_t right = ((viewport->view_x + viewport->view_width) >> 5) + offset.x;
-    int16_t top = (viewport->view_y >> 4) + offset.y;
-    int16_t bottom = ((viewport->view_y + viewport->view_height) >> 4) + offset.y;
+    auto offset = MiniMapOffsets[get_current_rotation()];
+    int16_t left = (viewport->viewPos.x >> 5) + offset.x;
+    int16_t right = ((viewport->viewPos.x + viewport->view_width) >> 5) + offset.x;
+    int16_t top = (viewport->viewPos.y >> 4) + offset.y;
+    int16_t bottom = ((viewport->viewPos.y + viewport->view_height) >> 4) + offset.y;
 
     // top horizontal lines
     gfx_fill_rect(dpi, left, top, left + 3, top, PALETTE_INDEX_56);
@@ -1156,15 +1162,14 @@ static void window_map_paint_hud_rectangle(rct_drawpixelinfo* dpi)
  *
  *  rct2: 0x0068D24E
  */
-static void window_map_set_land_rights_tool_update(int32_t x, int32_t y)
+static void window_map_set_land_rights_tool_update(const ScreenCoordsXY& screenCoords)
 {
-    int16_t mapX, mapY;
     rct_viewport* viewport;
 
     map_invalidate_selection_rect();
     gMapSelectFlags &= ~MAP_SELECT_FLAG_ENABLE;
-    screen_get_map_xy(x, y, &mapX, &mapY, &viewport);
-    if (mapX == LOCATION_NULL)
+    auto mapCoords = screen_get_map_xy(screenCoords, &viewport);
+    if (!mapCoords)
         return;
 
     gMapSelectFlags |= MAP_SELECT_FLAG_ENABLE;
@@ -1176,12 +1181,11 @@ static void window_map_set_land_rights_tool_update(int32_t x, int32_t y)
 
     int32_t size = (landRightsToolSize * 32) - 32;
     int32_t radius = (landRightsToolSize * 16) - 16;
-    mapX = (mapX - radius) & 0xFFE0;
-    mapY = (mapY - radius) & 0xFFE0;
-    gMapSelectPositionA.x = mapX;
-    gMapSelectPositionA.y = mapY;
-    gMapSelectPositionB.x = mapX + size;
-    gMapSelectPositionB.y = mapY + size;
+    mapCoords->x = (mapCoords->x - radius) & 0xFFE0;
+    mapCoords->y = (mapCoords->y - radius) & 0xFFE0;
+    gMapSelectPositionA = *mapCoords;
+    gMapSelectPositionB.x = mapCoords->x + size;
+    gMapSelectPositionB.y = mapCoords->y + size;
     map_invalidate_selection_rect();
 }
 
@@ -1189,95 +1193,97 @@ static void window_map_set_land_rights_tool_update(int32_t x, int32_t y)
  *
  *  rct2: 0x00666EEF
  */
-static void place_park_entrance_get_map_position(
-    int32_t x, int32_t y, int16_t* mapX, int16_t* mapY, int16_t* mapZ, int32_t* direction)
+static CoordsXYZD place_park_entrance_get_map_position(const ScreenCoordsXY& screenCoords)
 {
-    TileElement* tileElement;
+    CoordsXYZD parkEntranceMapPosition{ 0, 0, 0, INVALID_DIRECTION };
+    const CoordsXY mapCoords = sub_68A15E(screenCoords);
+    parkEntranceMapPosition = { mapCoords.x, mapCoords.y, 0, INVALID_DIRECTION };
+    if (parkEntranceMapPosition.isNull())
+        return parkEntranceMapPosition;
 
-    sub_68A15E(x, y, mapX, mapY, direction, &tileElement);
-    if (*mapX == LOCATION_NULL)
-        return;
-
-    tileElement = map_get_surface_element_at(*mapX >> 5, *mapY >> 5);
-    *mapZ = tileElement->AsSurface()->GetWaterHeight();
-    if (*mapZ == 0)
+    auto surfaceElement = map_get_surface_element_at(mapCoords);
+    if (surfaceElement == nullptr)
     {
-        *mapZ = tileElement->base_height / 2;
-        if ((tileElement->AsSurface()->GetSlope() & TILE_ELEMENT_SLOPE_ALL_CORNERS_UP) != 0)
+        parkEntranceMapPosition.setNull();
+        return parkEntranceMapPosition;
+    }
+
+    parkEntranceMapPosition.z = surfaceElement->GetWaterHeight();
+    if (parkEntranceMapPosition.z == 0)
+    {
+        parkEntranceMapPosition.z = surfaceElement->GetBaseZ();
+        if ((surfaceElement->GetSlope() & TILE_ELEMENT_SLOPE_ALL_CORNERS_UP) != 0)
         {
-            (*mapZ)++;
-            if (tileElement->AsSurface()->GetSlope() & TILE_ELEMENT_SLOPE_DOUBLE_HEIGHT)
+            parkEntranceMapPosition.z += 16;
+            if (surfaceElement->GetSlope() & TILE_ELEMENT_SLOPE_DOUBLE_HEIGHT)
             {
-                (*mapZ)++;
+                parkEntranceMapPosition.z += 16;
             }
         }
     }
-    *direction = (gWindowSceneryRotation - get_current_rotation()) & 3;
+    parkEntranceMapPosition.direction = (gWindowSceneryRotation - get_current_rotation()) & 3;
+    return parkEntranceMapPosition;
 }
 
 /**
  *
  *  rct2: 0x00666FD0
  */
-static void window_map_place_park_entrance_tool_update(int32_t x, int32_t y)
+static void window_map_place_park_entrance_tool_update(const ScreenCoordsXY& screenCoords)
 {
-    int16_t mapX, mapY, mapZ = 0;
-    int32_t direction = 0, sideDirection;
+    int32_t sideDirection;
 
     map_invalidate_selection_rect();
     map_invalidate_map_selection_tiles();
     gMapSelectFlags &= ~MAP_SELECT_FLAG_ENABLE;
     gMapSelectFlags &= ~MAP_SELECT_FLAG_ENABLE_ARROW;
     gMapSelectFlags &= ~MAP_SELECT_FLAG_ENABLE_CONSTRUCT;
-    place_park_entrance_get_map_position(x, y, &mapX, &mapY, &mapZ, &direction);
-    if (mapX == (int16_t)-1)
+    CoordsXYZD parkEntrancePosition = place_park_entrance_get_map_position(screenCoords);
+    if (parkEntrancePosition.isNull())
     {
         park_entrance_remove_ghost();
         return;
     }
 
-    sideDirection = (direction + 1) & 3;
+    sideDirection = (parkEntrancePosition.direction + 1) & 3;
     gMapSelectionTiles.clear();
-    gMapSelectionTiles.push_back({ mapX, mapY });
-    gMapSelectionTiles.push_back(
-        { mapX + CoordsDirectionDelta[sideDirection].x, mapY + CoordsDirectionDelta[sideDirection].y });
-    gMapSelectionTiles.push_back(
-        { mapX - CoordsDirectionDelta[sideDirection].x, mapY - CoordsDirectionDelta[sideDirection].y });
+    gMapSelectionTiles.push_back({ parkEntrancePosition.x, parkEntrancePosition.y });
+    gMapSelectionTiles.push_back({ parkEntrancePosition.x + CoordsDirectionDelta[sideDirection].x,
+                                   parkEntrancePosition.y + CoordsDirectionDelta[sideDirection].y });
+    gMapSelectionTiles.push_back({ parkEntrancePosition.x - CoordsDirectionDelta[sideDirection].x,
+                                   parkEntrancePosition.y - CoordsDirectionDelta[sideDirection].y });
 
-    gMapSelectArrowPosition.x = mapX;
-    gMapSelectArrowPosition.y = mapY;
-    gMapSelectArrowPosition.z = mapZ * 16;
-    gMapSelectArrowDirection = direction;
+    gMapSelectArrowPosition = parkEntrancePosition;
+    gMapSelectArrowDirection = parkEntrancePosition.direction;
 
     gMapSelectFlags |= MAP_SELECT_FLAG_ENABLE_CONSTRUCT | MAP_SELECT_FLAG_ENABLE_ARROW;
     map_invalidate_map_selection_tiles();
-    if (gParkEntranceGhostExists && mapX == gParkEntranceGhostPosition.x && mapY == gParkEntranceGhostPosition.y
-        && direction == gParkEntranceGhostDirection)
+    if (gParkEntranceGhostExists && parkEntrancePosition == gParkEntranceGhostPosition)
     {
         return;
     }
 
     park_entrance_remove_ghost();
-    park_entrance_place_ghost(mapX, mapY, mapZ, direction);
+    park_entrance_place_ghost(parkEntrancePosition);
 }
 
 /**
  *
  *  rct2: 0x0068D4E9
  */
-static void window_map_set_peep_spawn_tool_update(int32_t x, int32_t y)
+static void window_map_set_peep_spawn_tool_update(const ScreenCoordsXY& screenCoords)
 {
-    int32_t mapX, mapY, mapZ, direction;
+    int32_t mapZ, direction;
     TileElement* tileElement;
 
     map_invalidate_selection_rect();
     gMapSelectFlags &= ~MAP_SELECT_FLAG_ENABLE;
     gMapSelectFlags &= ~MAP_SELECT_FLAG_ENABLE_ARROW;
-    footpath_bridge_get_info_from_pos(x, y, &mapX, &mapY, &direction, &tileElement);
-    if ((mapX & 0xFFFF) == 0x8000)
+    auto mapCoords = footpath_bridge_get_info_from_pos(screenCoords, &direction, &tileElement);
+    if (mapCoords.isNull())
         return;
 
-    mapZ = tileElement->base_height * 8;
+    mapZ = tileElement->GetBaseZ();
     if (tileElement->GetType() == TILE_ELEMENT_TYPE_SURFACE)
     {
         if ((tileElement->AsSurface()->GetSlope() & TILE_ELEMENT_SLOPE_ALL_CORNERS_UP) != 0)
@@ -1289,14 +1295,10 @@ static void window_map_set_peep_spawn_tool_update(int32_t x, int32_t y)
     gMapSelectFlags |= MAP_SELECT_FLAG_ENABLE;
     gMapSelectFlags |= MAP_SELECT_FLAG_ENABLE_ARROW;
     gMapSelectType = MAP_SELECT_TYPE_FULL;
-    gMapSelectPositionA.x = mapX;
-    gMapSelectPositionA.y = mapY;
-    gMapSelectPositionB.x = mapX;
-    gMapSelectPositionB.y = mapY;
+    gMapSelectPositionA = mapCoords;
+    gMapSelectPositionB = mapCoords;
+    gMapSelectArrowPosition = CoordsXYZ{ mapCoords, mapZ };
     gMapSelectArrowDirection = direction_reverse(direction);
-    gMapSelectArrowPosition.x = mapX;
-    gMapSelectArrowPosition.y = mapY;
-    gMapSelectArrowPosition.z = mapZ;
     map_invalidate_selection_rect();
 }
 
@@ -1304,19 +1306,18 @@ static void window_map_set_peep_spawn_tool_update(int32_t x, int32_t y)
  *
  *  rct2: 0x006670A4
  */
-static void window_map_place_park_entrance_tool_down(int32_t x, int32_t y)
+static void window_map_place_park_entrance_tool_down(const ScreenCoordsXY& screenCoords)
 {
     park_entrance_remove_ghost();
 
-    int16_t mapX, mapY, mapZ;
-    int32_t direction;
-    place_park_entrance_get_map_position(x, y, &mapX, &mapY, &mapZ, &direction);
-    if (mapX != LOCATION_NULL)
+    CoordsXYZD parkEntrancePosition = place_park_entrance_get_map_position(screenCoords);
+    if (!parkEntrancePosition.isNull())
     {
-        money32 price = place_park_entrance(mapX, mapY, mapZ, direction);
-        if (price != MONEY32_UNDEFINED)
+        auto gameAction = PlaceParkEntranceAction(parkEntrancePosition);
+        auto result = GameActions::Execute(&gameAction);
+        if (result->Error == GA_ERROR::OK)
         {
-            audio_play_sound_at_location(SoundId::PlaceItem, gCommandPosition.x, gCommandPosition.y, gCommandPosition.z);
+            audio_play_sound_at_location(SoundId::PlaceItem, result->Position);
         }
     }
 }
@@ -1325,22 +1326,23 @@ static void window_map_place_park_entrance_tool_down(int32_t x, int32_t y)
  *
  *  rct2: 0x0068D573
  */
-static void window_map_set_peep_spawn_tool_down(int32_t x, int32_t y)
+static void window_map_set_peep_spawn_tool_down(const ScreenCoordsXY& screenCoords)
 {
     TileElement* tileElement;
-    int32_t mapX, mapY, mapZ, direction;
+    int32_t mapZ, direction;
 
     // Verify footpath exists at location, and retrieve coordinates
-    footpath_get_coordinates_from_pos(x, y, &mapX, &mapY, &direction, &tileElement);
-    if (mapX == LOCATION_NULL)
+    auto mapCoords = footpath_get_coordinates_from_pos(screenCoords, &direction, &tileElement);
+    if (mapCoords.isNull())
         return;
 
-    mapZ = tileElement->base_height * 8;
+    mapZ = tileElement->GetBaseZ();
 
-    bool result = place_peep_spawn({ mapX, mapY, mapZ, (uint8_t)direction });
-    if (result)
+    auto gameAction = PlacePeepSpawnAction({ mapCoords, mapZ, static_cast<Direction>(direction) });
+    auto result = GameActions::Execute(&gameAction);
+    if (result->Error == GA_ERROR::OK)
     {
-        audio_play_sound_at_location(SoundId::PlaceItem, gCommandPosition.x, gCommandPosition.y, gCommandPosition.z);
+        audio_play_sound_at_location(SoundId::PlaceItem, result->Position);
     }
 }
 
@@ -1430,126 +1432,20 @@ static constexpr const uint16_t ElementTypeAddColour[] = {
     MAP_COLOUR(PALETTE_INDEX_68),                     // TILE_ELEMENT_TYPE_CORRUPT
 };
 
-enum
+static uint16_t map_window_get_pixel_colour_peep(const CoordsXY& c)
 {
-    COLOUR_KEY_RIDE,
-    COLOUR_KEY_FOOD,
-    COLOUR_KEY_DRINK,
-    COLOUR_KEY_SOUVENIR,
-    COLOUR_KEY_KIOSK,
-    COLOUR_KEY_FIRST_AID,
-    COLOUR_KEY_CASH_MACHINE,
-    COLOUR_KEY_TOILETS
-};
-
-static constexpr const uint8_t RideColourKey[] = {
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_SPIRAL_ROLLER_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_STAND_UP_ROLLER_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_SUSPENDED_SWINGING_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_INVERTED_ROLLER_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_JUNIOR_ROLLER_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_MINIATURE_RAILWAY
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_MONORAIL
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_MINI_SUSPENDED_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_BOAT_HIRE
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_WOODEN_WILD_MOUSE
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_STEEPLECHASE
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_CAR_RIDE
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_LAUNCHED_FREEFALL
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_BOBSLEIGH_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_OBSERVATION_TOWER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_LOOPING_ROLLER_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_DINGHY_SLIDE
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_MINE_TRAIN_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_CHAIRLIFT
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_CORKSCREW_ROLLER_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_MAZE = 20
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_SPIRAL_SLIDE
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_GO_KARTS
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_LOG_FLUME
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_RIVER_RAPIDS
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_DODGEMS
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_SWINGING_SHIP
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_SWINGING_INVERTER_SHIP
-    COLOUR_KEY_FOOD,         // RIDE_TYPE_FOOD_STALL
-    COLOUR_KEY_FOOD,         // RIDE_TYPE_1D
-    COLOUR_KEY_DRINK,        // RIDE_TYPE_DRINK_STALL
-    COLOUR_KEY_DRINK,        // RIDE_TYPE_1F
-    COLOUR_KEY_SOUVENIR,     // RIDE_TYPE_SHOP
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_MERRY_GO_ROUND
-    COLOUR_KEY_SOUVENIR,     // RIDE_TYPE_22
-    COLOUR_KEY_KIOSK,        // RIDE_TYPE_INFORMATION_KIOSK
-    COLOUR_KEY_TOILETS,      // RIDE_TYPE_TOILETS
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_FERRIS_WHEEL
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_MOTION_SIMULATOR
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_3D_CINEMA
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_TOP_SPIN
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_SPACE_RINGS
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_REVERSE_FREEFALL_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_LIFT
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_VERTICAL_DROP_ROLLER_COASTER
-    COLOUR_KEY_CASH_MACHINE, // RIDE_TYPE_CASH_MACHINE
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_TWIST
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_HAUNTED_HOUSE
-    COLOUR_KEY_FIRST_AID,    // RIDE_TYPE_FIRST_AID
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_CIRCUS
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_GHOST_TRAIN
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_TWISTER_ROLLER_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_WOODEN_ROLLER_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_SIDE_FRICTION_ROLLER_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_STEEL_WILD_MOUSE
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_MULTI_DIMENSION_ROLLER_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_MULTI_DIMENSION_ROLLER_COASTER_ALT
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_FLYING_ROLLER_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_FLYING_ROLLER_COASTER_ALT
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_VIRGINIA_REEL
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_SPLASH_BOATS
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_MINI_HELICOPTERS
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_LAY_DOWN_ROLLER_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_SUSPENDED_MONORAIL
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_LAY_DOWN_ROLLER_COASTER_ALT
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_REVERSER_ROLLER_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_HEARTLINE_TWISTER_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_MINI_GOLF
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_GIGA_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_ROTO_DROP
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_FLYING_SAUCERS
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_CROOKED_HOUSE
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_MONORAIL_CYCLES
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_COMPACT_INVERTED_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_WATER_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_AIR_POWERED_VERTICAL_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_INVERTED_HAIRPIN_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_MAGIC_CARPET
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_SUBMARINE_RIDE
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_RIVER_RAFTS
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_50
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_ENTERPRISE
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_52
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_53
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_54
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_55
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_INVERTED_IMPULSE_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_MINI_ROLLER_COASTER
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_MINE_RIDE
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_59
-    COLOUR_KEY_RIDE,         // RIDE_TYPE_LIM_LAUNCHED_ROLLER_COASTER
-    COLOUR_KEY_RIDE,         //
-    COLOUR_KEY_RIDE,         //
-    COLOUR_KEY_RIDE,         //
-};
-
-static uint16_t map_window_get_pixel_colour_peep(CoordsXY c)
-{
-    TileElement* tileElement = map_get_surface_element_at(c);
-    uint16_t colour = TerrainColour[tileElement->AsSurface()->GetSurfaceStyle()];
-    if (tileElement->AsSurface()->GetWaterHeight() > 0)
+    auto* surfaceElement = map_get_surface_element_at(c);
+    if (surfaceElement == nullptr)
+        return 0;
+    uint16_t colour = TerrainColour[surfaceElement->GetSurfaceStyle()];
+    if (surfaceElement->GetWaterHeight() > 0)
         colour = WaterColour;
 
-    if (!(tileElement->AsSurface()->GetOwnership() & OWNERSHIP_OWNED))
+    if (!(surfaceElement->GetOwnership() & OWNERSHIP_OWNED))
         colour = MAP_COLOUR_UNOWNED(colour);
 
-    const int32_t maxSupportedTileElementType = (int32_t)std::size(ElementTypeAddColour);
+    const int32_t maxSupportedTileElementType = static_cast<int32_t>(std::size(ElementTypeAddColour));
+    auto tileElement = reinterpret_cast<TileElement*>(surfaceElement);
     while (!(tileElement++)->IsLastForTile())
     {
         if (tileElement->IsGhost())
@@ -1570,16 +1466,19 @@ static uint16_t map_window_get_pixel_colour_peep(CoordsXY c)
     return colour;
 }
 
-static uint16_t map_window_get_pixel_colour_ride(CoordsXY c)
+static uint16_t map_window_get_pixel_colour_ride(const CoordsXY& c)
 {
     Ride* ride;
     uint16_t colourA = 0;                            // highlight colour
     uint16_t colourB = MAP_COLOUR(PALETTE_INDEX_13); // surface colour (dark grey)
 
     // as an improvement we could use first_element to show underground stuff?
-    TileElement* tileElement = map_get_surface_element_at(c);
+    TileElement* tileElement = reinterpret_cast<TileElement*>(map_get_surface_element_at(c));
     do
     {
+        if (tileElement == nullptr)
+            break;
+
         if (tileElement->IsGhost())
         {
             colourA = MAP_COLOUR(PALETTE_INDEX_21);
@@ -1602,11 +1501,20 @@ static uint16_t map_window_get_pixel_colour_ride(CoordsXY c)
                 if (tileElement->AsEntrance()->GetEntranceType() == ENTRANCE_TYPE_PARK_ENTRANCE)
                     break;
                 ride = get_ride(tileElement->AsEntrance()->GetRideIndex());
-                colourA = RideKeyColours[RideColourKey[ride->type]];
+                if (ride != nullptr)
+                {
+                    const auto& colourKey = RideTypeDescriptors[ride->type].ColourKey;
+                    colourA = RideKeyColours[static_cast<size_t>(colourKey)];
+                }
                 break;
             case TILE_ELEMENT_TYPE_TRACK:
                 ride = get_ride(tileElement->AsTrack()->GetRideIndex());
-                colourA = RideKeyColours[RideColourKey[ride->type]];
+                if (ride != nullptr)
+                {
+                    const auto& colourKey = RideTypeDescriptors[ride->type].ColourKey;
+                    colourA = RideKeyColours[static_cast<size_t>(colourKey)];
+                }
+
                 break;
         }
     } while (!(tileElement++)->IsLastForTile());
@@ -1623,32 +1531,32 @@ static void map_window_set_pixels(rct_window* w)
     int32_t x = 0, y = 0, dx = 0, dy = 0;
 
     int32_t pos = (_currentLine * (MAP_WINDOW_MAP_SIZE - 1)) + MAXIMUM_MAP_SIZE_TECHNICAL - 1;
-    LocationXY16 destinationPosition = MakeXY16(pos % MAP_WINDOW_MAP_SIZE, pos / MAP_WINDOW_MAP_SIZE);
+    auto destinationPosition = ScreenCoordsXY{ pos % MAP_WINDOW_MAP_SIZE, pos / MAP_WINDOW_MAP_SIZE };
     auto destination = _mapImageData.data() + (destinationPosition.y * MAP_WINDOW_MAP_SIZE) + destinationPosition.x;
     switch (get_current_rotation())
     {
         case 0:
-            x = _currentLine * 32;
+            x = _currentLine * COORDS_XY_STEP;
             y = 0;
             dx = 0;
-            dy = 32;
+            dy = COORDS_XY_STEP;
             break;
         case 1:
-            x = (MAXIMUM_MAP_SIZE_TECHNICAL - 1) * 32;
-            y = _currentLine * 32;
-            dx = -32;
+            x = MAXIMUM_TILE_START_XY;
+            y = _currentLine * COORDS_XY_STEP;
+            dx = -COORDS_XY_STEP;
             dy = 0;
             break;
         case 2:
-            x = ((MAXIMUM_MAP_SIZE_TECHNICAL - 1) - _currentLine) * 32;
-            y = (MAXIMUM_MAP_SIZE_TECHNICAL - 1) * 32;
+            x = MAXIMUM_MAP_SIZE_BIG - ((_currentLine + 1) * COORDS_XY_STEP);
+            y = MAXIMUM_TILE_START_XY;
             dx = 0;
-            dy = -32;
+            dy = -COORDS_XY_STEP;
             break;
         case 3:
             x = 0;
-            y = ((MAXIMUM_MAP_SIZE_TECHNICAL - 1) - _currentLine) * 32;
-            dx = 32;
+            y = MAXIMUM_MAP_SIZE_BIG - ((_currentLine + 1) * COORDS_XY_STEP);
+            dx = COORDS_XY_STEP;
             dy = 0;
             break;
     }
@@ -1681,23 +1589,22 @@ static void map_window_set_pixels(rct_window* w)
         _currentLine = 0;
 }
 
-static CoordsXY map_window_screen_to_map(int32_t screenX, int32_t screenY)
+static CoordsXY map_window_screen_to_map(ScreenCoordsXY screenCoords)
 {
-    screenX = ((screenX + 8) - MAXIMUM_MAP_SIZE_TECHNICAL) / 2;
-    screenY = ((screenY + 8)) / 2;
-    int32_t x = (screenY - screenX) * 32;
-    int32_t y = (screenX + screenY) * 32;
+    screenCoords.x = ((screenCoords.x + 8) - MAXIMUM_MAP_SIZE_TECHNICAL) / 2;
+    screenCoords.y = ((screenCoords.y + 8)) / 2;
+    auto location = TileCoordsXY(screenCoords.y - screenCoords.x, screenCoords.x + screenCoords.y).ToCoordsXY();
 
     switch (get_current_rotation())
     {
         case 0:
-            return { x, y };
+            return location;
         case 1:
-            return { MAXIMUM_MAP_SIZE_TECHNICAL * 32 - 1 - y, x };
+            return { MAXIMUM_MAP_SIZE_BIG - 1 - location.y, location.x };
         case 2:
-            return { MAXIMUM_MAP_SIZE_TECHNICAL * 32 - 1 - x, MAXIMUM_MAP_SIZE_TECHNICAL * 32 - 1 - y };
+            return { MAXIMUM_MAP_SIZE_BIG - 1 - location.x, MAXIMUM_MAP_SIZE_BIG - 1 - location.y };
         case 3:
-            return { y, MAXIMUM_MAP_SIZE_TECHNICAL * 32 - 1 - x };
+            return { location.y, MAXIMUM_MAP_SIZE_BIG - 1 - location.x };
     }
 
     return { 0, 0 }; // unreachable

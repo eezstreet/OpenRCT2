@@ -24,7 +24,7 @@ MemoryStream::MemoryStream(const MemoryStream& copy)
     {
         _data = Memory::Allocate<void>(_dataCapacity);
         std::memcpy(_data, copy._data, _dataCapacity);
-        _position = (void*)((uintptr_t)_data + copy.GetPosition());
+        _position = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(_data) + copy.GetPosition());
     }
 }
 
@@ -45,11 +45,11 @@ MemoryStream::MemoryStream(void* data, size_t dataSize, uint8_t access)
 }
 
 MemoryStream::MemoryStream(const void* data, size_t dataSize)
-    : MemoryStream((void*)data, dataSize, MEMORY_ACCESS::READ)
+    : MemoryStream(const_cast<void*>(data), dataSize, MEMORY_ACCESS::READ)
 {
 }
 
-MemoryStream::MemoryStream(MemoryStream&& mv)
+MemoryStream::MemoryStream(MemoryStream&& mv) noexcept
 {
     *this = std::move(mv);
 }
@@ -65,7 +65,7 @@ MemoryStream::~MemoryStream()
     _data = nullptr;
 }
 
-MemoryStream& MemoryStream::operator=(MemoryStream&& mv)
+MemoryStream& MemoryStream::operator=(MemoryStream&& mv) noexcept
 {
     _access = mv._access;
     _dataCapacity = mv._dataCapacity;
@@ -115,7 +115,7 @@ uint64_t MemoryStream::GetLength() const
 
 uint64_t MemoryStream::GetPosition() const
 {
-    return (uint64_t)((uintptr_t)_position - (uintptr_t)_data);
+    return static_cast<uint64_t>(reinterpret_cast<uintptr_t>(_position) - reinterpret_cast<uintptr_t>(_data));
 }
 
 void MemoryStream::SetPosition(uint64_t position)
@@ -144,7 +144,7 @@ void MemoryStream::Seek(int64_t offset, int32_t origin)
     {
         throw IOException("New position out of bounds.");
     }
-    _position = (void*)((uintptr_t)_data + (uintptr_t)newPosition);
+    _position = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(_data) + static_cast<uintptr_t>(newPosition));
 }
 
 void MemoryStream::Read(void* buffer, uint64_t length)
@@ -155,8 +155,33 @@ void MemoryStream::Read(void* buffer, uint64_t length)
         throw IOException("Attempted to read past end of stream.");
     }
 
-    std::copy_n((const uint8_t*)_position, length, (uint8_t*)buffer);
-    _position = (void*)((uintptr_t)_position + length);
+    std::memcpy(buffer, _position, length);
+    _position = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(_position) + length);
+}
+
+void MemoryStream::Read1(void* buffer)
+{
+    Read<1>(buffer);
+}
+
+void MemoryStream::Read2(void* buffer)
+{
+    Read<2>(buffer);
+}
+
+void MemoryStream::Read4(void* buffer)
+{
+    Read<4>(buffer);
+}
+
+void MemoryStream::Read8(void* buffer)
+{
+    Read<8>(buffer);
+}
+
+void MemoryStream::Read16(void* buffer)
+{
+    Read<16>(buffer);
 }
 
 uint64_t MemoryStream::TryRead(void* buffer, uint64_t length)
@@ -175,7 +200,7 @@ void MemoryStream::Write(const void* buffer, uint64_t length)
     {
         if (_access & MEMORY_ACCESS::OWNER)
         {
-            EnsureCapacity((size_t)nextPosition);
+            EnsureCapacity(static_cast<size_t>(nextPosition));
         }
         else
         {
@@ -183,9 +208,34 @@ void MemoryStream::Write(const void* buffer, uint64_t length)
         }
     }
 
-    std::copy_n((const uint8_t*)buffer, length, (uint8_t*)_position);
-    _position = (void*)((uintptr_t)_position + length);
-    _dataSize = std::max<size_t>(_dataSize, (size_t)nextPosition);
+    std::memcpy(_position, buffer, length);
+    _position = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(_position) + length);
+    _dataSize = std::max<size_t>(_dataSize, static_cast<size_t>(nextPosition));
+}
+
+void MemoryStream::Write1(const void* buffer)
+{
+    Write<1>(buffer);
+}
+
+void MemoryStream::Write2(const void* buffer)
+{
+    Write<2>(buffer);
+}
+
+void MemoryStream::Write4(const void* buffer)
+{
+    Write<4>(buffer);
+}
+
+void MemoryStream::Write8(const void* buffer)
+{
+    Write<8>(buffer);
+}
+
+void MemoryStream::Write16(const void* buffer)
+{
+    Write<16>(buffer);
 }
 
 void MemoryStream::EnsureCapacity(size_t capacity)
@@ -201,6 +251,6 @@ void MemoryStream::EnsureCapacity(size_t capacity)
         uint64_t position = GetPosition();
         _dataCapacity = newCapacity;
         _data = Memory::Reallocate(_data, _dataCapacity);
-        _position = (void*)((uintptr_t)_data + (uintptr_t)position);
+        _position = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(_data) + static_cast<uintptr_t>(position));
     }
 }

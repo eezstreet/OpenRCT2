@@ -26,8 +26,8 @@ enum {
     WINDOW_NETWORK_PAGE_INFORMATION,
 };
 
-#define WW 450
-#define WH 210
+static constexpr const int32_t WW = 450;
+static constexpr const int32_t WH = 210;
 
 enum WINDOW_NETWORK_WIDGET_IDX {
     WIDX_BACKGROUND,
@@ -186,7 +186,7 @@ static void window_network_set_page(rct_window* w, int32_t page)
     window_event_resize_call(w);
     window_event_invalidate_call(w);
     window_init_scroll_widgets(w);
-    window_invalidate(w);
+    w->Invalidate();
 }
 
 static void window_network_anchor_border_widgets(rct_window* w)
@@ -237,7 +237,7 @@ static void window_network_information_update(rct_window* w)
 {
     w->frame_no++;
     widget_invalidate(w, WIDX_TAB1 + w->page);
-    window_invalidate(w);
+    w->Invalidate();
 
     NetworkStats_t curStats = network_get_stats();
 
@@ -266,8 +266,8 @@ static void window_network_information_update(rct_window* w)
         const NetworkHistory_t& history = _networkHistory[i];
         for (int n = 1; n < NETWORK_STATISTICS_GROUP_MAX; n++)
         {
-            graphMaxIn = (float)std::max<uint32_t>(history.deltaBytesReceived[n], graphMaxIn);
-            graphMaxOut = (float)std::max<uint32_t>(history.deltaBytesSent[n], graphMaxOut);
+            graphMaxIn = static_cast<float>(std::max<uint32_t>(history.deltaBytesReceived[n], graphMaxIn));
+            graphMaxOut = static_cast<float>(std::max<uint32_t>(history.deltaBytesSent[n], graphMaxOut));
         }
     }
 
@@ -282,8 +282,8 @@ static void window_network_information_update(rct_window* w)
 
         _bytesIn = _networkAccumulatedStats.deltaBytesReceived[NETWORK_STATISTICS_GROUP_TOTAL];
         _bytesOut = _networkAccumulatedStats.deltaBytesSent[NETWORK_STATISTICS_GROUP_TOTAL];
-        _bytesInSec = (double)_bytesIn / statsTimeElapsed;
-        _bytesOutSec = (double)_bytesOut / statsTimeElapsed;
+        _bytesInSec = static_cast<double>(_bytesIn) / statsTimeElapsed;
+        _bytesOutSec = static_cast<double>(_bytesOut) / statsTimeElapsed;
 
         _networkAccumulatedStats = {};
     }
@@ -334,15 +334,15 @@ static void window_network_draw_graph(
         // std::sort(history.deltaBytesReceived.begin(), history.deltaBytesReceived.end(), std::greater<uint16_t>());
 
         // NOTE: Capacity is not a mistake, we always want the full length.
-        uint32_t curX = std::round(((float)i / (float)_networkHistory.capacity()) * barWidth * width);
+        uint32_t curX = std::round((static_cast<float>(i) / static_cast<float>(_networkHistory.capacity())) * barWidth * width);
 
         float totalSum = 0.0f;
         for (int n = 1; n < NETWORK_STATISTICS_GROUP_MAX; n++)
         {
             if (received)
-                totalSum += (float)history.deltaBytesReceived[n];
+                totalSum += static_cast<float>(history.deltaBytesReceived[n]);
             else
-                totalSum += (float)history.deltaBytesSent[n];
+                totalSum += static_cast<float>(history.deltaBytesSent[n]);
         }
 
         int32_t yOffset = height;
@@ -353,13 +353,13 @@ static void window_network_draw_graph(
 
             if (received)
             {
-                totalHeight = ((float)history.deltaBytesReceived[n] / dataMax) * height;
-                singleHeight = ((float)history.deltaBytesReceived[n] / totalSum) * totalHeight;
+                totalHeight = (static_cast<float>(history.deltaBytesReceived[n]) / dataMax) * height;
+                singleHeight = (static_cast<float>(history.deltaBytesReceived[n]) / totalSum) * totalHeight;
             }
             else
             {
-                totalHeight = ((float)history.deltaBytesSent[n] / dataMax) * height;
-                singleHeight = ((float)history.deltaBytesSent[n] / totalSum) * totalHeight;
+                totalHeight = (static_cast<float>(history.deltaBytesSent[n]) / dataMax) * height;
+                singleHeight = (static_cast<float>(history.deltaBytesSent[n]) / totalSum) * totalHeight;
             }
 
             uint32_t lineHeight = std::ceil(singleHeight);
@@ -391,45 +391,48 @@ static void window_network_information_paint(rct_window* w, rct_drawpixelinfo* d
     const int32_t graphHeight = (totalHeight - totalHeightText - heightTab) / 2;
 
     rct_drawpixelinfo clippedDPI;
-    if (clip_drawpixelinfo(&clippedDPI, dpi, w->x, w->y, w->width, w->height))
+    if (clip_drawpixelinfo(&clippedDPI, dpi, w->windowPos.x, w->windowPos.y, w->width, w->height))
     {
         dpi = &clippedDPI;
 
-        int32_t x = padding;
-        int32_t y = heightTab + padding;
+        auto screenCoords = ScreenCoordsXY{ padding, heightTab + padding };
 
         // Received stats.
         {
-            gfx_draw_string_left(dpi, STR_NETWORK_RECEIVE, nullptr, PALETTE_INDEX_10, x, y);
+            gfx_draw_string_left(dpi, STR_NETWORK_RECEIVE, nullptr, PALETTE_INDEX_10, screenCoords);
 
             format_readable_speed(textBuffer, sizeof(textBuffer), _bytesInSec);
-            gfx_draw_string(dpi, textBuffer, PALETTE_INDEX_10, x + 70, y);
+            gfx_draw_string(dpi, textBuffer, PALETTE_INDEX_10, screenCoords + ScreenCoordsXY(70, 0));
 
-            gfx_draw_string_left(dpi, STR_NETWORK_TOTAL_RECEIVED, nullptr, PALETTE_INDEX_10, x + 200, y);
+            gfx_draw_string_left(
+                dpi, STR_NETWORK_TOTAL_RECEIVED, nullptr, PALETTE_INDEX_10, screenCoords + ScreenCoordsXY{ 200, 0 });
 
             format_readable_size(textBuffer, sizeof(textBuffer), _networkStats.bytesReceived[NETWORK_STATISTICS_GROUP_TOTAL]);
-            gfx_draw_string(dpi, textBuffer, PALETTE_INDEX_10, x + 300, y);
-            y += textHeight + padding;
+            gfx_draw_string(dpi, textBuffer, PALETTE_INDEX_10, screenCoords + ScreenCoordsXY(300, 0));
+            screenCoords.y += textHeight + padding;
 
-            window_network_draw_graph(w, dpi, x, y, graphHeight, w->width - (padding * 2), graphBarWidth, true);
-            y += graphHeight + padding;
+            window_network_draw_graph(
+                w, dpi, screenCoords.x, screenCoords.y, graphHeight, w->width - (padding * 2), graphBarWidth, true);
+            screenCoords.y += graphHeight + padding;
         }
 
         // Sent stats.
         {
-            gfx_draw_string_left(dpi, STR_NETWORK_SEND, nullptr, PALETTE_INDEX_10, x, y);
+            gfx_draw_string_left(dpi, STR_NETWORK_SEND, nullptr, PALETTE_INDEX_10, screenCoords);
 
             format_readable_speed(textBuffer, sizeof(textBuffer), _bytesOutSec);
-            gfx_draw_string(dpi, textBuffer, PALETTE_INDEX_10, x + 70, y);
+            gfx_draw_string(dpi, textBuffer, PALETTE_INDEX_10, screenCoords + ScreenCoordsXY(70, 0));
 
-            gfx_draw_string_left(dpi, STR_NETWORK_TOTAL_SENT, nullptr, PALETTE_INDEX_10, x + 200, y);
+            gfx_draw_string_left(
+                dpi, STR_NETWORK_TOTAL_SENT, nullptr, PALETTE_INDEX_10, screenCoords + ScreenCoordsXY{ 200, 0 });
 
             format_readable_size(textBuffer, sizeof(textBuffer), _networkStats.bytesSent[NETWORK_STATISTICS_GROUP_TOTAL]);
-            gfx_draw_string(dpi, textBuffer, PALETTE_INDEX_10, x + 300, y);
-            y += textHeight + padding;
+            gfx_draw_string(dpi, textBuffer, PALETTE_INDEX_10, screenCoords + ScreenCoordsXY(300, 0));
+            screenCoords.y += textHeight + padding;
 
-            window_network_draw_graph(w, dpi, x, y, graphHeight, w->width - (padding * 2), graphBarWidth, false);
-            y += graphHeight + padding;
+            window_network_draw_graph(
+                w, dpi, screenCoords.x, screenCoords.y, graphHeight, w->width - (padding * 2), graphBarWidth, false);
+            screenCoords.y += graphHeight + padding;
         }
 
         // Draw legend
@@ -439,14 +442,16 @@ static void window_network_information_paint(rct_window* w, rct_drawpixelinfo* d
                 format_string(textBuffer, sizeof(textBuffer), NetworkTrafficGroupNames[i], nullptr);
 
                 // Draw color stripe.
-                gfx_fill_rect(dpi, x, y + 4, x + 4, y + 6, NetworkTrafficGroupColors[i]);
+                gfx_fill_rect(
+                    dpi, screenCoords.x, screenCoords.y + 4, screenCoords.x + 4, screenCoords.y + 6,
+                    NetworkTrafficGroupColors[i]);
 
                 // Draw text.
-                gfx_draw_string(dpi, textBuffer, PALETTE_INDEX_10, x + 10, y);
+                gfx_draw_string(dpi, textBuffer, PALETTE_INDEX_10, screenCoords + ScreenCoordsXY(10, 0));
 
                 gfx_get_string_width(textBuffer);
 
-                x += gfx_get_string_width(textBuffer) + 20;
+                screenCoords.x += gfx_get_string_width(textBuffer) + 20;
             }
         }
     }
@@ -470,7 +475,8 @@ static void window_network_draw_tab_image(rct_window* w, rct_drawpixelinfo* dpi,
             }
         }
 
-        gfx_draw_sprite(dpi, spriteIndex, w->x + w->widgets[widgetIndex].left, w->y + w->widgets[widgetIndex].top, 0);
+        gfx_draw_sprite(
+            dpi, spriteIndex, w->windowPos.x + w->widgets[widgetIndex].left, w->windowPos.y + w->widgets[widgetIndex].top, 0);
     }
 }
 

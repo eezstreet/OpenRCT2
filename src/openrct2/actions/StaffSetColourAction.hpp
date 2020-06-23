@@ -65,14 +65,12 @@ public:
         }
 
         // Update each staff member's uniform
-        int32_t spriteIndex;
-        Peep* peep;
-        FOR_ALL_PEEPS (spriteIndex, peep)
+        for (auto peep : EntityList<Staff>(SPRITE_LIST_PEEP))
         {
-            if (peep->type == PEEP_TYPE_STAFF && peep->staff_type == _staffType)
+            if (peep->StaffType == _staffType)
             {
-                peep->tshirt_colour = _colour;
-                peep->trousers_colour = _colour;
+                peep->TshirtColour = _colour;
+                peep->TrousersColour = _colour;
             }
         }
 

@@ -29,6 +29,7 @@ enum class TileModifyType : uint8_t
     PathToggleEdge,
     EntranceMakeUsable,
     WallSetSlope,
+    WallSetAnimationFrame,
     TrackBaseHeightOffset,
     TrackSetChain,
     TrackSetChainBlock,
@@ -89,6 +90,10 @@ public:
 private:
     GameActionResult::Ptr QueryExecute(bool isExecuting) const
     {
+        if (!LocationValid(_loc))
+        {
+            return MakeResult(GA_ERROR::INVALID_PARAMETERS, STR_LAND_NOT_OWNED_BY_PARK);
+        }
         auto res = MakeResult();
         switch (static_cast<TileModifyType>(_setting))
         {
@@ -185,6 +190,13 @@ private:
                 res = tile_inspector_wall_set_slope(_loc, elementIndex, slopeValue, isExecuting);
                 break;
             }
+            case TileModifyType::WallSetAnimationFrame:
+            {
+                const auto elementIndex = _value1;
+                const auto animationFrameOffset = _value2;
+                res = tile_inspector_wall_animation_frame_offset(_loc, elementIndex, animationFrameOffset, isExecuting);
+                break;
+            }
             case TileModifyType::TrackBaseHeightOffset:
             {
                 const auto elementIndex = _value1;
@@ -255,7 +267,7 @@ private:
 
         res->Position.x = _loc.x;
         res->Position.y = _loc.y;
-        res->Position.z = tile_element_height(_loc.x, _loc.y);
+        res->Position.z = tile_element_height(_loc);
 
         return res;
     }

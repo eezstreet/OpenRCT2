@@ -22,7 +22,9 @@
 #        define __USE_SHGETKNOWNFOLDERPATH__
 #        define __USE_GETDATEFORMATEX__
 #    else
-#        define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+#        ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+#            define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+#        endif
 #    endif
 
 #    include "../OpenRCT2.h"
@@ -134,17 +136,23 @@ namespace Platform
         }
     }
 
+    static std::string GetCurrentExecutableDirectory()
+    {
+        auto exePath = GetCurrentExecutablePath();
+        auto exeDirectory = Path::GetDirectory(exePath);
+        return exeDirectory;
+    }
+
     std::string GetInstallPath()
     {
-        auto path = std::string(gCustomOpenrctDataPath);
+        auto path = std::string(gCustomOpenRCT2DataPath);
         if (!path.empty())
         {
             path = Path::GetAbsolute(path);
         }
         else
         {
-            auto exePath = GetCurrentExecutablePath();
-            auto exeDirectory = Path::GetDirectory(exePath);
+            auto exeDirectory = GetCurrentExecutableDirectory();
             path = Path::Combine(exeDirectory, "data");
         }
         return path;
@@ -157,7 +165,7 @@ namespace Platform
 
     std::string GetDocsPath()
     {
-        return std::string();
+        return GetCurrentExecutableDirectory();
     }
 
     static SYSTEMTIME TimeToSystemTime(std::time_t timestamp)
@@ -214,7 +222,14 @@ namespace Platform
         if (hModule != nullptr)
         {
             using RtlGetVersionPtr = NTSTATUS(WINAPI*)(PRTL_OSVERSIONINFOW);
+#    if defined(__GNUC__) && __GNUC__ >= 8
+#        pragma GCC diagnostic push
+#        pragma GCC diagnostic ignored "-Wcast-function-type"
+#    endif
             auto fn = (RtlGetVersionPtr)GetProcAddress(hModule, "RtlGetVersion");
+#    if defined(__GNUC__) && __GNUC__ >= 8
+#        pragma GCC diagnostic pop
+#    endif
             if (fn != nullptr)
             {
                 RTL_OSVERSIONINFOW rovi{};
@@ -231,6 +246,17 @@ namespace Platform
             }
         }
         return result;
+    }
+
+    bool IsRunningInWine()
+    {
+        HMODULE ntdllMod = GetModuleHandleW(L"ntdll.dll");
+
+        if (ntdllMod && GetProcAddress(ntdllMod, "wine_get_version"))
+        {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -314,6 +340,16 @@ namespace Platform
             size = GetModuleFileNameW(hModule, wExePath.get(), wExePathCapacity);
         } while (size >= wExePathCapacity);
         return String::ToUtf8(wExePath.get());
+    }
+
+    uintptr_t StrDecompToPrecomp(utf8* input)
+    {
+        return reinterpret_cast<uintptr_t>(input);
+    }
+
+    bool HandleSpecialCommandLineArgument(const char* argument)
+    {
+        return false;
     }
 } // namespace Platform
 

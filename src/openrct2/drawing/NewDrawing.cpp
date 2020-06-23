@@ -19,6 +19,8 @@
 #include "IDrawingContext.h"
 #include "IDrawingEngine.h"
 
+#include <cmath>
+
 using namespace OpenRCT2;
 using namespace OpenRCT2::Drawing;
 using namespace OpenRCT2::Paint;
@@ -84,7 +86,7 @@ void drawing_engine_resize()
     }
 }
 
-void drawing_engine_set_palette(const rct_palette_entry* colours)
+void drawing_engine_set_palette(const GamePalette& colours)
 {
     auto context = GetContext();
     if (context != nullptr)
@@ -209,6 +211,39 @@ void gfx_draw_line(rct_drawpixelinfo* dpi, int32_t x1, int32_t y1, int32_t x2, i
     }
 }
 
+void gfx_draw_dashed_line(
+    rct_drawpixelinfo* dpi, const int32_t x1, const int32_t y1, const int32_t x2, const int32_t y2,
+    const int32_t dashedLineSegmentLength, const int32_t colour)
+{
+    assert(dashedLineSegmentLength > 0);
+
+    const auto drawingEngine = dpi->DrawingEngine;
+    if (drawingEngine != nullptr)
+    {
+        constexpr int32_t precisionFactor = 1000;
+
+        const int32_t dashedLineLength = std::hypot(x2 - x1, y2 - y1);
+        const int32_t lineSegmentCount = dashedLineLength / dashedLineSegmentLength / 2;
+        if (lineSegmentCount == 0)
+        {
+            return;
+        }
+
+        const int32_t lineXDist = std::abs(x2 - x1);
+        const int32_t lineYDist = std::abs(y2 - y1);
+        const int32_t dxPrecise = precisionFactor * lineXDist / lineSegmentCount / 2;
+        const int32_t dyPrecise = precisionFactor * lineYDist / lineSegmentCount / 2;
+        IDrawingContext* dc = drawingEngine->GetDrawingContext(dpi);
+
+        for (int32_t i = 0, x, y; i < lineSegmentCount; ++i)
+        {
+            x = x1 + dxPrecise * i * 2 / precisionFactor;
+            y = y1 + dyPrecise * i * 2 / precisionFactor;
+            dc->DrawLine(colour, x, y, x + dxPrecise / precisionFactor, y + dyPrecise / precisionFactor);
+        }
+    }
+}
+
 void FASTCALL gfx_draw_sprite(rct_drawpixelinfo* dpi, int32_t image, int32_t x, int32_t y, uint32_t tertiary_colour)
 {
     auto drawingEngine = dpi->DrawingEngine;
@@ -219,13 +254,13 @@ void FASTCALL gfx_draw_sprite(rct_drawpixelinfo* dpi, int32_t image, int32_t x, 
     }
 }
 
-void FASTCALL gfx_draw_glpyh(rct_drawpixelinfo* dpi, int32_t image, int32_t x, int32_t y, uint8_t* palette)
+void FASTCALL gfx_draw_glyph(rct_drawpixelinfo* dpi, int32_t image, int32_t x, int32_t y, const PaletteMap& paletteMap)
 {
     auto drawingEngine = dpi->DrawingEngine;
     if (drawingEngine != nullptr)
     {
         IDrawingContext* dc = drawingEngine->GetDrawingContext(dpi);
-        dc->DrawGlyph(image, x, y, palette);
+        dc->DrawGlyph(image, x, y, paletteMap);
     }
 }
 
@@ -239,13 +274,13 @@ void FASTCALL gfx_draw_sprite_raw_masked(rct_drawpixelinfo* dpi, int32_t x, int3
     }
 }
 
-void FASTCALL gfx_draw_sprite_solid(rct_drawpixelinfo* dpi, int32_t image, int32_t x, int32_t y, uint8_t colour)
+void FASTCALL gfx_draw_sprite_solid(rct_drawpixelinfo* dpi, int32_t image, const ScreenCoordsXY& coords, uint8_t colour)
 {
     auto drawingEngine = dpi->DrawingEngine;
     if (drawingEngine != nullptr)
     {
         IDrawingContext* dc = drawingEngine->GetDrawingContext(dpi);
-        dc->DrawSpriteSolid(image, x, y, colour);
+        dc->DrawSpriteSolid(image, coords.x, coords.y, colour);
     }
 }
 

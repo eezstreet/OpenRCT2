@@ -16,47 +16,36 @@
 #include "Map.h"
 #include "Sprite.h"
 
-static constexpr const LocationXY16 _moneyEffectMoveOffset[] = { { 1, -1 }, { 1, 1 }, { -1, 1 }, { -1, -1 } };
+static constexpr const CoordsXY _moneyEffectMoveOffset[] = { { 1, -1 }, { 1, 1 }, { -1, 1 }, { -1, -1 } };
 
-bool rct_sprite::IsMoneyEffect()
+template<> bool SpriteBase::Is<MoneyEffect>() const
 {
-    return this->money_effect.sprite_identifier == SPRITE_IDENTIFIER_MISC
-        && this->money_effect.type == SPRITE_MISC_MONEY_EFFECT;
-}
-
-rct_money_effect* rct_sprite::AsMoneyEffect()
-{
-    rct_money_effect* result = nullptr;
-    if (IsMoneyEffect())
-    {
-        result = (rct_money_effect*)this;
-    }
-    return result;
+    return sprite_identifier == SPRITE_IDENTIFIER_MISC && type == SPRITE_MISC_MONEY_EFFECT;
 }
 
 /**
  *
  *  rct2: 0x0067351F
  */
-void rct_money_effect::CreateAt(money32 value, int32_t x, int32_t y, int32_t z, bool vertical)
+void MoneyEffect::CreateAt(money32 value, const CoordsXYZ& effectPos, bool vertical)
 {
     if (value == MONEY(0, 00))
         return;
 
-    rct_money_effect* moneyEffect = &create_sprite(SPRITE_IDENTIFIER_MISC)->money_effect;
+    MoneyEffect* moneyEffect = &create_sprite(SPRITE_IDENTIFIER_MISC)->money_effect;
     if (moneyEffect == nullptr)
         return;
 
-    moneyEffect->value = value;
-    moneyEffect->vertical = (vertical ? 1 : 0);
+    moneyEffect->Value = value;
+    moneyEffect->Vertical = (vertical ? 1 : 0);
     moneyEffect->sprite_width = 64;
     moneyEffect->sprite_height_negative = 20;
     moneyEffect->sprite_height_positive = 30;
     moneyEffect->sprite_identifier = SPRITE_IDENTIFIER_MISC;
-    sprite_move(x, y, z, (rct_sprite*)moneyEffect);
+    moneyEffect->MoveTo(effectPos);
     moneyEffect->type = SPRITE_MISC_MONEY_EFFECT;
-    moneyEffect->num_movements = 0;
-    moneyEffect->move_delay = 0;
+    moneyEffect->NumMovements = 0;
+    moneyEffect->MoveDelay = 0;
 
     int16_t offsetX = 0;
     if (!gOpenRCT2NoGraphics)
@@ -67,19 +56,18 @@ void rct_money_effect::CreateAt(money32 value, int32_t x, int32_t y, int32_t z, 
         gCurrentFontSpriteBase = FONT_SPRITE_BASE_MEDIUM;
         offsetX = -(gfx_get_string_width(buffer) / 2);
     }
-    moneyEffect->offset_x = offsetX;
-    moneyEffect->wiggle = 0;
+    moneyEffect->OffsetX = offsetX;
+    moneyEffect->Wiggle = 0;
 }
 
 /**
  *
  *  rct2: 0x0069C5D0
  */
-void rct_money_effect::Create(money32 value)
+void MoneyEffect::Create(money32 value, const CoordsXYZ& loc)
 {
-    LocationXYZ16 mapPosition = { gCommandPosition.x, gCommandPosition.y, gCommandPosition.z };
-
-    if (mapPosition.x == LOCATION_NULL)
+    auto offsetLoc = loc;
+    if (loc.isNull())
     {
         // If game actions return no valid location of the action we can not use the screen
         // coordinates as every client will have different ones.
@@ -94,33 +82,32 @@ void rct_money_effect::Create(money32 value)
             return;
 
         rct_viewport* mainViewport = window_get_viewport(mainWindow);
-        screen_get_map_xy(
-            mainViewport->x + (mainViewport->width / 2), mainViewport->y + (mainViewport->height / 2), &mapPosition.x,
-            &mapPosition.y, nullptr);
-        if (mapPosition.x == LOCATION_NULL)
+        auto mapPositionXY = screen_get_map_xy(
+            { mainViewport->pos.x + (mainViewport->width / 2), mainViewport->pos.y + (mainViewport->height / 2) }, nullptr);
+        if (!mapPositionXY)
             return;
 
-        mapPosition.z = tile_element_height(mapPosition.x, mapPosition.y);
+        offsetLoc = { *mapPositionXY, tile_element_height(*mapPositionXY) };
     }
-    mapPosition.z += 10;
-    CreateAt(-value, mapPosition.x, mapPosition.y, mapPosition.z, false);
+    offsetLoc.z += 10;
+    CreateAt(-value, offsetLoc, false);
 }
 
 /**
  *
  *  rct2: 0x00673232
  */
-void rct_money_effect::Update()
+void MoneyEffect::Update()
 {
-    invalidate_sprite_2((rct_sprite*)this);
-    wiggle++;
-    if (wiggle >= 22)
+    Invalidate2();
+    Wiggle++;
+    if (Wiggle >= 22)
     {
-        wiggle = 0;
+        Wiggle = 0;
     }
 
-    move_delay++;
-    if (move_delay < 2)
+    MoveDelay++;
+    if (MoveDelay < 2)
     {
         return;
     }
@@ -128,33 +115,33 @@ void rct_money_effect::Update()
     int32_t newX = x;
     int32_t newY = y;
     int32_t newZ = z;
-    move_delay = 0;
+    MoveDelay = 0;
 
-    if (vertical)
+    if (Vertical)
     {
         newZ += 1;
     }
     newY += _moneyEffectMoveOffset[get_current_rotation()].y;
     newX += _moneyEffectMoveOffset[get_current_rotation()].x;
 
-    sprite_move(newX, newY, newZ, (rct_sprite*)this);
+    MoveTo({ newX, newY, newZ });
 
-    num_movements++;
-    if (num_movements < 55)
+    NumMovements++;
+    if (NumMovements < 55)
     {
         return;
     }
 
-    sprite_remove((rct_sprite*)this);
+    sprite_remove(this);
 }
 
-std::pair<rct_string_id, money32> rct_money_effect::GetStringId() const
+std::pair<rct_string_id, money32> MoneyEffect::GetStringId() const
 {
-    rct_string_id spentStringId = vertical ? STR_MONEY_EFFECT_SPEND_HIGHP : STR_MONEY_EFFECT_SPEND;
-    rct_string_id receiveStringId = vertical ? STR_MONEY_EFFECT_RECEIVE_HIGHP : STR_MONEY_EFFECT_RECEIVE;
+    rct_string_id spentStringId = Vertical ? STR_MONEY_EFFECT_SPEND_HIGHP : STR_MONEY_EFFECT_SPEND;
+    rct_string_id receiveStringId = Vertical ? STR_MONEY_EFFECT_RECEIVE_HIGHP : STR_MONEY_EFFECT_RECEIVE;
     rct_string_id stringId = receiveStringId;
-    money32 outValue = value;
-    if (value < 0)
+    money32 outValue = Value;
+    if (Value < 0)
     {
         outValue *= -1;
         stringId = spentStringId;

@@ -12,6 +12,7 @@
 #include "../OpenRCT2.h"
 #include "../core/Console.hpp"
 #include "../core/String.hpp"
+#include "../platform/Platform2.h"
 
 #include <algorithm>
 #include <cstring>
@@ -61,7 +62,7 @@ bool CommandLineArgEnumerator::TryPopInteger(int32_t* result)
     char const* arg;
     if (TryPopString(&arg))
     {
-        *result = (int32_t)atol(arg);
+        *result = static_cast<int32_t>(atol(arg));
         return true;
     }
 
@@ -73,7 +74,7 @@ bool CommandLineArgEnumerator::TryPopReal(float* result)
     char const* arg;
     if (TryPopString(&arg))
     {
-        *result = (float)atof(arg);
+        *result = static_cast<float>(atof(arg));
         return true;
     }
 
@@ -488,16 +489,16 @@ namespace CommandLine
         switch (option->Type)
         {
             case CMDLINE_TYPE_SWITCH:
-                *((bool*)option->OutAddress) = true;
+                *(static_cast<bool*>(option->OutAddress)) = true;
                 return true;
             case CMDLINE_TYPE_INTEGER:
-                *((int32_t*)option->OutAddress) = (int32_t)atol(valueString);
+                *(static_cast<int32_t*>(option->OutAddress)) = static_cast<int32_t>(atol(valueString));
                 return true;
             case CMDLINE_TYPE_REAL:
-                *((float*)option->OutAddress) = (float)atof(valueString);
+                *(static_cast<float*>(option->OutAddress)) = static_cast<float>(atof(valueString));
                 return true;
             case CMDLINE_TYPE_STRING:
-                *((utf8**)option->OutAddress) = String::Duplicate(valueString);
+                *(static_cast<utf8**>(option->OutAddress)) = String::Duplicate(valueString);
                 return true;
             default:
                 Console::Error::WriteLine("Unknown CMDLINE_TYPE for: %s", option->LongName);
@@ -507,17 +508,7 @@ namespace CommandLine
 
     static bool HandleSpecialArgument([[maybe_unused]] const char* argument)
     {
-#ifdef __APPLE__
-        if (String::Equals(argument, "-NSDocumentRevisionsDebugMode"))
-        {
-            return true;
-        }
-        if (String::StartsWith(argument, "-psn_"))
-        {
-            return true;
-        }
-#endif
-        return false;
+        return Platform::HandleSpecialCommandLineArgument(argument);
     }
 
     const CommandLineOptionDefinition* FindOption(const CommandLineOptionDefinition* options, char shortName)

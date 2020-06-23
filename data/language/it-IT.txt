@@ -25,7 +25,7 @@ STR_0020    :Seggiovia
 STR_0021    :Ottovolante ad avvitamento
 STR_0022    :Labirinto
 STR_0023    :Scivolo a spirale
-STR_0024    :Go Kart
+STR_0024    :Go-kart
 STR_0025    :Tronchi
 STR_0026    :Rapide
 STR_0027    :Autoscontri
@@ -116,10 +116,10 @@ STR_0530    :Le carrozze pendono da un cavo d'acciaio che fa avanti e indietro p
 STR_0531    :Un ottovolante compatto su un percorso d'acciaio nel quale i treni viaggiano lungo avvitamenti e inversioni
 STR_0532    :Il labirinto è costituito da siepi o muri alti due metri, e al suo interno i visitatori cercano la via d'uscita
 STR_0533    :Un edificio di legno con una scala interna e uno scivolo a spirale esterno, da discendere utilizzando appositi tappetini
-STR_0534    :Go-kart a motore a benzina guidati dai visitatori
-STR_0535    :Delle barche a forma di tronchi viaggiano lungo un canale d'acqua, schizzando i passeggeri mentre volano giù per ripide discese
+STR_0534    :I visitatori gareggiano uno contro l'altro su un percorso d'asfalto
+STR_0535    :Delle barche viaggiano su un canale d'acqua, schizzando lungo ripide discese per bagnare i passeggeri
 STR_0536    :Delle barche rotonde scorrono lungo un largo canale d'acqua, schizzando attraverso cascate e spaventando i passeggeri con delle rapide schiumose
-STR_0537    :Autoscontri con veicoli guidabili
+STR_0537    :I visitatori si scontrano uno con l'altro a bordo di autoscontri elettrici
 STR_0538    :Nave dei pirati grande
 STR_0539    :La nave è appesa a un braccio dotato di un contrappeso al lato opposto, e oscilla in un intero giro a 360 gradi
 STR_0540    :Un chiosco presso il quale i visitatori acquistano cibo
@@ -158,7 +158,7 @@ STR_0578    :Le carrozze viaggiano lungo un percorso racchiuso da anelli circola
 STR_0579    :Un tranquillo gioco di golf in miniatura
 STR_0580    :Un gigante ottovolante di acciaio in grado di offrire morbide cadute e risalite a più di 90 metri di altezza
 STR_0581    :Un anello di sedie è posizionato in cima alla torre mentre ruota piano, quindi precipita fermandosi gentilmente alla base tramite freni magnetici
-STR_0582    :Veicoli galleggianti liberamente guidabili
+STR_0582    :I visitatori sono a bordo di veicoli fluttuanti guidabili liberamente
 STR_0583    :Un edificio contenente stanze distorte e corridoi ad angolo che disorientano i visitatori che vi camminano all'interno
 STR_0584    :Speciali biciclette viaggiano lungo un percorso a monorotaia di acciaio, spinte soltanto dalle pedalate dei passeggeri
 STR_0585    :I passeggeri viaggiano su coppie di sedili sospesi sotto al percorso, mentre viaggiano attraverso numerose inversioni e inclinazioni
@@ -181,36 +181,36 @@ STR_0771    :Intrattenitore {INT32}
 STR_0777    :Parco senza nome{POP16}{POP16}
 STR_0778    :Cartello
 STR_0779    :1°
-STR_0780    :2°
-STR_0781    :3°
-STR_0782    :4°
-STR_0783    :5°
-STR_0784    :6°
-STR_0785    :7°
-STR_0786    :8°
-STR_0787    :9°
-STR_0788    :10°
-STR_0789    :11°
-STR_0790    :12°
-STR_0791    :13°
-STR_0792    :14°
-STR_0793    :15°
-STR_0794    :16°
-STR_0795    :17°
-STR_0796    :18°
-STR_0797    :19°
-STR_0798    :20°
-STR_0799    :21°
-STR_0800    :22°
-STR_0801    :23°
-STR_0802    :24°
-STR_0803    :25°
-STR_0804    :26°
-STR_0805    :27°
-STR_0806    :28°
-STR_0807    :29°
-STR_0808    :30°
-STR_0809    :31°
+STR_0780    :2
+STR_0781    :3
+STR_0782    :4
+STR_0783    :5
+STR_0784    :6
+STR_0785    :7
+STR_0786    :8
+STR_0787    :9
+STR_0788    :10
+STR_0789    :11
+STR_0790    :12
+STR_0791    :13
+STR_0792    :14
+STR_0793    :15
+STR_0794    :16
+STR_0795    :17
+STR_0796    :18
+STR_0797    :19
+STR_0798    :20
+STR_0799    :21
+STR_0800    :22
+STR_0801    :23
+STR_0802    :24
+STR_0803    :25
+STR_0804    :26
+STR_0805    :27
+STR_0806    :28
+STR_0807    :29
+STR_0808    :30
+STR_0809    :31
 STR_0810    :Gen
 STR_0811    :Feb
 STR_0812    :Mar
@@ -477,7 +477,7 @@ STR_1091    :Modalità spettacolo circense
 STR_1092    :Lancio in discesa
 STR_1093    :Modalità casa distorta
 STR_1094    :Modalità caduta libera
-STR_1095    :Mod. circuito continuo sezi. a blocchi
+STR_1095    :Mod. circuito continuo sez. a blocchi
 STR_1096    :Lancio a motore (without passing station)
 STR_1097    :Mod. lancio a motore sez. a blocchi
 STR_1098    :In viaggio verso la fine della {POP16}{STRINGID}
@@ -553,8 +553,8 @@ STR_1167    :Impossibile alzare il livello dell'acqua in questo punto...
 STR_1168    :Opzioni
 STR_1169    :(Nessuno)
 STR_1170    :{STRING}
-STR_1171    :{RED}Chiuso - - 
-STR_1172    :{YELLOW}{STRINGID} - - 
+STR_1171    :{RED}Chiuso
+STR_1172    :{YELLOW}{STRINGID}
 STR_1173    :{SMALLFONT}{BLACK}Costruisci sentieri e corsie d'attesa
 STR_1174    :Un'insegna è d'intralcio
 STR_1175    :Impossibile costruirlo su un sentiero in pendenza
@@ -1110,8 +1110,8 @@ STR_1726    :Il terreno non è in vendita!
 STR_1727    :I diritti di costruzione non sono in vendita!
 STR_1728    :Impossibile comprare i diritti di costruzione qui...
 STR_1729    :Questo terreno non è di proprietà del parco!
-STR_1730    :{RED}Chiuso - - 
-STR_1731    :{WHITE}{STRINGID} - - 
+STR_1730    :{RED}Chiuso
+STR_1731    :{WHITE}{STRINGID}
 STR_1732    :Costruisci
 STR_1733    :Modalità
 STR_1734    :{WINDOW_COLOUR_2}Numero di giri:
@@ -1131,8 +1131,8 @@ STR_1749    :{POP16}{POP16}{POP16}{POP16}{POP16}{POP16}{POP16}{POP16}{POP16}{DUR
 STR_1751    :Impossibile cambiare il limite di tempo per attrazione...
 STR_1752    :{SMALLFONT}{BLACK}Mostra la lista completa dei visitatori del parco
 STR_1753    :{SMALLFONT}{BLACK}Mostra il riassunto dei visitatori del parco
-STR_1754    :{BLACK}{COMMA16} visitatori
-STR_1755    :{BLACK}{COMMA16} visitatore
+STR_1754    :{BLACK}{COMMA32} visitatori
+STR_1755    :{BLACK}{COMMA32} visitatore
 STR_1756    :{WINDOW_COLOUR_2}Prezzo biglietto:
 STR_1757    :{WINDOW_COLOUR_2}Affidabilità: {MOVE_X}{255}{BLACK}{COMMA16}%
 STR_1758    :{SMALLFONT}{BLACK}Modalità costruzione
@@ -1190,7 +1190,7 @@ STR_1813    :Oggetti vari
 STR_1814    :Azioni
 STR_1815    :Pensieri
 STR_1816    :{SMALLFONT}{BLACK}Scegli il tipo di informazioni da mostrare nella lista dei visitatori
-STR_1817    :({COMMA16})
+STR_1817    :({COMMA32})
 STR_1818    :{WINDOW_COLOUR_2}Tutti i visitatori
 STR_1819    :{WINDOW_COLOUR_2}Tutti i visitatori (riassunto)
 STR_1820    :{WINDOW_COLOUR_2}Visitatori {STRINGID}
@@ -1219,9 +1219,9 @@ STR_1842    :La preferita da: {COMMA16} visitatore
 STR_1843    :La preferita da: {COMMA16} visitatori
 STR_1844    :{SMALLFONT}{BLACK}Scegli il tipo di informazione da mostrare nella lista delle attrazioni
 STR_1845    :{MONTHYEAR}
-STR_1846    :{COMMA16} visitatori
-STR_1847    :{INLINE_SPRITE}{11}{20}{00}{00}{COMMA16} visitatori
-STR_1848    :{INLINE_SPRITE}{10}{20}{00}{00}{COMMA16} visitatori
+STR_1846    :{COMMA32} visitatori
+STR_1847    :{INLINE_SPRITE}{11}{20}{00}{00}{COMMA32} visitatori
+STR_1848    :{INLINE_SPRITE}{10}{20}{00}{00}{COMMA32} visitatori
 STR_1849    :{WINDOW_COLOUR_2}Suona la musica
 STR_1850    :{SMALLFONT}{BLACK}Scegli quale musica dev'essere suonata in quest'attrazione
 STR_1851    :{WINDOW_COLOUR_2}Costo mantenim.: {BLACK}{CURRENCY2DP} l'ora
@@ -1579,7 +1579,7 @@ STR_2219    :{RED}{COMMA16} persone sono rimaste uccise in un incidente su {STRI
 STR_2220    :{WINDOW_COLOUR_2}Valutazione del parco: {BLACK}{COMMA16}
 STR_2221    :{SMALLFONT}{BLACK}Valutazione del parco: {COMMA16}
 STR_2222    :{SMALLFONT}{BLACK}{STRINGID}
-STR_2223    :{WINDOW_COLOUR_2}Visitatori nel parco: {BLACK}{COMMA16}
+STR_2223    :{WINDOW_COLOUR_2}Visitatori nel parco: {BLACK}{COMMA32}
 STR_2224    :{WINDOW_COLOUR_2}Denaro: {BLACK}{CURRENCY2DP}
 STR_2225    :{WINDOW_COLOUR_2}Denaro: {RED}{CURRENCY2DP}
 STR_2226    :{WINDOW_COLOUR_2}Valore del parco: {BLACK}{CURRENCY}
@@ -1825,7 +1825,7 @@ STR_2482    :{SMALLFONT}{BLACK}Profitto: {CURRENCY} alla settimana,  valore del 
 STR_2483    :{WINDOW_COLOUR_2}Profitto settimanale: {BLACK}+{CURRENCY2DP}
 STR_2484    :{WINDOW_COLOUR_2}Profitto settimanale: {RED}{CURRENCY2DP}
 STR_2487    :Mostra i “veri” nomi dei visitatori
-STR_2488    :{SMALLFONT}{BLACK}Svaria tra i “veri” nomi dei visitatori e i loro numeri
+STR_2488    :{SMALLFONT}{BLACK}Alterna tra i nomi “veri” dei visitatori e i loro numeri
 STR_2489    :Tasti rapidi
 STR_2490    :Tasti rapidi
 STR_2491    :Ripristina
@@ -1862,38 +1862,14 @@ STR_2521    :Mostra la lista del personale
 STR_2522    :Mostra i messaggi recenti
 STR_2523    :Mostra la mappa
 STR_2524    :Schermata
-STR_2525    :???
-STR_2526    :???
-STR_2527    :???
-STR_2528    :???
-STR_2529    :???
-STR_2530    :???
-STR_2531    :???
-STR_2532    :???
 STR_2533    :Backspace
 STR_2534    :Tab
-STR_2535    :???
-STR_2536    :???
 STR_2537    :Cancella
 STR_2538    :Invio
-STR_2539    :???
-STR_2540    :???
-STR_2541    :???
-STR_2542    :???
 STR_2543    :Alt/Menu
 STR_2544    :Pausa
 STR_2545    :BlocMaiusc
-STR_2546    :???
-STR_2547    :???
-STR_2548    :???
-STR_2549    :???
-STR_2550    :???
-STR_2551    :???
 STR_2552    :Escape
-STR_2553    :???
-STR_2554    :???
-STR_2555    :???
-STR_2556    :???
 STR_2557    :Barra spaziatrice
 STR_2558    :Pagina su
 STR_2559    :Pagina giù
@@ -1910,54 +1886,7 @@ STR_2569    :Istantanea
 STR_2570    :Inserisci
 STR_2571    :Elimina
 STR_2572    :Guida
-STR_2573    :0
-STR_2574    :1
-STR_2575    :2
-STR_2576    :3
-STR_2577    :4
-STR_2578    :5
-STR_2579    :6
-STR_2580    :7
-STR_2581    :8
-STR_2582    :9
-STR_2583    :???
-STR_2584    :???
-STR_2585    :???
-STR_2586    :???
-STR_2587    :???
-STR_2588    :???
-STR_2589    :???
-STR_2590    :A
-STR_2591    :B
-STR_2592    :C
-STR_2593    :D
-STR_2594    :E
-STR_2595    :F
-STR_2596    :G
-STR_2597    :H
-STR_2598    :I
-STR_2599    :J
-STR_2600    :K
-STR_2601    :L
-STR_2602    :M
-STR_2603    :N
-STR_2604    :O
-STR_2605    :P
-STR_2606    :Q
-STR_2607    :R
-STR_2608    :S
-STR_2609    :T
-STR_2610    :U
-STR_2611    :V
-STR_2612    :W
-STR_2613    :X
-STR_2614    :Y
-STR_2615    :Z
-STR_2616    :???
-STR_2617    :???
 STR_2618    :Menu
-STR_2619    :???
-STR_2620    :???
 STR_2621    :Tastierino numerico 0
 STR_2622    :Tastierino numerico 1
 STR_2623    :Tastierino numerico 2
@@ -1970,60 +1899,18 @@ STR_2629    :Tastierino numerico 8
 STR_2630    :Tastierino numerico 9
 STR_2631    :Tastierino numerico *
 STR_2632    :Tastierino numerico +
-STR_2633    :???
 STR_2634    :Tastierino numerico 
 STR_2635    :Tastierino numerico .
 STR_2636    :Tastierino numerico /
-STR_2637    :F1
-STR_2638    :F2
-STR_2639    :F3
-STR_2640    :F4
-STR_2641    :F5
-STR_2642    :F6
-STR_2643    :F7
-STR_2644    :F8
-STR_2645    :F9
-STR_2646    :F10
-STR_2647    :F11
-STR_2648    :F12
-STR_2649    :F13
-STR_2650    :F14
-STR_2651    :F15
-STR_2652    :F16
-STR_2653    :F17
-STR_2654    :F18
-STR_2655    :F19
-STR_2656    :F20
-STR_2657    :F21
-STR_2658    :F22
-STR_2659    :F23
-STR_2660    :F24
-STR_2661    :???
-STR_2662    :???
-STR_2663    :???
-STR_2664    :???
-STR_2665    :???
-STR_2666    :???
-STR_2667    :???
-STR_2668    :???
 STR_2669    :BlocNum
 STR_2670    :Scorr
-STR_2671    :???
-STR_2672    :???
-STR_2673    :???
-STR_2674    :???
-STR_2675    :???
-STR_2676    :???
-STR_2677    :???
-STR_2678    :???
-STR_2679    :???
 STR_2680    :Tutte le ricerche sono completate
-STR_2681    :{MEDIUMFONT}{BLACK}Increases your money by {CURRENCY}
+STR_2681    :{MEDIUMFONT}{BLACK}Incrementa il tuo denaro di {CURRENCY}
 STR_2684    :{SMALLFONT}{BLACK}Arriva un largo numero di visitatori
 STR_2685    :Simplex Noise Parameters
 STR_2686    :Basso:
 STR_2687    :Alto:
-STR_2688    :Base Frequency:
+STR_2688    :Frequenza Base:
 STR_2689    :Ottavi:
 STR_2690    :Generazione Mappa
 STR_2691    :Base height:
@@ -2032,9 +1919,6 @@ STR_2693    :Terreno:
 STR_2694    :Genera
 STR_2695    :Terreno casuale
 STR_2696    :Colloca alberi
-STR_2697    :???
-STR_2698    :???
-STR_2699    :???
 STR_2700    :Salvataggio automatico:
 STR_2701    :Ogni minuto
 STR_2702    :Ogni 5 minuti
@@ -2046,13 +1930,6 @@ STR_2707    :Usa il file manager di sistema
 STR_2708    :{WINDOW_COLOUR_1}Sei sicuro di voler sovrascrivere {STRINGID}?
 STR_2709    :Sovrascrivi
 STR_2710    :Digitare il nome del file.
-STR_2711    :;
-STR_2712    :=
-STR_2713    :,
-STR_2714    :-
-STR_2715    :.
-STR_2716    :/
-STR_2717    :'
 STR_2718    :Sali di livello
 STR_2719    :Crea nuovo
 STR_2720    :{UINT16}sec
@@ -2067,8 +1944,8 @@ STR_2728    :{UINT16}ora:{UINT16}min
 STR_2729    :{UINT16}ora:{UINT16}min
 STR_2730    :{UINT16}ore:{UINT16}min
 STR_2731    :{UINT16}ore:{UINT16}min
-STR_2732    :{COMMA16}piedi
-STR_2733    :{COMMA16}m
+STR_2732    :{COMMA32}piedi
+STR_2733    :{COMMA32}m
 STR_2734    :{COMMA16}mph
 STR_2735    :{COMMA16}km/h
 STR_2736    :{MONTH}, anno {COMMA16}
@@ -2079,10 +1956,6 @@ STR_2740    :RollerCoaster Tycoon 1
 STR_2741    :RollerCoaster Tycoon 2
 STR_2742    :css50.dat not found
 STR_2743    :Copiare 'data/css17.dat' dalla cartella di installazione di RCT1 come 'data/css50.dat' nella cartella di RCT2, oppure impostare il percorso di installazione di RCT1 nella scheda "Avanzate".
-STR_2744    :[
-STR_2745    :\
-STR_2746    :]
-STR_2747    :”
 STR_2749    :Nuovo scenario
 # New strings used in the cheats window previously these were ???
 STR_2750    :Sposta tutti gli elementi sopra
@@ -2107,7 +1980,7 @@ STR_2777    :{MOVE_X}{SMALLFONT}{STRING}
 STR_2778    :»{MOVE_X}{SMALLFONT}{STRING}
 STR_2779    :Finestra #{COMMA16}
 STR_2780    :Finestra extra
-STR_2781    :{STRINGID}:{MOVE_X}{195}{STRINGID}
+STR_2781    :{STRINGID}:
 STR_2782    :SHIFT + 
 STR_2783    :CTRL + 
 STR_2784    :Modifica la scorciatoia
@@ -2239,7 +2112,7 @@ STR_2977    :Nome del dipendente
 STR_2978    :Digita il nome di questo dipendente:
 STR_2979    :Impossibile battezzare il dipendente...
 STR_2980    :Troppe insegne nella partita
-STR_2981    :{RED}Vietato l'ingresso - - 
+STR_2981    :{RED}Vietato l'ingresso
 STR_2982    :Testo dell'insegna
 STR_2983    :Digita il testo di questa insegna:
 STR_2984    :Impossibile fissare il testo dell'insegna...
@@ -2552,9 +2425,9 @@ STR_3328    :Impossibile passare alla fase successiva dell'editor...
 STR_3329    :L'entrata del parco non è stata ancora costruita
 STR_3330    :Il parco deve possedere del terreno
 STR_3331    :Il percorso dall'entrata del parco al bordo della mappa non è completo o è troppo complesso. Dev'essere di larghezza singola con il minor numero possibile di collegamenti e curve
-STR_3332    :L'entrata del parco è oriantata nel senso sbagliato o non ha un percorso che conduce al bordo della mappa
-STR_3333    :Esporta oggetti di plug-in insieme alle partite salvate
-STR_3334    :{SMALLFONT}{BLACK}Scegli se salvare gli eventuali dati necessari degli oggetti di plug-in (dati non forniti con il prodotto principale) all'interno dei file di scenario o delle partite salvate, permettendone così l'accesso anche a chi non possiede questi dati addizionali
+STR_3332    :L'entrata del parco è orientata nel senso sbagliato o non ha un percorso che conduce al bordo della mappa
+STR_3333    :Esporta oggetti personalizzati con le partite salvate
+STR_3334    :{SMALLFONT}{BLACK}Scegliere se salvare gli eventuali dati necessari agli oggetti personalizzati (dati aggiuntivi non forniti con il prodotto principale) all'interno dei file di scenario o delle partite salvate, permettendone così l'accesso anche a chi non possiede questi dati aggiuntivi
 STR_3335    :Editor di percorsi - Selezione tipo percorso e veicoli
 STR_3336    :Gestione percorsi personalizzati - Selezione tipo attrazione
 STR_3338    :{BLACK}Disposizione personalizzata
@@ -2607,11 +2480,6 @@ STR_3390    :Troppi oggetti selezionati
 STR_3437    :{SMALLFONT}{BLACK}Elimina gli alberi, i muri e i piccoli oggetti di scenario dal terreno
 STR_3438    :Impossibile rimuovere tutto lo scenario da qui...
 STR_3439    :Elimina scen.
-STR_3440    :Pagina 1
-STR_3441    :Pagina 2
-STR_3442    :Pagina 3
-STR_3443    :Pagina 4
-STR_3444    :Pagina 5
 STR_3445    :Imposta l'area da pattugliare
 STR_3446    :Annulla l'area da pattugliare
 
@@ -2660,19 +2528,6 @@ STR_5160    :{POP16}{MONTH} {PUSH16}{PUSH16}{STRINGID}, anno {POP16}{COMMA16}
 STR_5161    :Formato data:
 STR_5162    :Giorno/Mese/Anno
 STR_5163    :Mese/Giorno/Anno
-STR_5164    :Nome canale Twitch
-STR_5165    :Nomina i visitatori come i follower
-STR_5166    :{SMALLFONT}{BLACK}Nomina i visitatori come i follower{NEWLINE}del proprio canale Twitch
-STR_5167    :Segui i visitatori follower
-STR_5168    :{SMALLFONT}{BLACK}Segui i visitatori che si chiamano come i follower su Twitch
-STR_5169    :Nomina i visitatori come gli utenti in chat su Twitch
-STR_5170    :{SMALLFONT}{BLACK}I visitatori del parco hanno i nomi degli utenti in chat su Twitch
-STR_5171    :Segui i visitatori della chat
-STR_5172    :{SMALLFONT}{BLACK}Attiva informazioni per seguire i visitatori che si chiamano come gli utenti in chat su Twitch
-STR_5173    :Mostra la chat di Twitch come avvisi
-STR_5174    :{SMALLFONT}{BLACK}Mostra i messaggi di chat su Twitch preceduti da !news nelle notifiche all'interno del gioco
-STR_5175    :Inserire il nome del proprio canale Twitch
-STR_5176    :Attiva integrazione con Twitch
 STR_5177    :Modalità schermo:
 STR_5178    :{SMALLFONT}{BLACK}Mostra trucchi finanziari
 STR_5179    :{SMALLFONT}{BLACK}Mostra trucchi dei visitatori
@@ -2753,11 +2608,11 @@ STR_5251    :Pulsante Opzioni Titolo
 STR_5252    :Selezione Titolo Scenario
 STR_5253    :Informazioni Parco
 STR_5254    :Crea
-STR_5255    :{SMALLFONT}{BLACK}Create a new title sequence from scratch
-STR_5256    :Create a new theme to make changes to
-STR_5257    :{SMALLFONT}{BLACK}Create a new theme based on the current one
-STR_5258    :{SMALLFONT}{BLACK}Delete the current theme
-STR_5259    :{SMALLFONT}{BLACK}Rename the current theme
+STR_5255    :{SMALLFONT}{BLACK} Crea una nuova sequenza di titoli da zero
+STR_5256    :Crea un nuovo tema da modificare
+STR_5257    :{SMALLFONT}{BLACK}Crea un nuovo tema basato sul tema corrente
+STR_5258    :{SMALLFONT}{BLACK}Elimina il tema corrente
+STR_5259    :{SMALLFONT}{BLACK}Rinomina il tema corrente
 STR_5260    :Schermata gigante
 STR_5261    :Filtro
 STR_5262    :Wacky Worlds
@@ -2769,9 +2624,8 @@ STR_5267    :{SMALLFONT}{BLACK}Cultura and Unità
 STR_5268    :{SMALLFONT}{BLACK}Audio
 STR_5269    :{SMALLFONT}{BLACK}Controlli e interfaccia
 STR_5270    :{SMALLFONT}{BLACK}Varie
-STR_5271    :{SMALLFONT}{BLACK}Twitch
-STR_5272    :{SMALLFONT}{BLACK}Sceneri piccoli
-STR_5273    :{SMALLFONT}{BLACK}Sceneri grandi
+STR_5272    :{SMALLFONT}{BLACK}Scenari piccoli
+STR_5273    :{SMALLFONT}{BLACK}Scenari grandi
 STR_5274    :{SMALLFONT}{BLACK}Percorso
 STR_5275    :Cerca per oggetti
 STR_5276    :Inserisci il nome di un oggetto da cercare
@@ -2811,8 +2665,8 @@ STR_5309    :OpenRCT2
 STR_5310    :Casuale
 STR_5311    :{SMALLFONT}{BLACK}Strumenti di debug
 STR_5312    :Mostra console
-STR_5313    :Mostra analizzatore cella
-STR_5314    :Analizzatore cella
+STR_5313    :Mostra analizzatore celle
+STR_5314    :Analizzatore celle
 STR_5315    :Erba
 STR_5316    :Sabbia
 STR_5317    :Sporco
@@ -2838,7 +2692,7 @@ STR_5336    :Uscita corsa
 STR_5337    :Entrata Parco
 STR_5338    :Tipo elemento
 STR_5339    :{SMALLFONT}{BLACK}Altezza base
-STR_5340    :{SMALLFONT}{BLACK}Clearance height
+STR_5340    :{SMALLFONT}{BLACK}Altezza margini
 STR_5343    :Colloca automaticamente il personale
 STR_5344    :Changelog
 STR_5345    :Trucchi finanziari
@@ -2910,7 +2764,6 @@ STR_5410    :Modifica
 STR_5411    :Ricarica
 STR_5412    :Salta a
 STR_5413    :Carica
-STR_5414    :Carica{MOVE_X}{87}Six Flags Magic Mountain.SC6
 STR_5415    :Carica{MOVE_X}{87}{STRING}
 STR_5416    :Carica{MOVE_X}{87}Nessun salvataggio selezionato
 STR_5417    :Posizione
@@ -2952,7 +2805,7 @@ STR_5452    :Visibilità della barra
 STR_5453    :Selezione altra corsa
 STR_5454    :FPS senza limiti
 STR_5455    :Abilita modalità sandbox
-STR_5456    :Disabilita controlli distanze
+STR_5456    :Disabilita controllo margini
 STR_5457    :Disabilita limite supporti
 STR_5458    :Ruota senso orario
 STR_5459    :Ruota antiorario
@@ -2978,7 +2831,7 @@ STR_5478    :Strumenti
 STR_5479    :Barra
 STR_5480    :Mostra i pulsanti nella barra per:
 STR_5481    :Temi
-STR_5482    :{WINDOW_COLOUR_2}Tempo dall'ultima inspezione: {BLACK}1 minuto
+STR_5482    :{WINDOW_COLOUR_2}Tempo dall'ultima ispezione: {BLACK}1 minuto
 STR_5483    :{BLACK}({COMMA16} settimane rimaste)
 STR_5484    :{BLACK}({COMMA16} settimana rimasta)
 STR_5485    :{SMALLFONT}{STRING}
@@ -3009,7 +2862,7 @@ STR_5511    :(UNKNOWN)
 STR_5512    :Salva partita con nome...
 STR_5513    :Salvataggio veloce
 STR_5514    :Disattiva vandalismi
-STR_5515    :{SMALLFONT}{BLACK}Impedisce ai visitatori di vandalizzare il parco quando sono arrabbiati
+STR_5515    :{SMALLFONT}{BLACK}Impedisce ai visitatori del parco di compiere atti vandalici quando sono arrabbiati
 STR_5516    :{SMALLFONT}{BLACK}Nero
 STR_5517    :{SMALLFONT}{BLACK}Grigio
 STR_5518    :{SMALLFONT}{BLACK}Bianco
@@ -3225,7 +3078,7 @@ STR_5762    :Yuan cinesi (CN¥)
 STR_5763    :Tutti i file
 STR_5764    :Tipo di attrazione non valida
 STR_5765    :Non è possibile modificare attrazioni non valide
-STR_5766    :<available string id>
+STR_5766    :Fiorino Ungherese (Ft)
 STR_5767    :Fatturato
 STR_5768    :Clienti totali
 STR_5769    :Profitto totale
@@ -3303,13 +3156,12 @@ STR_5841    :{SMALLFONT}{BLACK}Mostra un pulsante differente per le novità nell
 STR_5842    :{SMALLFONT}{BLACK}Mostra scenari divisi per difficoltà (come in RCT2) o per gioco di origine (come in RCT1)
 STR_5843    :{SMALLFONT}{BLACK}Abilita lo sblocco progressivo degli scenari (come in RCT1)
 STR_5844    :{SMALLFONT}{BLACK}Connettiti al server multigiocatore{NEWLINE}anche in caso di asincronia o errori
-STR_5845    :{SMALLFONT}{BLACK}Aggiungi un pulsante{NEWLINE}per debuggare nella barra.{NEWLINE}Abilita le shortcut nellatastiera per la console sviluppatori
+STR_5845    :{SMALLFONT}{BLACK}Aggiungi un pulsante nella barra{NEWLINE}per effettuare il debug.{NEWLINE}Abilita le scorciatoie da tastiera per la console sviluppatori
 STR_5846    :{SMALLFONT}{BLACK}Imposta i salvataggi automatici di OpenRCT2 spesso
 STR_5847    :{SMALLFONT}{BLACK}Seleziona la sequenza del parco utilizzata nei titoli.{NEWLINE}La sequenza del titolo in RCT1/2 richiede l'importazione degli scenari per funzionare
-STR_5848    :{SMALLFONT}{BLACK}Crea e gestici sequenze di titoli personalizzate
+STR_5848    :{SMALLFONT}{BLACK}Crea e gestisci sequenze di titoli personalizzate
 STR_5849    :{SMALLFONT}{BLACK}Colloca sulla mappa{NEWLINE}i nuovi membri del personale automaticamente
-STR_5851    :{SMALLFONT}{BLACK}Imposta l'intervallo predefinito di inspezione{NEWLINE}nelle nuove attrazioni
-STR_5852    :{SMALLFONT}{BLACK}Imposta il nome del canale TwitchTV che sarà utilizzato per l'integrazione di Twitch
+STR_5851    :{SMALLFONT}{BLACK}Imposta l'intervallo predefinito di ispezione{NEWLINE}nelle nuove attrazioni
 STR_5853    :{SMALLFONT}{BLACK}Abilita/Disabilita gli effetti sonori
 STR_5854    :{SMALLFONT}{BLACK}Abilita/Disabilita le musiche delle attrazioni
 STR_5855    :{SMALLFONT}{BLACK}Imposta a tutto schermo, senza bordi della finestra{NEWLINE}o come finestra
@@ -3431,7 +3283,7 @@ STR_5970    :{WINDOW_COLOUR_2}ID ingresso: {BLACK}{COMMA16}
 STR_5971    :{WINDOW_COLOUR_2}ID uscita: {BLACK}{COMMA16}
 STR_5972    :{WINDOW_COLOUR_2}ID percorso: {BLACK}{COMMA16}
 STR_5973    :Attacca al successivo
-STR_5974    :{SMALLFONT}{BLACK}Cambia l'altezza della base e l'altezza in modo da posizionarle come l'elemento successivo sull'attuale cella. Ciò permette di costruire più facilmente su questa cella.
+STR_5974    :{SMALLFONT}{BLACK}Cambia l'altezza di base e dei margini affinché sia la stessa del successivo elemento sull'attuale cella. Ciò permette di costruire più facilmente su questa cella.
 STR_5975    :Inclinazione:
 STR_5976    :Piatto
 STR_5977    :Lato destro su
@@ -3495,6 +3347,7 @@ STR_6034    :{SMALLFONT}{BLACK}{STRING}
 STR_6035    :Selezionare la cartella di installazione di RCT1
 STR_6036    :{SMALLFONT}{BLACK}Pulisci
 STR_6037    :Selezionare una cartella di installazione di RCT1 valida
+STR_6037    :La cartella selezionata non contiene un'installazione valida di RollerCoaster Tycoon 1.
 STR_6038    :{SMALLFONT}{BLACK}Se RCT1 è installato, selezionarne la cartella per caricarne gli scenari, la musica, ecc.
 STR_6039    :{SMALLFONT}{BLACK}Demolizione veloce percorso
 STR_6040    :Modifica opzioni scenario
@@ -3709,9 +3562,6 @@ STR_6248    :{WINDOW_COLOUR_1}Rinnovare davvero {STRINGID} al costo di {CURRENCY
 STR_6249    :{WINDOW_COLOUR_1}Rinnovare davvero {STRINGID}?
 STR_6250    :{WINDOW_COLOUR_1}Si è sicuri di voler demolire completamente {STRINGID} e guadagnare {CURRENCY}?
 STR_6251    :L'attrazione non è ancora vuota
-STR_6252    :URL API di Twitch
-STR_6253    :{SMALLFONT}{BLACK}Inserire l'URL delle API per l'integrazione di Twitch. Richiesto per abilitare l'integrazione con Twitch.
-STR_6254    :URL delle API per l'integrazione di Twitch:
 STR_6255    :L'URL non è valido
 STR_6256    :Effetti di rendering
 STR_6257    :Vetro (traslucido)
@@ -3734,7 +3584,7 @@ STR_6273    :Musica
 STR_6274    :Impossibile impostare schema colore...
 STR_6275    :{WINDOW_COLOUR_2}Stile stazione:
 STR_6276    :{RED}{STRINGID} ha ospiti bloccati, probabilmente a causa di un errato tipo di attrazione o modalità operativa.
-STR_6277    :{WINDOW_COLOUR_2}Indice stazione: {BLACK}{COMMA16}
+STR_6277    :{WINDOW_COLOUR_2}Indice stazione: {BLACK}{STRINGID}
 STR_6278    :Numero autosalvataggi
 STR_6279    :{SMALLFONT}{BLACK}Numero di autosalvataggi da mantenere
 STR_6280    :{SMALLFONT}{BLACK}Chat
@@ -3764,6 +3614,74 @@ STR_6303    :Scaricamento oggetto ({COMMA16} / {COMMA16}): [{STRING}]
 STR_6304    :Apri selezione scenario
 STR_6305    :Multithreading
 STR_6306    :{SMALLFONT}{BLACK}Opzione sperimentale per utilizzare più thread per il rendering, potrebbe causare instabilità.
+STR_6307    :Schema colore: {BLACK}{STRINGID}
+STR_6308    :“{STRINGID}{OUTLINE}{TOPAZ}”{NEWLINE}{STRINGID}
+STR_6309    :Riconnessione
+STR_6310    :{WINDOW_COLOUR_2}Posizione: {BLACK}{INT32} {INT32} {INT32}
+STR_6311    :{WINDOW_COLOUR_2}Successivo: {BLACK}{INT32} {INT32} {INT32}
+STR_6312    :(surface)
+STR_6313    :(slope {INT32})
+STR_6314    :{WINDOW_COLOUR_2}Dest: {BLACK}{INT32}, {INT32} tolerance {INT32}
+STR_6315    :{WINDOW_COLOUR_2}Obiettivo Pathfind: {BLACK}{INT32}, {INT32}, {INT32} dir {INT32}
+STR_6316    :{WINDOW_COLOUR_2}Storico Pathfind:
+STR_6317    :{BLACK}{INT32}, {INT32}, {INT32} dir {INT32}
+STR_6318    :Network desync rilevato.{NEWLINE}File log: {STRING}
+STR_6319    :{WINDOW_COLOUR_2}Blocco freno chiuso
+STR_6320    :{WINDOW_COLOUR_2}Indistruttibile
+STR_6321    :{WINDOW_COLOUR_2}L'aggiunta è rotta
+STR_6322    :{WINDOW_COLOUR_2}Sprite Id: {BLACK}{INT32}
+STR_6323    :Simulazione
+STR_6324    :Simula
+STR_6325    :{SMALLFONT}{BLACK}Simula attrazione
+STR_6326    :Non è stato possibile simulare {POP16}{POP16}{POP16}{STRINGID}...
+STR_6327    :Cattura schermate giganti con sfondo trasparente
+STR_6328    :{SMALLFONT}{BLACK}Con questa opzione attivata, le schermate giganti (screenshot) saranno catturate con uno sfondo trasparente invece di quello nero
+STR_6329    :{STRING}{STRINGID}
+STR_6330    :Scaricamento [{STRING}] da {STRING} ({COMMA16} / {COMMA16})
+STR_6331    :Crea anatre
+STR_6332    :Rimuovi anatre
+STR_6333    :Aumenta fattore di scala
+STR_6334    :Diminuisci fattore di scala
+STR_6335    :Analizzatore celle: Inserisci elemento corrotto
+STR_6336    :Analizzatore celle: Copia elemento
+STR_6337    :Analizzatore celle: Incolla elemento
+STR_6338    :Analizzatore celle: Elimina elemento
+STR_6339    :Analizzatore celle: Sposta elemento in su
+STR_6340    :Analizzatore celle: Sposta elemento in giù
+STR_6341    :Analizzatore celle: Aumenta coordinata X
+STR_6342    :Analizzatore celle: Diminuisci coordinata X
+STR_6343    :Analizzatore celle: Aumenta coordinata Y
+STR_6344    :Analizzatore celle: Diminuisci coordinata Y
+STR_6345    :Analizzatore celle: Aumenta altezza elemento
+STR_6346    :Analizzatore celle: Diminuisci altezza elemento
+STR_6347    :Non possono essere collocati arredamenti del sentiero su un passaggio a livello!
+STR_6348    :Rimuovere prima il passaggio a livello!
+STR_6349    :Sequenza del titolo casuale
+STR_6350    :Sparpaglia
+STR_6351    :Strumento sparpaglia scenario
+STR_6352    :Densità
+STR_6353    :{SMALLFONT}{BLACK}Densità bassa
+STR_6354    :{SMALLFONT}{BLACK}Densità media
+STR_6355    :{SMALLFONT}{BLACK}Densità alta
+STR_6356    :{SMALLFONT}{BLACK}Fa apparire anatre se il parco contiene acqua
+STR_6357    :{SMALLFONT}{BLACK}Rimuove tutte le anatre dalla mappa
+STR_6358    :Pagina {UINT16}
+STR_6359    :{POP16}{POP16}Pagina {UINT16}
+STR_6360    :{SMALLFONT}{BLACK}{COMMA32}
+STR_6361    :Attiva effetti luce su attrazioni (sperimentale)
+STR_6362    :{SMALLFONT}{BLACK}Se abilitato, i veicoli delle attrazioni con percorso saranno illuminati di notte.
+STR_6363    :Testo copiato negli appunti
+STR_6365    :Vittime attrazioni
+STR_6366    :Veicoli fermi o incastrati
+STR_6364    :{RED}{COMMA16} persona rimasta uccisa in un incidente su {STRINGID}
+STR_6367    :{WINDOW_COLOUR_2}Fotogramma animazione:
+STR_6368    :Per motivi di compatibilità, non è consigliato eseguire OpenRCT2 tramite Wine. OpenRCT2 offre supporto nativo per macOS, Linux, FreeBSD and OpenBSD.
+STR_6369    :Permetti costruzione percorsi ad altezze non valide
+STR_6370    :{SMALLFONT}{BLACK}Permette di collocare pezzi di percorso a qualsiasi intervallo di altezza
+STR_6371    :La cartella specificata contiene un'installazione di RollerCoaster Tycoon 1, ma non contiene il file “csg1i.dat”. Questo file dev'essere copiato dal CD di RollerCoaster Tycoon 1 alla cartella “Data” dell'installazione su disco di RollerCoaster Tycoon 1. 
+STR_6372    :La cartella specificata contiene un'installazione di RollerCoaster Tycoon 1, ma la versione non è compatibile. OpenRCT2 necessita di un'installazione di Loopy Landscapes o di RCT Deluxe per poter utilizzare le risorse di RollerCoaster Tycoon 1.
+STR_6373    :Attiva controllo margini
+STR_6374    :M
 
 #############
 # Scenarios #
@@ -4081,7 +3999,7 @@ STR_DTLS    :Un castello con un paio di montagne russe deve diventare un parco t
 <Wacky Warren>
 STR_SCNR    :Wacky Warren
 STR_PARK    :Wacky Warren
-STR_DTLS    :Un parco che ha molti dei suoi sentieri e montange russe sotterranee
+STR_DTLS    :Un parco che ha molti dei suoi sentieri e montagne russe sotterranee
 
 <Grand Glacier>
 STR_SCNR    :Grand Glacier

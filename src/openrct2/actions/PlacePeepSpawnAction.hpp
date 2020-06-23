@@ -19,8 +19,6 @@
 #include "../world/Surface.h"
 #include "GameAction.h"
 
-static int32_t _nextPeepSpawnIndex = 0;
-
 DEFINE_GAME_ACTION(PlacePeepSpawnAction, GAME_COMMAND_PLACE_PEEP_SPAWN, GameActionResult)
 {
 private:
@@ -30,7 +28,7 @@ public:
     PlacePeepSpawnAction()
     {
     }
-    PlacePeepSpawnAction(CoordsXYZD location)
+    PlacePeepSpawnAction(const CoordsXYZD& location)
         : _location(location)
     {
     }
@@ -56,37 +54,36 @@ public:
         }
 
         auto res = std::make_unique<GameActionResult>();
-        res->ExpenditureType = RCT_EXPENDITURE_TYPE_LAND_PURCHASE;
-        res->Position = CoordsXYZ{ _location.x, _location.y, _location.z / 8 };
+        res->Expenditure = ExpenditureType::LandPurchase;
+        res->Position = _location;
 
         if (!map_check_free_elements_and_reorganise(3))
         {
             return std::make_unique<GameActionResult>(GA_ERROR::NO_FREE_ELEMENTS, STR_ERR_CANT_PLACE_PEEP_SPAWN_HERE, STR_NONE);
         }
 
-        if (_location.x <= 16 || _location.y <= 16 || _location.x >= (gMapSizeUnits - 16)
+        if (!LocationValid(_location) || _location.x <= 16 || _location.y <= 16 || _location.x >= (gMapSizeUnits - 16)
             || _location.y >= (gMapSizeUnits - 16))
         {
             return std::make_unique<GameActionResult>(
                 GA_ERROR::INVALID_PARAMETERS, STR_ERR_CANT_PLACE_PEEP_SPAWN_HERE, STR_OFF_EDGE_OF_MAP);
         }
 
-        TileElement *mapElement, *surfaceMapElement;
         // Verify footpath exists at location, and retrieve coordinates
-        mapElement = map_get_path_element_at(_location.x >> 5, _location.y >> 5, _location.z / 8);
-        if (mapElement == nullptr)
+        auto pathElement = map_get_path_element_at(TileCoordsXYZ{ _location });
+        if (pathElement == nullptr)
         {
             return std::make_unique<GameActionResult>(
                 GA_ERROR::INVALID_PARAMETERS, STR_ERR_CANT_PLACE_PEEP_SPAWN_HERE, STR_CAN_ONLY_BE_BUILT_ACROSS_PATHS);
         }
 
         // Verify location is unowned
-        surfaceMapElement = map_get_surface_element_at(_location.x >> 5, _location.y >> 5);
+        auto surfaceMapElement = map_get_surface_element_at(_location);
         if (surfaceMapElement == nullptr)
         {
             return std::make_unique<GameActionResult>(GA_ERROR::UNKNOWN, STR_ERR_CANT_PLACE_PEEP_SPAWN_HERE, STR_NONE);
         }
-        if (surfaceMapElement->AsSurface()->GetOwnership() != OWNERSHIP_UNOWNED)
+        if (surfaceMapElement->GetOwnership() != OWNERSHIP_UNOWNED)
         {
             return std::make_unique<GameActionResult>(
                 GA_ERROR::INVALID_PARAMETERS, STR_ERR_CANT_PLACE_PEEP_SPAWN_HERE, STR_ERR_MUST_BE_OUTSIDE_PARK_BOUNDARIES);
@@ -98,37 +95,51 @@ public:
     GameActionResult::Ptr Execute() const override
     {
         auto res = std::make_unique<GameActionResult>();
-        res->ExpenditureType = RCT_EXPENDITURE_TYPE_LAND_PURCHASE;
-        res->Position = CoordsXYZ{ _location.x, _location.y, _location.z / 8 };
+        res->Expenditure = ExpenditureType::LandPurchase;
+        res->Position = _location;
 
-        // If we have reached our max peep spawns, use peep spawn next to last one set.
-        if (gPeepSpawns.size() >= MAX_PEEP_SPAWNS)
-        {
-            auto peepSpawnIndex = _nextPeepSpawnIndex;
-            _nextPeepSpawnIndex = (peepSpawnIndex + 1) % (int32_t)gPeepSpawns.size();
+        // Shift the spawn point to the edge of the tile
+        auto spawnPos = CoordsXY{ _location.ToTileCentre() }
+            + CoordsXY{ DirectionOffsets[_location.direction].x * 15, DirectionOffsets[_location.direction].y * 15 };
 
-            // Before the new location is set, clear the old location
-            int32_t prevX = gPeepSpawns[peepSpawnIndex].x;
-            gPeepSpawns[peepSpawnIndex].x = PEEP_SPAWN_UNDEFINED;
-
-            map_invalidate_tile_full(prevX, gPeepSpawns[peepSpawnIndex].y);
-        }
-
-        // Shift the spawn point to the middle of the tile
-        int32_t middleX, middleY;
-        middleX = _location.x + 16 + (word_981D6C[_location.direction].x * 15);
-        middleY = _location.y + 16 + (word_981D6C[_location.direction].y * 15);
-
-        // Set peep spawn
         PeepSpawn spawn;
-        spawn.x = middleX;
-        spawn.y = middleY;
+        spawn.x = spawnPos.x;
+        spawn.y = spawnPos.y;
         spawn.z = _location.z;
         spawn.direction = _location.direction;
+
+        // When attempting to place a peep spawn on a tile that already contains it,
+        // remove that peep spawn instead.
+        if (!gPeepSpawns.empty())
+        {
+            // When searching for existing spawns, ignore the direction.
+            auto foundSpawn = std::find_if(gPeepSpawns.begin(), gPeepSpawns.end(), [spawn](const CoordsXYZ& existingSpawn) {
+                {
+                    return existingSpawn.ToTileStart() == spawn.ToTileStart();
+                }
+            });
+
+            if (foundSpawn != std::end(gPeepSpawns))
+            {
+                gPeepSpawns.erase(foundSpawn);
+                map_invalidate_tile_full(spawn);
+                return res;
+            }
+        }
+
+        // If we have reached our max peep spawns, remove the oldest spawns
+        while (gPeepSpawns.size() >= MAX_PEEP_SPAWNS)
+        {
+            PeepSpawn oldestSpawn = *gPeepSpawns.begin();
+            gPeepSpawns.erase(gPeepSpawns.begin());
+            map_invalidate_tile_full(oldestSpawn);
+        }
+
+        // Set peep spawn
         gPeepSpawns.push_back(spawn);
 
         // Invalidate tile
-        map_invalidate_tile_full(_location.x, _location.y);
+        map_invalidate_tile_full(_location);
 
         return res;
     }

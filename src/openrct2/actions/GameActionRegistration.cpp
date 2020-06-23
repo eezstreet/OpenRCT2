@@ -15,6 +15,7 @@
 #include "BannerSetStyleAction.hpp"
 #include "ClearAction.hpp"
 #include "ClimateSetAction.hpp"
+#include "CustomAction.hpp"
 #include "FootpathPlaceAction.hpp"
 #include "FootpathPlaceFromTrackAction.hpp"
 #include "FootpathRemoveAction.hpp"
@@ -33,6 +34,7 @@
 #include "LargeSceneryRemoveAction.hpp"
 #include "LargeScenerySetColourAction.hpp"
 #include "LoadOrQuitAction.hpp"
+#include "MazePlaceTrackAction.hpp"
 #include "MazeSetTrackAction.hpp"
 #include "NetworkModifyGroupAction.hpp"
 #include "ParkEntranceRemoveAction.hpp"
@@ -76,6 +78,7 @@
 #include "StaffSetPatrolAreaAction.hpp"
 #include "SurfaceSetStyleAction.hpp"
 #include "TileModifyAction.hpp"
+#include "TrackDesignAction.h"
 #include "TrackPlaceAction.hpp"
 #include "TrackRemoveAction.hpp"
 #include "TrackSetBrakeSpeedAction.hpp"
@@ -103,6 +106,7 @@ namespace GameActions
         Register<FootpathSceneryPlaceAction>();
         Register<FootpathSceneryRemoveAction>();
         Register<GuestSetNameAction>();
+        Register<MazePlaceTrackAction>();
         Register<MazeSetTrackAction>();
         Register<NetworkModifyGroupAction>();
         Register<ParkMarketingAction>();
@@ -155,6 +159,7 @@ namespace GameActions
         Register<LandSetRightsAction>();
         Register<LandSmoothAction>();
         Register<TileModifyAction>();
+        Register<TrackDesignAction>();
         Register<TrackPlaceAction>();
         Register<TrackRemoveAction>();
         Register<TrackSetBrakeSpeedAction>();
@@ -167,5 +172,8 @@ namespace GameActions
         Register<GuestSetFlagsAction>();
         Register<ParkSetDateAction>();
         Register<SetCheatAction>();
+#ifdef ENABLE_SCRIPTING
+        Register<CustomAction>();
+#endif
     }
 } // namespace GameActions

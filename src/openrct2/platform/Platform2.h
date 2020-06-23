@@ -45,5 +45,8 @@ namespace Platform
     bool IsOSVersionAtLeast(uint32_t major, uint32_t minor, uint32_t build);
 #endif
 
+    bool IsRunningInWine();
     bool IsColourTerminalSupported();
+    bool HandleSpecialCommandLineArgument(const char* argument);
+    uintptr_t StrDecompToPrecomp(utf8* input);
 } // namespace Platform

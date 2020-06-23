@@ -46,9 +46,8 @@ static void fixup_pointers(paint_session* s, size_t paint_session_entries, size_
             }
             else
             {
-                s[i].PaintStructs[j].basic.next_quadrant_ps = &s[i].PaintStructs
-                                                                   [(uintptr_t)s[i].PaintStructs[j].basic.next_quadrant_ps]
-                                                                       .basic;
+                auto nextQuadrantPs = reinterpret_cast<uintptr_t>(s[i].PaintStructs[j].basic.next_quadrant_ps);
+                s[i].PaintStructs[j].basic.next_quadrant_ps = &s[i].PaintStructs[nextQuadrantPs].basic;
             }
         }
         for (size_t j = 0; j < quadrant_entries; j++)
@@ -92,8 +91,7 @@ static std::vector<paint_session> extract_paint_session(const std::string parkFi
         resolutionHeight += 128;
 
         rct_viewport viewport;
-        viewport.x = 0;
-        viewport.y = 0;
+        viewport.pos = { 0, 0 };
         viewport.width = resolutionWidth;
         viewport.height = resolutionHeight;
         viewport.view_width = viewport.width;
@@ -105,12 +103,11 @@ static std::vector<paint_session> extract_paint_session(const std::string parkFi
         int32_t customY = (gMapSize / 2) * 32 + 16;
 
         int32_t x = 0, y = 0;
-        int32_t z = tile_element_height(customX, customY);
+        int32_t z = tile_element_height({ customX, customY });
         x = customY - customX;
         y = ((customX + customY) / 2) - z;
 
-        viewport.view_x = x - ((viewport.view_width) / 2);
-        viewport.view_y = y - ((viewport.view_height) / 2);
+        viewport.viewPos = { x - ((viewport.view_width) / 2), y - ((viewport.view_height) / 2) };
         viewport.zoom = 0;
         gCurrentRotation = 0;
 
@@ -123,7 +120,7 @@ static std::vector<paint_session> extract_paint_session(const std::string parkFi
         dpi.width = resolutionWidth;
         dpi.height = resolutionHeight;
         dpi.pitch = 0;
-        dpi.bits = (uint8_t*)malloc(dpi.width * dpi.height);
+        dpi.bits = static_cast<uint8_t*>(malloc(dpi.width * dpi.height));
 
         log_info("Obtaining sprite data...");
         viewport_render(&dpi, &viewport, 0, 0, viewport.width, viewport.height, &sessions);
@@ -192,11 +189,11 @@ static int cmdline_for_bench_sprite_sort(int argc, const char** argv)
         }
         else
         {
-            argv_for_benchmark.push_back((char*)argv[i]);
+            argv_for_benchmark.push_back(const_cast<char*>(argv[i]));
         }
     }
     // Update argc with all the changes made
-    argc = (int)argv_for_benchmark.size();
+    argc = static_cast<int>(argv_for_benchmark.size());
     ::benchmark::Initialize(&argc, &argv_for_benchmark[0]);
     if (::benchmark::ReportUnrecognizedArguments(argc, &argv_for_benchmark[0]))
         return -1;
@@ -206,7 +203,7 @@ static int cmdline_for_bench_sprite_sort(int argc, const char** argv)
 
 static exitcode_t HandleBenchSpriteSort(CommandLineArgEnumerator* argEnumerator)
 {
-    const char** argv = (const char**)argEnumerator->GetArguments() + argEnumerator->GetIndex();
+    const char** argv = const_cast<const char**>(argEnumerator->GetArguments()) + argEnumerator->GetIndex();
     int32_t argc = argEnumerator->GetCount() - argEnumerator->GetIndex();
     int32_t result = cmdline_for_bench_sprite_sort(argc, argv);
     if (result < 0)

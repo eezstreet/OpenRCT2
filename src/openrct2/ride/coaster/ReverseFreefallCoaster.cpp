@@ -201,13 +201,13 @@ static void paint_reverse_freefall_rc_flat(
     {
         uint32_t imageId = SPR_REVERSE_FREEFALL_RC_FLAT_NW_SE | session->TrackColours[SCHEME_TRACK];
         sub_98197C(session, imageId, 0, 0, 20, 32, 1, height, 6, 0, height);
-        paint_util_push_tunnel_right(session, height, TUNNEL_6);
+        paint_util_push_tunnel_right(session, height, TUNNEL_SQUARE_FLAT);
     }
     else
     {
         uint32_t imageId = SPR_REVERSE_FREEFALL_RC_FLAT_SW_NE | session->TrackColours[SCHEME_TRACK];
         sub_98197C(session, imageId, 0, 0, 32, 20, 1, height, 0, 6, height);
-        paint_util_push_tunnel_left(session, height, TUNNEL_6);
+        paint_util_push_tunnel_left(session, height, TUNNEL_SQUARE_FLAT);
     }
 
     wooden_a_supports_paint_setup(session, (direction & 1) ? 1 : 0, 0, height, session->TrackColours[SCHEME_SUPPORTS], nullptr);
@@ -219,7 +219,6 @@ static void paint_reverse_freefall_rc_station(
     paint_session* session, ride_id_t rideIndex, uint8_t trackSequence, uint8_t direction, int32_t height,
     const TileElement* tileElement)
 {
-    Ride* ride = get_ride(rideIndex);
     uint32_t imageId;
 
     if (direction == 0 || direction == 2)
@@ -234,7 +233,7 @@ static void paint_reverse_freefall_rc_station(
 
         wooden_a_supports_paint_setup(
             session, (direction & 1) ? 1 : 0, 0, height, session->TrackColours[SCHEME_SUPPORTS], nullptr);
-        paint_util_push_tunnel_left(session, height, TUNNEL_6);
+        paint_util_push_tunnel_left(session, height, TUNNEL_SQUARE_FLAT);
     }
     else if (direction == 1 || direction == 3)
     {
@@ -248,10 +247,12 @@ static void paint_reverse_freefall_rc_station(
 
         wooden_a_supports_paint_setup(
             session, (direction & 1) ? 1 : 0, 0, height, session->TrackColours[SCHEME_SUPPORTS], nullptr);
-        paint_util_push_tunnel_right(session, height, TUNNEL_6);
+        paint_util_push_tunnel_right(session, height, TUNNEL_SQUARE_FLAT);
     }
 
-    track_paint_util_draw_station_platform(session, ride, direction, height, 5, tileElement);
+    auto ride = get_ride(rideIndex);
+    if (ride != nullptr)
+        track_paint_util_draw_station_platform(session, ride, direction, height, 5, tileElement);
 
     paint_util_set_segment_support_height(session, SEGMENTS_ALL, 0xFFFF, 0);
     paint_util_set_general_support_height(session, height + 32, 0x20);
@@ -290,11 +291,11 @@ static void paint_reverse_freefall_rc_slope(
                 int32_t tunnelOffset = tunnelOffsets03[trackSequence];
                 if (direction & 1)
                 {
-                    paint_util_push_tunnel_right(session, height + tunnelOffset, TUNNEL_6);
+                    paint_util_push_tunnel_right(session, height + tunnelOffset, TUNNEL_SQUARE_FLAT);
                 }
                 else
                 {
-                    paint_util_push_tunnel_left(session, height + tunnelOffset, TUNNEL_6);
+                    paint_util_push_tunnel_left(session, height + tunnelOffset, TUNNEL_SQUARE_FLAT);
                 }
             }
             else

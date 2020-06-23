@@ -45,14 +45,14 @@ private:
 public:
     LandSetRightsAction() = default;
 
-    LandSetRightsAction(MapRange range, LandSetRightSetting setting, uint8_t ownership = 0)
+    LandSetRightsAction(const MapRange& range, LandSetRightSetting setting, uint8_t ownership = 0)
         : _range(range)
         , _setting(static_cast<uint8_t>(setting))
         , _ownership(ownership)
     {
     }
 
-    LandSetRightsAction(CoordsXY coord, LandSetRightSetting setting, uint8_t ownership = 0)
+    LandSetRightsAction(const CoordsXY& coord, LandSetRightSetting setting, uint8_t ownership = 0)
         : _range(coord.x, coord.y, coord.x, coord.y)
         , _setting(static_cast<uint8_t>(setting))
         , _ownership(ownership)
@@ -97,10 +97,10 @@ private:
 
         CoordsXYZ centre{ (validRange.GetLeft() + validRange.GetRight()) / 2 + 16,
                           (validRange.GetTop() + validRange.GetBottom()) / 2 + 16, 0 };
-        centre.z = tile_element_height(centre.x, centre.y);
+        centre.z = tile_element_height(centre);
 
         res->Position = centre;
-        res->ExpenditureType = RCT_EXPENDITURE_TYPE_LAND_PURCHASE;
+        res->Expenditure = ExpenditureType::LandPurchase;
 
         if (!(gScreenFlags & SCREEN_FLAGS_EDITOR) && !gCheatsSandboxMode)
         {
@@ -108,10 +108,12 @@ private:
         }
 
         // Game command modified to accept selection size
-        for (auto y = validRange.GetTop(); y <= validRange.GetBottom(); y += 32)
+        for (auto y = validRange.GetTop(); y <= validRange.GetBottom(); y += COORDS_XY_STEP)
         {
-            for (auto x = validRange.GetLeft(); x <= validRange.GetRight(); x += 32)
+            for (auto x = validRange.GetLeft(); x <= validRange.GetRight(); x += COORDS_XY_STEP)
             {
+                if (!LocationValid({ x, y }))
+                    continue;
                 auto result = map_buy_land_rights_for_tile({ x, y }, isExecuting);
                 if (result->Error == GA_ERROR::OK)
                 {
@@ -123,14 +125,14 @@ private:
         if (isExecuting)
         {
             map_count_remaining_land_rights();
-            audio_play_sound_at_location(SoundId::PlaceItem, centre.x, centre.y, centre.z);
+            audio_play_sound_at_location(SoundId::PlaceItem, centre);
         }
         return res;
     }
 
-    GameActionResult::Ptr map_buy_land_rights_for_tile(const CoordsXY loc, bool isExecuting) const
+    GameActionResult::Ptr map_buy_land_rights_for_tile(const CoordsXY& loc, bool isExecuting) const
     {
-        SurfaceElement* surfaceElement = map_get_surface_element_at(loc)->AsSurface();
+        SurfaceElement* surfaceElement = map_get_surface_element_at(loc);
         if (surfaceElement == nullptr)
         {
             log_error("Could not find surface. x = %d, y = %d", loc.x, loc.y);
@@ -152,24 +154,24 @@ private:
                 if (isExecuting)
                 {
                     surfaceElement->SetOwnership(surfaceElement->GetOwnership() & ~OWNERSHIP_CONSTRUCTION_RIGHTS_OWNED);
-                    uint16_t baseHeight = surfaceElement->base_height * 8;
-                    map_invalidate_tile(loc.x, loc.y, baseHeight, baseHeight + 16);
+                    uint16_t baseZ = surfaceElement->GetBaseZ();
+                    map_invalidate_tile({ loc, baseZ, baseZ + 16 });
                 }
                 return res;
             case LandSetRightSetting::SetForSale:
                 if (isExecuting)
                 {
                     surfaceElement->SetOwnership(surfaceElement->GetOwnership() | OWNERSHIP_AVAILABLE);
-                    uint16_t baseHeight = surfaceElement->base_height * 8;
-                    map_invalidate_tile(loc.x, loc.y, baseHeight, baseHeight + 16);
+                    uint16_t baseZ = surfaceElement->GetBaseZ();
+                    map_invalidate_tile({ loc, baseZ, baseZ + 16 });
                 }
                 return res;
             case LandSetRightSetting::SetConstructionRightsForSale:
                 if (isExecuting)
                 {
                     surfaceElement->SetOwnership(surfaceElement->GetOwnership() | OWNERSHIP_CONSTRUCTION_RIGHTS_AVAILABLE);
-                    uint16_t baseHeight = surfaceElement->base_height * 8;
-                    map_invalidate_tile(loc.x, loc.y, baseHeight, baseHeight + 16);
+                    uint16_t baseZ = surfaceElement->GetBaseZ();
+                    map_invalidate_tile({ loc, baseZ, baseZ + 16 });
                 }
                 return res;
             case LandSetRightSetting::SetOwnershipWithChecks:
@@ -179,7 +181,7 @@ private:
                     return res;
                 }
 
-                TileElement* tileElement = map_get_first_element_at(loc.x / 32, loc.y / 32);
+                TileElement* tileElement = map_get_first_element_at(loc);
                 do
                 {
                     if (tileElement == nullptr)

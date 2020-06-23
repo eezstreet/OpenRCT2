@@ -120,7 +120,7 @@ const rct_string_id PeepThoughts[] = {
     STR_PEEP_THOUGHT_TYPE_TIRED,
     STR_PEEP_THOUGHT_TYPE_HUNGRY,
     STR_PEEP_THOUGHT_TYPE_THIRSTY,
-    STR_PEEP_THOUGHT_TYPE_BATHROOM,
+    STR_PEEP_THOUGHT_TYPE_TOILET,
     STR_PEEP_THOUGHT_TYPE_CANT_FIND,
     STR_PEEP_THOUGHT_TYPE_NOT_PAYING,
     STR_PEEP_THOUGHT_TYPE_NOT_WHILE_RAINING,
@@ -385,27 +385,9 @@ static void format_append_string(char** dest, size_t* size, const utf8* string)
 {
     if ((*size) == 0)
         return;
-    size_t length = strlen(string);
-    if (length < (*size))
-    {
-        std::memcpy((*dest), string, length);
-        (*dest) += length;
-        (*size) -= length;
-    }
-    else
-    {
-        std::memcpy((*dest), string, (*size) - 1);
-        (*dest) += (*size) - 1;
-        *(*dest)++ = '\0';
-        (*size) = 0;
-    }
-}
-
-static void format_append_string_n(char** dest, size_t* size, const utf8* string, size_t maxlen)
-{
-    if ((*size) == 0)
+    if (string == nullptr)
         return;
-    size_t length = std::min(maxlen, strlen(string));
+    size_t length = strnlen(string, *size);
     if (length < (*size))
     {
         std::memcpy((*dest), string, length);
@@ -912,10 +894,10 @@ static void format_date(char** dest, size_t* size, uint16_t value)
 {
     uint16_t args[] = { static_cast<uint16_t>(date_get_month(value)), static_cast<uint16_t>(date_get_year(value) + 1) };
     uint16_t* argsRef = args;
-    format_string_part(dest, size, STR_DATE_FORMAT_MY, (char**)&argsRef);
+    format_string_part(dest, size, STR_DATE_FORMAT_MY, reinterpret_cast<char**>(&argsRef));
 }
 
-static void format_length(char** dest, size_t* size, int16_t value)
+static void format_length(char** dest, size_t* size, int32_t value)
 {
     rct_string_id stringId = STR_UNIT_SUFFIX_METRES;
 
@@ -925,8 +907,8 @@ static void format_length(char** dest, size_t* size, int16_t value)
         stringId = STR_UNIT_SUFFIX_FEET;
     }
 
-    int16_t* argRef = &value;
-    format_string_part(dest, size, stringId, (char**)&argRef);
+    int32_t* argRef = &value;
+    format_string_part(dest, size, stringId, reinterpret_cast<char**>(&argRef));
 }
 
 static void format_velocity(char** dest, size_t* size, uint16_t value)
@@ -949,7 +931,7 @@ static void format_velocity(char** dest, size_t* size, uint16_t value)
     }
 
     uint16_t* argRef = &value;
-    format_string_part(dest, size, stringId, (char**)&argRef);
+    format_string_part(dest, size, stringId, reinterpret_cast<char**>(&argRef));
 }
 
 static constexpr const rct_string_id DurationFormats[][2] = {
@@ -985,7 +967,7 @@ static void format_duration(char** dest, size_t* size, uint16_t value)
 
     rct_string_id stringId = DurationFormats[minuteIndex][secondsIndex];
 
-    format_string_part(dest, size, stringId, (char**)&argsRef);
+    format_string_part(dest, size, stringId, reinterpret_cast<char**>(&argsRef));
 }
 
 static constexpr const rct_string_id RealtimeFormats[][2] = {
@@ -1021,7 +1003,7 @@ static void format_realtime(char** dest, size_t* size, uint16_t value)
 
     rct_string_id stringId = RealtimeFormats[hourIndex][minuteIndex];
 
-    format_string_part(dest, size, stringId, (char**)&argsRef);
+    format_string_part(dest, size, stringId, reinterpret_cast<char**>(&argsRef));
 }
 
 static void format_string_code(uint32_t format_code, char** dest, size_t* size, char** args)
@@ -1113,7 +1095,7 @@ static void format_string_code(uint32_t format_code, char** dest, size_t* size, 
             std::memcpy(&value, *args, sizeof(uint16_t));
             *args += 2;
 
-            format_string_part(dest, size, (rct_string_id)value, args);
+            format_string_part(dest, size, static_cast<rct_string_id>(value), args);
             break;
         case FORMAT_STRING:
             // Pop argument
@@ -1121,21 +1103,22 @@ static void format_string_code(uint32_t format_code, char** dest, size_t* size, 
             *args += sizeof(uintptr_t);
 
             if (value != 0)
-                format_append_string(dest, size, (char*)value);
+                format_append_string(dest, size, reinterpret_cast<char*>(value));
             break;
         case FORMAT_MONTHYEAR:
             // Pop argument
             std::memcpy(&value, *args, sizeof(uint16_t));
             *args += 2;
 
-            format_date(dest, size, (uint16_t)value);
+            format_date(dest, size, static_cast<uint16_t>(value));
             break;
         case FORMAT_MONTH:
             // Pop argument
             std::memcpy(&value, *args, sizeof(uint16_t));
             *args += 2;
 
-            format_append_string(dest, size, language_get_string(DateGameMonthNames[(int32_t)value]));
+            format_append_string(
+                dest, size, language_get_string(DateGameMonthNames[static_cast<int32_t>(value)]));
             break;
         case FORMAT_VELOCITY:
             // Pop argument
@@ -1143,7 +1126,7 @@ static void format_string_code(uint32_t format_code, char** dest, size_t* size, 
             value = temp16;
             *args += 2;
 
-            format_velocity(dest, size, (uint16_t)value);
+            format_velocity(dest, size, static_cast<uint16_t>(value));
             break;
         case FORMAT_POP16:
             *args += 2;
@@ -1156,22 +1139,21 @@ static void format_string_code(uint32_t format_code, char** dest, size_t* size, 
             std::memcpy(&value, *args, sizeof(uint16_t));
             *args += 2;
 
-            format_duration(dest, size, (uint16_t)value);
+            format_duration(dest, size, static_cast<uint16_t>(value));
             break;
         case FORMAT_REALTIME:
             // Pop argument
             std::memcpy(&value, *args, sizeof(uint16_t));
             *args += 2;
 
-            format_realtime(dest, size, (uint16_t)value);
+            format_realtime(dest, size, static_cast<uint16_t>(value));
             break;
         case FORMAT_LENGTH:
             // Pop argument
-            std::memcpy(&temp16, *args, sizeof(int16_t));
-            value = temp16;
+            std::memcpy(&value, *args, sizeof(uint16_t));
             *args += 2;
 
-            format_length(dest, size, (int16_t)value);
+            format_length(dest, size, static_cast<uint16_t>(value));
             break;
         case FORMAT_SPRITE:
             // Pop argument
@@ -1244,7 +1226,7 @@ static void format_string_part_from_raw(utf8** dest, size_t* size, const utf8* s
         }
         else
         {
-            size_t codepointLength = (size_t)utf8_get_codepoint_length(code);
+            size_t codepointLength = static_cast<size_t>(utf8_get_codepoint_length(code));
             format_handle_overflow(codepointLength);
             if (*size > codepointLength)
             {
@@ -1272,16 +1254,14 @@ static void format_string_part(utf8** dest, size_t* size, rct_string_id format, 
     }
     else if (format <= USER_STRING_END)
     {
+        // User strings should no longer be used
+        assert(false);
+
         // Custom string
         format -= 0x8000;
 
         // Bits 10, 11 represent number of bytes to pop off arguments
         *args += (format & 0xC00) >> 9;
-        format &= ~0xC00;
-
-        format_append_string_n(dest, size, gUserStrings[format], USER_STRING_MAX_LENGTH);
-        if ((*size) > 0)
-            *(*dest) = '\0';
     }
     else if (format <= REAL_NAME_END)
     {
@@ -1295,8 +1275,6 @@ static void format_string_part(utf8** dest, size_t* size, rct_string_id format, 
         format_push_char(real_name_initials[(realNameIndex >> 10) % std::size(real_name_initials)]);
         format_push_char('.');
         *(*dest) = '\0';
-
-        *args += 4;
     }
     else
     {
@@ -1355,7 +1333,7 @@ void format_string(utf8* dest, size_t size, rct_string_id format, const void* ar
 
     utf8* end = dest;
     size_t left = size;
-    format_string_part(&end, &left, format, (char**)&args);
+    format_string_part(&end, &left, format, reinterpret_cast<char**>(const_cast<void**>(&args)));
     if (left == 0)
     {
         // Replace last character with null terminator
@@ -1390,7 +1368,7 @@ void format_string_raw(utf8* dest, size_t size, const utf8* src, const void* arg
 
     utf8* end = dest;
     size_t left = size;
-    format_string_part_from_raw(&end, &left, src, (char**)&args);
+    format_string_part_from_raw(&end, &left, src, reinterpret_cast<char**>(const_cast<void**>(&args)));
     if (left == 0)
     {
         // Replace last character with null terminator

@@ -13,4 +13,9 @@
 #include "Map.h"
 #include "TileElement.h"
 
-rct_scenery_entry* get_large_scenery_entry(int32_t entryIndex);
+rct_scenery_entry* get_large_scenery_entry(ObjectEntryIndex entryIndex);
+
+enum
+{
+    LARGE_SCENERY_ELEMENT_FLAGS2_ACCOUNTED = 1 << 0,
+};

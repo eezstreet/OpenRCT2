@@ -33,6 +33,7 @@ extern bool gCheatsEnableChainLiftOnAllTrack;
 extern bool gCheatsAllowArbitraryRideTypeChanges;
 extern bool gCheatsIgnoreResearchStatus;
 extern bool gCheatsEnableAllDrawableTrackPieces;
+extern bool gCheatsAllowTrackPlaceInvalidHeights;
 
 enum class CheatType : int32_t
 {
@@ -83,6 +84,9 @@ enum class CheatType : int32_t
     DisableRideValueAging,
     IgnoreResearchStatus,
     EnableAllDrawableTrackPieces,
+    CreateDucks,
+    RemoveDucks,
+    AllowTrackPlaceInvalidHeights,
     Count,
 };
 
@@ -94,7 +98,7 @@ enum
     GUEST_PARAMETER_THIRST,
     GUEST_PARAMETER_NAUSEA,
     GUEST_PARAMETER_NAUSEA_TOLERANCE,
-    GUEST_PARAMETER_BATHROOM,
+    GUEST_PARAMETER_TOILET,
     GUEST_PARAMETER_PREFERRED_RIDE_INTENSITY
 };
 
@@ -108,6 +112,7 @@ enum
 
 #define CHEATS_GIVE_GUESTS_MONEY MONEY(1000, 00)
 #define CHEATS_TRAM_INCREMENT 250
+#define CHEATS_DUCK_INCREMENT 20
 #define CHEATS_STAFF_FAST_SPEED 0xFF
 #define CHEATS_STAFF_NORMAL_SPEED 0x60
 #define CHEATS_STAFF_FREEZE_SPEED 0
@@ -115,5 +120,6 @@ enum
 void CheatsReset();
 const char* CheatsGetName(CheatType cheatType);
 void CheatsSet(CheatType cheatType, int32_t param1 = 0, int32_t param2 = 0);
+void CheatsSerialise(class DataSerialiser& ds);
 
 #endif

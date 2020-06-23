@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2019 OpenRCT2 developers
+ * Copyright (c) 2014-2020 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -13,14 +13,29 @@
 #include <openrct2/common.h>
 #include <openrct2/ride/Ride.h>
 #include <openrct2/windows/tile_inspector.h>
+#include <string_view>
 
 using loadsave_callback = void (*)(int32_t result, const utf8* path);
 using scenarioselect_callback = void (*)(const utf8* path);
 struct Peep;
 struct TileElement;
-struct rct_vehicle;
+struct Vehicle;
+enum class ScatterToolDensity : uint8_t;
+
+extern ScenerySelection gWindowSceneryTabSelections[];
+extern uint8_t gWindowSceneryActiveTabIndex;
+extern bool gWindowSceneryScatterEnabled;
+extern uint16_t gWindowSceneryScatterSize;
+extern ScatterToolDensity gWindowSceneryScatterDensity;
+extern uint8_t gWindowSceneryPaintEnabled;
+extern uint8_t gWindowSceneryRotation;
+extern colour_t gWindowSceneryPrimaryColour;
+extern colour_t gWindowScenerySecondaryColour;
+extern colour_t gWindowSceneryTertiaryColour;
+extern bool gWindowSceneryEyedropperEnabled;
 
 rct_window* window_about_open();
+void WindowCampaignRefreshRides();
 rct_window* window_changelog_open();
 rct_window* window_cheats_open();
 rct_window* window_clear_scenery_open();
@@ -47,10 +62,11 @@ rct_window* window_save_prompt_open();
 rct_window* window_server_list_open();
 rct_window* window_server_start_open();
 #endif
-rct_window* window_shortcut_change_open(int32_t selected_key);
+rct_window* window_shortcut_change_open(int32_t selected_key, rct_string_id key_string_id);
 rct_window* window_shortcut_keys_open();
 rct_window* window_staff_list_open();
 rct_window* window_staff_open(Peep* peep);
+void WindowStaffListRefresh();
 rct_window* window_themes_open();
 rct_window* window_title_exit_open();
 rct_window* window_title_logo_open();
@@ -90,10 +106,14 @@ void window_title_command_editor_open(struct TitleSequence* sequence, int32_t co
 rct_window* window_scenarioselect_open(scenarioselect_callback callback, bool titleEditor);
 
 rct_window* window_error_open(rct_string_id title, rct_string_id message);
-
-rct_window* window_loadsave_open(int32_t type, const char* defaultName, loadsave_callback callback);
+rct_window* window_error_open(const std::string_view& title, const std::string_view& message);
+struct TrackDesign;
+rct_window* window_loadsave_open(int32_t type, const char* defaultName, loadsave_callback callback, TrackDesign* t6Exporter);
 rct_window* window_track_place_open(const struct track_design_file_ref* tdFileRef);
 rct_window* window_track_manage_open(struct track_design_file_ref* tdFileRef);
+
+void TrackPlaceClearProvisionalTemporarily();
+void TrackPlaceRestoreProvisional();
 
 rct_window* window_map_open();
 void window_map_reset();
@@ -105,19 +125,19 @@ void window_research_funding_page_paint(rct_window* w, rct_drawpixelinfo* dpi, r
 rct_window* window_new_ride_open();
 rct_window* window_new_ride_open_research();
 void window_new_ride_init_vars();
-void window_new_ride_focus(ride_list_item rideItem);
+void window_new_ride_focus(RideSelection rideItem);
 
 rct_window* window_ride_list_open();
 void window_ride_list_refresh_list(rct_window* w);
 
 rct_window* window_ride_main_open(Ride* ride);
 rct_window* window_ride_open_track(TileElement* tileElement);
-rct_window* window_ride_open_vehicle(rct_vehicle* vehicle);
+rct_window* window_ride_open_vehicle(Vehicle* vehicle);
 void window_ride_measurements_design_cancel();
 
 // rct2: 0x00F635EE
-extern ride_list_item _window_track_list_item;
-rct_window* window_track_list_open(ride_list_item item);
+extern RideSelection _window_track_list_item;
+rct_window* window_track_list_open(RideSelection item);
 
 void window_map_tooltip_update_visibility();
 
@@ -136,6 +156,10 @@ void window_text_input_raw_open(
     rct_window* call_w, rct_widgetindex call_widget, rct_string_id title, rct_string_id description,
     const_utf8string existing_text, int32_t maxLength);
 
+void window_text_input_open(
+    const std::string_view& title, const std::string_view& description, const std::string_view& initialValue, size_t maxLength,
+    std::function<void(const std::string_view&)> okCallback, std::function<void()> cancelCallback);
+
 rct_window* window_object_load_error_open(utf8* path, size_t numMissingObjects, const rct_object_entry* missingObjects);
 
 rct_window* window_ride_construction_open();
@@ -148,7 +172,7 @@ bool clear_scenery_tool_is_active();
 bool water_tool_is_active();
 
 rct_window* window_scenery_open();
-bool window_scenery_set_selected_item(int32_t sceneryId);
+bool window_scenery_set_selected_item(const ScenerySelection& scenery);
 void window_scenery_set_default_placement_configuration();
 void window_scenery_init();
 void window_scenery_reset_selected_scenery_items();
@@ -164,7 +188,20 @@ void window_tile_inspector_clear_clipboard();
 
 rct_window* window_editor_object_selection_open();
 
-void window_tooltip_reset(int32_t x, int32_t y);
-void window_tooltip_show(rct_string_id id, int32_t x, int32_t y);
-void window_tooltip_open(rct_window* widgetWindow, rct_widgetindex widgetIndex, int32_t x, int32_t y);
+void window_tooltip_reset(const ScreenCoordsXY& screenCoords);
+void window_tooltip_show(rct_string_id id, ScreenCoordsXY screenCoords);
+void window_tooltip_open(rct_window* widgetWindow, rct_widgetindex widgetIndex, const ScreenCoordsXY& screenCoords);
 void window_tooltip_close();
+
+rct_window* window_scenery_scatter_open();
+
+// clang-format off
+#define WINDOW_SHIM_RAW(TITLE, WIDTH, HEIGHT, CLOSE_STR) \
+    { WWT_FRAME,    0,  0,          WIDTH - 1, 0, HEIGHT - 1, 0xFFFFFFFF,  STR_NONE }, \
+    { WWT_CAPTION,  0,  1,          WIDTH - 2, 1, 14,         TITLE,       STR_WINDOW_TITLE_TIP }, \
+    { WWT_CLOSEBOX, 0,  WIDTH - 13, WIDTH - 3, 2, 13,         CLOSE_STR, STR_CLOSE_WINDOW_TIP }
+
+#define WINDOW_SHIM(TITLE, WIDTH, HEIGHT) WINDOW_SHIM_RAW(TITLE, WIDTH, HEIGHT, STR_CLOSE_X)
+#define WINDOW_SHIM_WHITE(TITLE, WIDTH, HEIGHT) WINDOW_SHIM_RAW(TITLE, WIDTH, HEIGHT, STR_CLOSE_X_WHITE)
+
+// clang-format on

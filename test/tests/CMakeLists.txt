@@ -214,16 +214,23 @@ target_link_libraries(test_tile_elements ${GTEST_LIBRARIES} libopenrct2 ${LDL} z
 target_link_platform_libraries(test_tile_elements)
 add_test(NAME tile_elements COMMAND test_tile_elements)
 
-if (NOT DISABLE_NETWORK)
-    # Replay tests
-    set(REPLAY_TEST_SOURCES "${CMAKE_CURRENT_LIST_DIR}/ReplayTests.cpp"
-                                  "${CMAKE_CURRENT_LIST_DIR}/TestData.cpp")
-    add_executable(test_replays ${REPLAY_TEST_SOURCES})
-    SET_CHECK_CXX_FLAGS(test_replays)
-    target_link_libraries(test_replays ${GTEST_LIBRARIES} libopenrct2 ${LDL} z)
-    target_link_platform_libraries(test_replays)
-    add_test(NAME replay_tests COMMAND test_replays)
-endif ()
+# Replay tests
+set(REPLAY_TEST_SOURCES "${CMAKE_CURRENT_LIST_DIR}/ReplayTests.cpp"
+							  "${CMAKE_CURRENT_LIST_DIR}/TestData.cpp")
+add_executable(test_replays ${REPLAY_TEST_SOURCES})
+SET_CHECK_CXX_FLAGS(test_replays)
+target_link_libraries(test_replays ${GTEST_LIBRARIES} libopenrct2 ${LDL} z)
+target_link_platform_libraries(test_replays)
+add_test(NAME replay_tests COMMAND test_replays)
+
+# Play tests
+set(PLAY_TEST_SOURCES "${CMAKE_CURRENT_LIST_DIR}/PlayTests.cpp"
+                      "${CMAKE_CURRENT_LIST_DIR}/TestData.cpp")
+add_executable(test_plays ${PLAY_TEST_SOURCES})
+SET_CHECK_CXX_FLAGS(test_plays)
+target_link_libraries(test_plays ${GTEST_LIBRARIES} libopenrct2 ${LDL} z)
+target_link_platform_libraries(test_plays)
+add_test(NAME play_tests COMMAND test_plays)
 
 # Pathfinding test
 set(PATHFINDING_TEST_SOURCES  "${CMAKE_CURRENT_LIST_DIR}/Pathfinding.cpp"
@@ -234,11 +241,11 @@ target_link_libraries(test_pathfinding ${GTEST_LIBRARIES} libopenrct2 ${LDL} z)
 target_link_platform_libraries(test_pathfinding)
 add_test(NAME pathfinding COMMAND test_pathfinding)
 
-# LoadSave test
-set(NETWORKLOADSAVE_TEST_SOURCES "${CMAKE_CURRENT_LIST_DIR}/NetworkLoadSave.cpp"
+# S6 Import/Export test
+set(S6IMPORTEXPORT_TEST_SOURCES "${CMAKE_CURRENT_LIST_DIR}/S6ImportExportTests.cpp"
                                  "${CMAKE_CURRENT_LIST_DIR}/TestData.cpp")
-add_executable(test_networkloadsave ${NETWORKLOADSAVE_TEST_SOURCES})
-SET_CHECK_CXX_FLAGS(test_networkloadsave)
-target_link_libraries(test_networkloadsave ${GTEST_LIBRARIES} libopenrct2 ${LDL} z)
-target_link_platform_libraries(test_networkloadsave)
-add_test(NAME networkloadsave COMMAND test_networkloadsave)
+add_executable(test_s6importexporttests ${S6IMPORTEXPORT_TEST_SOURCES})
+SET_CHECK_CXX_FLAGS(test_s6importexporttests)
+target_link_libraries(test_s6importexporttests ${GTEST_LIBRARIES} libopenrct2 ${LDL} z)
+target_link_platform_libraries(test_s6importexporttests)
+add_test(NAME s6importexporttests COMMAND test_s6importexporttests)

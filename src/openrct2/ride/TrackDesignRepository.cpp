@@ -35,7 +35,7 @@ struct TrackRepositoryItem
 {
     std::string Name;
     std::string Path;
-    uint8_t RideType = 0;
+    uint8_t RideType = RIDE_TYPE_NULL;
     std::string ObjectEntry;
     uint32_t Flags = 0;
 };
@@ -63,12 +63,12 @@ private:
 public:
     explicit TrackDesignFileIndex(const IPlatformEnvironment& env)
         : FileIndex(
-              "track design index", MAGIC_NUMBER, VERSION, env.GetFilePath(PATHID::CACHE_TRACKS), std::string(PATTERN),
-              std::vector<std::string>({
-                  env.GetDirectoryPath(DIRBASE::RCT1, DIRID::TRACK),
-                  env.GetDirectoryPath(DIRBASE::RCT2, DIRID::TRACK),
-                  env.GetDirectoryPath(DIRBASE::USER, DIRID::TRACK),
-              }))
+            "track design index", MAGIC_NUMBER, VERSION, env.GetFilePath(PATHID::CACHE_TRACKS), std::string(PATTERN),
+            std::vector<std::string>({
+                env.GetDirectoryPath(DIRBASE::RCT1, DIRID::TRACK),
+                env.GetDirectoryPath(DIRBASE::RCT2, DIRID::TRACK),
+                env.GetDirectoryPath(DIRBASE::USER, DIRID::TRACK),
+            }))
     {
     }
 
@@ -88,7 +88,6 @@ public:
             {
                 item.Flags |= TRIF_READ_ONLY;
             }
-            track_design_dispose(td6);
             return std::make_tuple(true, item);
         }
         else
@@ -167,7 +166,7 @@ public:
             {
                 const ObjectRepositoryItem* ori = repo.FindObject(item.ObjectEntry.c_str());
 
-                if (ori == nullptr || !RideGroupManager::RideTypeIsIndependent(rideType))
+                if (ori == nullptr || !RideTypeDescriptors[rideType].HasFlag(RIDE_TYPE_FLAG_LIST_VEHICLES_SEPARATELY))
                     entryIsNotSeparate = true;
             }
 
@@ -226,7 +225,7 @@ public:
             {
                 const ObjectRepositoryItem* ori = repo.FindObject(item.ObjectEntry.c_str());
 
-                if (ori == nullptr || !RideGroupManager::RideTypeIsIndependent(rideType))
+                if (ori == nullptr || !RideTypeDescriptors[rideType].HasFlag(RIDE_TYPE_FLAG_LIST_VEHICLES_SEPARATELY))
                     entryIsNotSeparate = true;
             }
 

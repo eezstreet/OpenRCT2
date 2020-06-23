@@ -25,8 +25,9 @@
 #include <openrct2/world/Scenery.h>
 #include <openrct2/world/Wall.h>
 
-#define WW 113
-#define WH 96
+static constexpr const rct_string_id WINDOW_TITLE = STR_SIGN;
+static constexpr const int32_t WW = 113;
+static constexpr const int32_t WH = 96;
 
 // clang-format off
 enum WINDOW_SIGN_WIDGET_IDX {
@@ -42,9 +43,7 @@ enum WINDOW_SIGN_WIDGET_IDX {
 
 // 0x9AEE00
 static rct_widget window_sign_widgets[] = {
-        { WWT_FRAME,    0, 0,       WW - 1,     0,          WH - 1,     0xFFFFFFFF,     STR_NONE },                         // panel / background
-        { WWT_CAPTION,  0, 1,       WW - 2,     1,          14,         STR_SIGN,       STR_WINDOW_TITLE_TIP },             // title bar
-        { WWT_CLOSEBOX, 0, WW - 13, WW - 3,     2,          13,         STR_CLOSE_X,    STR_CLOSE_WINDOW_TIP },             // close x button
+        WINDOW_SHIM(WINDOW_TITLE, WW, WH),             // close x button
         { WWT_VIEWPORT, 1, 3,       WW - 26,    17,         WH - 20,    STR_VIEWPORT,   STR_NONE },                         // Viewport
         { WWT_FLATBTN,  1, WW - 25, WW - 2,     19,         42,         SPR_RENAME,     STR_CHANGE_SIGN_TEXT_TIP },         // change sign button
         { WWT_FLATBTN,  1, WW - 25, WW - 2,     67,         90,         SPR_DEMOLISH,   STR_DEMOLISH_SIGN_TIP },            // demolish button
@@ -131,6 +130,8 @@ static rct_window_event_list window_sign_small_events = {
 };
 // clang-format on
 
+static void window_sign_show_text_input(rct_window* w);
+
 /**
  *
  *  rct2: 0x006BA305
@@ -154,10 +155,13 @@ rct_window* window_sign_open(rct_windownumber number)
     window_init_scroll_widgets(w);
 
     auto banner = GetBanner(w->number);
-    int32_t view_x = banner->position.x << 5;
-    int32_t view_y = banner->position.y << 5;
+    if (banner == nullptr)
+        return nullptr;
 
-    TileElement* tile_element = map_get_first_element_at(view_x / 32, view_y / 32);
+    auto signViewPos = banner->position.ToCoordsXY().ToTileCentre();
+    TileElement* tile_element = map_get_first_element_at(signViewPos);
+    if (tile_element == nullptr)
+        return nullptr;
 
     while (1)
     {
@@ -166,33 +170,35 @@ rct_window* window_sign_open(rct_windownumber number)
             rct_scenery_entry* scenery_entry = tile_element->AsLargeScenery()->GetEntry();
             if (scenery_entry != nullptr && scenery_entry->large_scenery.scrolling_mode != SCROLLING_MODE_NONE)
             {
-                BannerIndex bannerIndex = tile_element->AsLargeScenery()->GetBannerIndex();
+                auto bannerIndex = tile_element->AsLargeScenery()->GetBannerIndex();
 
                 if (bannerIndex == w->number)
                     break;
             }
         }
         tile_element++;
+        if (tile_element >= &gTileElements[std::size(gTileElements)])
+        {
+            return nullptr;
+        }
     }
 
-    int32_t view_z = tile_element->base_height << 3;
+    int32_t view_z = tile_element->GetBaseZ();
     w->frame_no = view_z;
 
     w->list_information_type = tile_element->AsLargeScenery()->GetPrimaryColour();
     w->var_492 = tile_element->AsLargeScenery()->GetSecondaryColour();
-    w->var_48C = tile_element->AsLargeScenery()->GetEntryIndex();
-
-    view_x += 16;
-    view_y += 16;
+    w->SceneryEntry = tile_element->AsLargeScenery()->GetEntryIndex();
 
     // Create viewport
     viewportWidget = &window_sign_widgets[WIDX_VIEWPORT];
     viewport_create(
-        w, w->x + viewportWidget->left + 1, w->y + viewportWidget->top + 1, (viewportWidget->right - viewportWidget->left) - 1,
-        (viewportWidget->bottom - viewportWidget->top) - 1, 0, view_x, view_y, view_z, 0, SPRITE_INDEX_NULL);
+        w, w->windowPos + ScreenCoordsXY{ viewportWidget->left + 1, viewportWidget->top + 1 },
+        (viewportWidget->right - viewportWidget->left) - 1, (viewportWidget->bottom - viewportWidget->top) - 1, 0,
+        { signViewPos, view_z }, 0, SPRITE_INDEX_NULL);
 
     w->viewport->flags = gConfigGeneral.always_show_gridlines ? VIEWPORT_FLAG_GRIDLINES : 0;
-    window_invalidate(w);
+    w->Invalidate();
 
     return w;
 }
@@ -203,11 +209,6 @@ rct_window* window_sign_open(rct_windownumber number)
  */
 static void window_sign_mouseup(rct_window* w, rct_widgetindex widgetIndex)
 {
-    auto banner = GetBanner(w->number);
-    int32_t x = banner->position.x << 5;
-    int32_t y = banner->position.y << 5;
-    auto tile_element = map_get_first_element_at(x / 32, y / 32);
-
     switch (widgetIndex)
     {
         case WIDX_CLOSE:
@@ -215,6 +216,11 @@ static void window_sign_mouseup(rct_window* w, rct_widgetindex widgetIndex)
             break;
         case WIDX_SIGN_DEMOLISH:
         {
+            auto banner = GetBanner(w->number);
+            auto bannerCoords = banner->position.ToCoordsXY();
+            auto tile_element = map_get_first_element_at(bannerCoords);
+            if (tile_element == nullptr)
+                return;
             while (1)
             {
                 if (tile_element->GetType() == TILE_ELEMENT_TYPE_LARGE_SCENERY)
@@ -222,33 +228,27 @@ static void window_sign_mouseup(rct_window* w, rct_widgetindex widgetIndex)
                     rct_scenery_entry* scenery_entry = tile_element->AsLargeScenery()->GetEntry();
                     if (scenery_entry->large_scenery.scrolling_mode != SCROLLING_MODE_NONE)
                     {
-                        BannerIndex bannerIndex = tile_element->AsLargeScenery()->GetBannerIndex();
+                        auto bannerIndex = tile_element->AsLargeScenery()->GetBannerIndex();
                         if (bannerIndex == w->number)
                             break;
                     }
                 }
                 tile_element++;
+                if (tile_element >= &gTileElements[std::size(gTileElements)])
+                {
+                    return;
+                }
             }
 
             auto sceneryRemoveAction = LargeSceneryRemoveAction(
-                x, y, tile_element->base_height, tile_element->GetDirection(),
+                { bannerCoords, tile_element->GetBaseZ(), tile_element->GetDirection() },
                 tile_element->AsLargeScenery()->GetSequenceIndex());
             GameActions::Execute(&sceneryRemoveAction);
-
             break;
         }
         case WIDX_SIGN_TEXT:
-        {
-            auto stringId = banner->string_idx;
-            if (banner->flags & BANNER_FLAG_LINKED_TO_RIDE)
-            {
-                Ride* ride = get_ride(banner->ride_index);
-                set_format_arg(16, uint32_t, ride->name_arguments);
-                stringId = ride->name;
-            }
-            window_text_input_open(w, WIDX_SIGN_TEXT, STR_SIGN_TEXT_TITLE, STR_SIGN_TEXT_PROMPT, stringId, 0, 32);
+            window_sign_show_text_input(w);
             break;
-        }
     }
 }
 
@@ -261,10 +261,10 @@ static void window_sign_mousedown(rct_window* w, rct_widgetindex widgetIndex, rc
     switch (widgetIndex)
     {
         case WIDX_MAIN_COLOUR:
-            window_dropdown_show_colour(w, widget, TRANSLUCENT(w->colours[1]), (uint8_t)w->list_information_type);
+            window_dropdown_show_colour(w, widget, TRANSLUCENT(w->colours[1]), static_cast<uint8_t>(w->list_information_type));
             break;
         case WIDX_TEXT_COLOUR:
-            window_dropdown_show_colour(w, widget, TRANSLUCENT(w->colours[1]), (uint8_t)w->var_492);
+            window_dropdown_show_colour(w, widget, TRANSLUCENT(w->colours[1]), static_cast<uint8_t>(w->var_492));
             break;
     }
 }
@@ -299,7 +299,7 @@ static void window_sign_dropdown(rct_window* w, rct_widgetindex widgetIndex, int
             return;
     }
 
-    window_invalidate(w);
+    w->Invalidate();
 }
 
 /**
@@ -324,7 +324,7 @@ static void window_sign_invalidate(rct_window* w)
     rct_widget* main_colour_btn = &window_sign_widgets[WIDX_MAIN_COLOUR];
     rct_widget* text_colour_btn = &window_sign_widgets[WIDX_TEXT_COLOUR];
 
-    rct_scenery_entry* scenery_entry = get_large_scenery_entry(w->var_48C);
+    rct_scenery_entry* scenery_entry = get_large_scenery_entry(w->SceneryEntry);
 
     main_colour_btn->type = WWT_EMPTY;
     text_colour_btn->type = WWT_EMPTY;
@@ -370,18 +370,17 @@ static void window_sign_viewport_rotate(rct_window* w)
 
     auto banner = GetBanner(w->number);
 
-    int32_t view_x = (banner->position.x << 5) + 16;
-    int32_t view_y = (banner->position.y << 5) + 16;
-    int32_t view_z = w->frame_no;
+    auto signViewPos = CoordsXYZ{ banner->position.ToCoordsXY().ToTileCentre(), w->frame_no };
 
     // Create viewport
     rct_widget* viewportWidget = &window_sign_widgets[WIDX_VIEWPORT];
     viewport_create(
-        w, w->x + viewportWidget->left + 1, w->y + viewportWidget->top + 1, (viewportWidget->right - viewportWidget->left) - 1,
-        (viewportWidget->bottom - viewportWidget->top) - 1, 0, view_x, view_y, view_z, 0, SPRITE_INDEX_NULL);
-
-    w->viewport->flags = gConfigGeneral.always_show_gridlines ? VIEWPORT_FLAG_GRIDLINES : 0;
-    window_invalidate(w);
+        w, w->windowPos + ScreenCoordsXY{ viewportWidget->left + 1, viewportWidget->top + 1 },
+        (viewportWidget->right - viewportWidget->left) - 1, (viewportWidget->bottom - viewportWidget->top) - 1, 0, signViewPos,
+        0, SPRITE_INDEX_NULL);
+    if (w->viewport != nullptr)
+        w->viewport->flags = gConfigGeneral.always_show_gridlines ? VIEWPORT_FLAG_GRIDLINES : 0;
+    w->Invalidate();
 }
 
 /**
@@ -410,10 +409,11 @@ rct_window* window_sign_small_open(rct_windownumber number)
     w->colours[2] = COLOUR_DARK_BROWN;
 
     auto banner = GetBanner(w->number);
-    int32_t view_x = banner->position.x << 5;
-    int32_t view_y = banner->position.y << 5;
+    auto signViewPos = banner->position.ToCoordsXY().ToTileCentre();
 
-    TileElement* tile_element = map_get_first_element_at(view_x / 32, view_y / 32);
+    TileElement* tile_element = map_get_first_element_at(signViewPos);
+    if (tile_element == nullptr)
+        return nullptr;
 
     while (1)
     {
@@ -429,25 +429,23 @@ rct_window* window_sign_small_open(rct_windownumber number)
         tile_element++;
     }
 
-    int32_t view_z = tile_element->base_height << 3;
+    int32_t view_z = tile_element->GetBaseZ();
     w->frame_no = view_z;
 
     w->list_information_type = tile_element->AsWall()->GetPrimaryColour();
     w->var_492 = tile_element->AsWall()->GetSecondaryColour();
-    w->var_48C = tile_element->AsWall()->GetEntryIndex();
-
-    view_x += 16;
-    view_y += 16;
+    w->SceneryEntry = tile_element->AsWall()->GetEntryIndex();
 
     // Create viewport
     viewportWidget = &window_sign_widgets[WIDX_VIEWPORT];
     viewport_create(
-        w, w->x + viewportWidget->left + 1, w->y + viewportWidget->top + 1, (viewportWidget->right - viewportWidget->left) - 1,
-        (viewportWidget->bottom - viewportWidget->top) - 1, 0, view_x, view_y, view_z, 0, SPRITE_INDEX_NULL);
+        w, w->windowPos + ScreenCoordsXY{ viewportWidget->left + 1, viewportWidget->top + 1 },
+        (viewportWidget->right - viewportWidget->left) - 1, (viewportWidget->bottom - viewportWidget->top) - 1, 0,
+        { signViewPos, view_z }, 0, SPRITE_INDEX_NULL);
 
     w->viewport->flags = gConfigGeneral.always_show_gridlines ? VIEWPORT_FLAG_GRIDLINES : 0;
     w->flags |= WF_NO_SCROLLING;
-    window_invalidate(w);
+    w->Invalidate();
 
     return w;
 }
@@ -458,11 +456,6 @@ rct_window* window_sign_small_open(rct_windownumber number)
  */
 static void window_sign_small_mouseup(rct_window* w, rct_widgetindex widgetIndex)
 {
-    auto banner = GetBanner(w->number);
-    int32_t x = banner->position.x << 5;
-    int32_t y = banner->position.y << 5;
-    auto tile_element = map_get_first_element_at(x / 32, y / 32);
-
     switch (widgetIndex)
     {
         case WIDX_CLOSE:
@@ -470,6 +463,11 @@ static void window_sign_small_mouseup(rct_window* w, rct_widgetindex widgetIndex
             break;
         case WIDX_SIGN_DEMOLISH:
         {
+            auto banner = GetBanner(w->number);
+            auto bannerCoords = banner->position.ToCoordsXY();
+            auto tile_element = map_get_first_element_at(bannerCoords);
+            if (tile_element == nullptr)
+                return;
             while (true)
             {
                 if (tile_element->GetType() == TILE_ELEMENT_TYPE_WALL)
@@ -483,23 +481,14 @@ static void window_sign_small_mouseup(rct_window* w, rct_widgetindex widgetIndex
                 }
                 tile_element++;
             }
-            TileCoordsXYZD wallLocation = { x >> 5, y >> 5, tile_element->base_height, tile_element->GetDirection() };
+            CoordsXYZD wallLocation = { bannerCoords, tile_element->GetBaseZ(), tile_element->GetDirection() };
             auto wallRemoveAction = WallRemoveAction(wallLocation);
             GameActions::Execute(&wallRemoveAction);
             break;
         }
         case WIDX_SIGN_TEXT:
-        {
-            auto stringId = banner->string_idx;
-            if (banner->flags & BANNER_FLAG_LINKED_TO_RIDE)
-            {
-                Ride* ride = get_ride(banner->ride_index);
-                set_format_arg(16, uint32_t, ride->name_arguments);
-                stringId = ride->name;
-            }
-            window_text_input_open(w, WIDX_SIGN_TEXT, STR_SIGN_TEXT_TITLE, STR_SIGN_TEXT_PROMPT, stringId, 0, 32);
+            window_sign_show_text_input(w);
             break;
-        }
     }
 }
 
@@ -533,7 +522,7 @@ static void window_sign_small_dropdown(rct_window* w, rct_widgetindex widgetInde
             return;
     }
 
-    window_invalidate(w);
+    w->Invalidate();
 }
 
 /**
@@ -545,7 +534,7 @@ static void window_sign_small_invalidate(rct_window* w)
     rct_widget* main_colour_btn = &window_sign_widgets[WIDX_MAIN_COLOUR];
     rct_widget* text_colour_btn = &window_sign_widgets[WIDX_TEXT_COLOUR];
 
-    rct_scenery_entry* scenery_entry = get_wall_entry(w->var_48C);
+    rct_scenery_entry* scenery_entry = get_wall_entry(w->SceneryEntry);
 
     main_colour_btn->type = WWT_EMPTY;
     text_colour_btn->type = WWT_EMPTY;
@@ -561,4 +550,14 @@ static void window_sign_small_invalidate(rct_window* w)
 
     main_colour_btn->image = SPRITE_ID_PALETTE_COLOUR_1(w->list_information_type) | IMAGE_TYPE_TRANSPARENT | SPR_PALETTE_BTN;
     text_colour_btn->image = SPRITE_ID_PALETTE_COLOUR_1(w->var_492) | IMAGE_TYPE_TRANSPARENT | SPR_PALETTE_BTN;
+}
+
+static void window_sign_show_text_input(rct_window* w)
+{
+    auto banner = GetBanner(w->number);
+    if (banner != nullptr)
+    {
+        auto bannerText = banner->GetText();
+        window_text_input_raw_open(w, WIDX_SIGN_TEXT, STR_SIGN_TEXT_TITLE, STR_SIGN_TEXT_PROMPT, bannerText.c_str(), 32);
+    }
 }

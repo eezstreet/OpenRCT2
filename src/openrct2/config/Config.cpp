@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2019 OpenRCT2 developers
+ * Copyright (c) 2014-2020 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -26,8 +26,10 @@
 #include "../paint/VirtualFloor.h"
 #include "../platform/Platform2.h"
 #include "../platform/platform.h"
+#include "../rct1/RCT1.h"
 #include "../scenario/Scenario.h"
 #include "../ui/UiContext.h"
+#include "../util/Util.h"
 #include "ConfigEnum.hpp"
 #include "IniReader.hpp"
 #include "IniWriter.hpp"
@@ -183,6 +185,7 @@ namespace Config
             model->day_night_cycle = reader->GetBoolean("day_night_cycle", false);
 
             model->enable_light_fx = reader->GetBoolean("enable_light_fx", false);
+            model->enable_light_fx_for_vehicles = reader->GetBoolean("enable_light_fx_for_vehicles", false);
             model->upper_case_banners = reader->GetBoolean("upper_case_banners", false);
             model->disable_lightning_effect = reader->GetBoolean("disable_lightning_effect", false);
             model->allow_loading_with_incorrect_checksum = reader->GetBoolean("allow_loading_with_incorrect_checksum", true);
@@ -256,6 +259,7 @@ namespace Config
         writer->WriteBoolean("minimize_fullscreen_focus_loss", model->minimize_fullscreen_focus_loss);
         writer->WriteBoolean("day_night_cycle", model->day_night_cycle);
         writer->WriteBoolean("enable_light_fx", model->enable_light_fx);
+        writer->WriteBoolean("enable_light_fx_for_vehicles", model->enable_light_fx_for_vehicles);
         writer->WriteBoolean("upper_case_banners", model->upper_case_banners);
         writer->WriteBoolean("disable_lightning_effect", model->disable_lightning_effect);
         writer->WriteBoolean("allow_loading_with_incorrect_checksum", model->allow_loading_with_incorrect_checksum);
@@ -299,6 +303,7 @@ namespace Config
             model->console_small_font = reader->GetBoolean("console_small_font", false);
             model->current_theme_preset = reader->GetCString("current_theme", "*RCT2");
             model->current_title_sequence_preset = reader->GetCString("current_title_sequence", "*OPENRCT2");
+            model->random_title_sequence = reader->GetBoolean("random_title_sequence", false);
             model->object_selection_filter_flags = reader->GetInt32("object_selection_filter_flags", 0x3FFF);
             model->scenarioselect_last_tab = reader->GetInt32("scenarioselect_last_tab", 0);
         }
@@ -317,6 +322,7 @@ namespace Config
         writer->WriteBoolean("console_small_font", model->console_small_font);
         writer->WriteString("current_theme", model->current_theme_preset);
         writer->WriteString("current_title_sequence", model->current_title_sequence_preset);
+        writer->WriteBoolean("random_title_sequence", model->random_title_sequence);
         writer->WriteInt32("object_selection_filter_flags", model->object_selection_filter_flags);
         writer->WriteInt32("scenarioselect_last_tab", model->scenarioselect_last_tab);
     }
@@ -380,6 +386,7 @@ namespace Config
             model->default_password = reader->GetString("default_password", "");
             model->stay_connected = reader->GetBoolean("stay_connected", true);
             model->advertise = reader->GetBoolean("advertise", true);
+            model->advertise_address = reader->GetString("advertise_address", "");
             model->maxplayers = reader->GetInt32("maxplayers", 16);
             model->server_name = reader->GetString("server_name", "Server");
             model->server_description = reader->GetString("server_description", "");
@@ -406,6 +413,7 @@ namespace Config
         writer->WriteString("default_password", model->default_password);
         writer->WriteBoolean("stay_connected", model->stay_connected);
         writer->WriteBoolean("advertise", model->advertise);
+        writer->WriteString("advertise_address", model->advertise_address);
         writer->WriteInt32("maxplayers", model->maxplayers);
         writer->WriteString("server_name", model->server_name);
         writer->WriteString("server_description", model->server_description);
@@ -432,10 +440,11 @@ namespace Config
             model->park_rating_warnings = reader->GetBoolean("park_rating_warnings", true);
             model->ride_broken_down = reader->GetBoolean("ride_broken_down", true);
             model->ride_crashed = reader->GetBoolean("ride_crashed", true);
+            model->ride_casualties = reader->GetBoolean("ride_casualties", true);
             model->ride_warnings = reader->GetBoolean("ride_warnings", true);
             model->ride_researched = reader->GetBoolean("ride_researched", true);
+            model->ride_stalled_vehicles = reader->GetBoolean("ride_stalled_vehicles", true);
             model->guest_warnings = reader->GetBoolean("guest_warnings", true);
-            model->guest_lost = reader->GetBoolean("guest_lost", false);
             model->guest_left_park = reader->GetBoolean("guest_left_park", true);
             model->guest_queuing_for_ride = reader->GetBoolean("guest_queuing_for_ride", true);
             model->guest_on_ride = reader->GetBoolean("guest_on_ride", true);
@@ -456,10 +465,11 @@ namespace Config
         writer->WriteBoolean("park_rating_warnings", model->park_rating_warnings);
         writer->WriteBoolean("ride_broken_down", model->ride_broken_down);
         writer->WriteBoolean("ride_crashed", model->ride_crashed);
+        writer->WriteBoolean("ride_casualties", model->ride_casualties);
         writer->WriteBoolean("ride_warnings", model->ride_warnings);
         writer->WriteBoolean("ride_researched", model->ride_researched);
+        writer->WriteBoolean("ride_stalled_vehicles", model->ride_stalled_vehicles);
         writer->WriteBoolean("guest_warnings", model->guest_warnings);
-        writer->WriteBoolean("guest_lost", model->guest_lost);
         writer->WriteBoolean("guest_left_park", model->guest_left_park);
         writer->WriteBoolean("guest_queuing_for_ride", model->guest_queuing_for_ride);
         writer->WriteBoolean("guest_on_ride", model->guest_on_ride);
@@ -467,34 +477,6 @@ namespace Config
         writer->WriteBoolean("guest_bought_item", model->guest_bought_item);
         writer->WriteBoolean("guest_used_facility", model->guest_used_facility);
         writer->WriteBoolean("guest_died", model->guest_died);
-    }
-
-    static void ReadTwitch(IIniReader* reader)
-    {
-        if (reader->ReadSection("twitch"))
-        {
-            auto model = &gConfigTwitch;
-            model->api_url = reader->GetCString("api_url", nullptr);
-            model->channel = reader->GetCString("channel", nullptr);
-            model->enable_follower_peep_names = reader->GetBoolean("follower_peep_names", true);
-            model->enable_follower_peep_tracking = reader->GetBoolean("follower_peep_tracking", false);
-            model->enable_chat_peep_names = reader->GetBoolean("chat_peep_names", true);
-            model->enable_chat_peep_tracking = reader->GetBoolean("chat_peep_tracking", true);
-            model->enable_news = reader->GetBoolean("news", false);
-        }
-    }
-
-    static void WriteTwitch(IIniWriter* writer)
-    {
-        auto model = &gConfigTwitch;
-        writer->WriteSection("twitch");
-        writer->WriteString("api_url", model->api_url);
-        writer->WriteString("channel", model->channel);
-        writer->WriteBoolean("follower_peep_names", model->enable_follower_peep_names);
-        writer->WriteBoolean("follower_peep_tracking", model->enable_follower_peep_tracking);
-        writer->WriteBoolean("chat_peep_names", model->enable_chat_peep_names);
-        writer->WriteBoolean("chat_peep_tracking", model->enable_chat_peep_tracking);
-        writer->WriteBoolean("news", model->enable_news);
     }
 
     static void ReadFont(IIniReader* reader)
@@ -539,6 +521,22 @@ namespace Config
         writer->WriteInt32("hinting_threshold", model->hinting_threshold);
     }
 
+    static void ReadPlugin(IIniReader* reader)
+    {
+        if (reader->ReadSection("plugin"))
+        {
+            auto model = &gConfigPlugin;
+            model->enable_hot_reloading = reader->GetBoolean("enable_hot_reloading", false);
+        }
+    }
+
+    static void WritePlugin(IIniWriter* writer)
+    {
+        auto model = &gConfigPlugin;
+        writer->WriteSection("plugin");
+        writer->WriteBoolean("enable_hot_reloading", model->enable_hot_reloading);
+    }
+
     static bool SetDefaults()
     {
         try
@@ -549,8 +547,8 @@ namespace Config
             ReadSound(reader.get());
             ReadNetwork(reader.get());
             ReadNotifications(reader.get());
-            ReadTwitch(reader.get());
             ReadFont(reader.get());
+            ReadPlugin(reader.get());
             return true;
         }
         catch (const std::exception&)
@@ -570,8 +568,8 @@ namespace Config
             ReadSound(reader.get());
             ReadNetwork(reader.get());
             ReadNotifications(reader.get());
-            ReadTwitch(reader.get());
             ReadFont(reader.get());
+            ReadPlugin(reader.get());
             return true;
         }
         catch (const std::exception&)
@@ -594,8 +592,8 @@ namespace Config
             WriteSound(writer.get());
             WriteNetwork(writer.get());
             WriteNotifications(writer.get());
-            WriteTwitch(writer.get());
             WriteFont(writer.get());
+            WritePlugin(writer.get());
             return true;
         }
         catch (const std::exception& ex)
@@ -626,7 +624,7 @@ namespace Config
 
         for (const utf8* location : searchLocations)
         {
-            if (platform_original_rct1_data_exists(location))
+            if (RCT1DataPresentAtLocation(location))
             {
                 return location;
             }
@@ -636,13 +634,13 @@ namespace Config
         if (platform_get_steam_path(steamPath, sizeof(steamPath)))
         {
             std::string location = Path::Combine(steamPath, platform_get_rct1_steam_dir());
-            if (platform_original_rct1_data_exists(location.c_str()))
+            if (RCT1DataPresentAtLocation(location.c_str()))
             {
                 return location;
             }
         }
 
-        if (platform_original_rct1_data_exists(gExePath))
+        if (RCT1DataPresentAtLocation(gExePath))
         {
             return gExePath;
         }
@@ -707,10 +705,10 @@ namespace Config
 GeneralConfiguration gConfigGeneral;
 InterfaceConfiguration gConfigInterface;
 SoundConfiguration gConfigSound;
-TwitchConfiguration gConfigTwitch;
 NetworkConfiguration gConfigNetwork;
 NotificationConfiguration gConfigNotifications;
 FontConfiguration gConfigFonts;
+PluginConfiguration gConfigPlugin;
 
 void config_set_defaults()
 {
@@ -752,8 +750,6 @@ void config_release()
     SafeFree(gConfigInterface.current_theme_preset);
     SafeFree(gConfigInterface.current_title_sequence_preset);
     SafeFree(gConfigSound.device);
-    SafeFree(gConfigTwitch.api_url);
-    SafeFree(gConfigTwitch.channel);
     SafeFree(gConfigFonts.file_name);
     SafeFree(gConfigFonts.font_name);
 }
@@ -828,4 +824,83 @@ bool config_find_or_browse_install_directory()
     }
 
     return true;
+}
+
+std::string FindCsg1datAtLocation(const utf8* path)
+{
+    char buffer[MAX_PATH], checkPath1[MAX_PATH], checkPath2[MAX_PATH];
+    safe_strcpy(buffer, path, MAX_PATH);
+    safe_strcat_path(buffer, "Data", MAX_PATH);
+    safe_strcpy(checkPath1, buffer, MAX_PATH);
+    safe_strcpy(checkPath2, buffer, MAX_PATH);
+    safe_strcat_path(checkPath1, "CSG1.DAT", MAX_PATH);
+    safe_strcat_path(checkPath2, "CSG1.1", MAX_PATH);
+
+    // Since Linux is case sensitive (and macOS sometimes too), make sure we handle case properly.
+    std::string path1result = Path::ResolveCasing(checkPath1);
+    if (!path1result.empty())
+    {
+        return path1result;
+    }
+
+    std::string path2result = Path::ResolveCasing(checkPath2);
+    return path2result;
+}
+
+bool Csg1datPresentAtLocation(const utf8* path)
+{
+    std::string location = FindCsg1datAtLocation(path);
+    return !location.empty();
+}
+
+std::string FindCsg1idatAtLocation(const utf8* path)
+{
+    auto result1 = Path::ResolveCasing(Path::Combine(path, "Data", "CSG1I.DAT"));
+    if (!result1.empty())
+    {
+        return result1;
+    }
+    auto result2 = Path::ResolveCasing(Path::Combine(path, "RCTdeluxe_install", "Data", "CSG1I.DAT"));
+    return result2;
+}
+
+bool Csg1idatPresentAtLocation(const utf8* path)
+{
+    std::string location = FindCsg1idatAtLocation(path);
+    return !location.empty();
+}
+
+bool RCT1DataPresentAtLocation(const utf8* path)
+{
+    return Csg1datPresentAtLocation(path) && Csg1idatPresentAtLocation(path) && CsgAtLocationIsUsable(path);
+}
+
+bool CsgIsUsable(rct_gx csg)
+{
+    return csg.header.num_entries == RCT1_NUM_LL_CSG_ENTRIES;
+}
+
+bool CsgAtLocationIsUsable(const utf8* path)
+{
+    auto csg1HeaderPath = FindCsg1idatAtLocation(path);
+    if (csg1HeaderPath.empty())
+    {
+        return false;
+    }
+
+    auto csg1DataPath = FindCsg1datAtLocation(path);
+    if (csg1DataPath.empty())
+    {
+        return false;
+    }
+
+    auto fileHeader = FileStream(csg1HeaderPath, FILE_MODE_OPEN);
+    auto fileData = FileStream(csg1DataPath, FILE_MODE_OPEN);
+    size_t fileHeaderSize = fileHeader.GetLength();
+    size_t fileDataSize = fileData.GetLength();
+
+    rct_gx csg = {};
+    csg.header.num_entries = static_cast<uint32_t>(fileHeaderSize / sizeof(rct_g1_element_32bit));
+    csg.header.total_size = static_cast<uint32_t>(fileDataSize);
+    return CsgIsUsable(csg);
 }

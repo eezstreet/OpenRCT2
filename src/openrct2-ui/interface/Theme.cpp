@@ -124,6 +124,7 @@ static constexpr const WindowThemeDesc WindowThemeDescriptors[] =
     { THEME_WC(WC_CONSTRUCT_RIDE),                 STR_THEMES_WINDOW_CONSTRUCT_RIDE,                 COLOURS_3(COLOUR_DARK_BROWN,               COLOUR_BORDEAUX_RED,             COLOUR_BORDEAUX_RED                                ) },
     { THEME_WC(WC_DEMOLISH_RIDE_PROMPT),           STR_THEMES_WINDOW_DEMOLISH_RIDE_PROMPT,           COLOURS_1(TRANSLUCENT(COLOUR_BORDEAUX_RED)                                                                                     ) },
     { THEME_WC(WC_SCENERY),                        STR_THEMES_WINDOW_SCENERY,                        COLOURS_3(COLOUR_DARK_BROWN,               COLOUR_DARK_GREEN,               COLOUR_DARK_GREEN                                  ) },
+    { THEME_WC(WC_SCENERY_SCATTER),                STR_THEMES_WINDOW_SCENERY_SCATTER,                COLOURS_3(COLOUR_DARK_BROWN,               COLOUR_DARK_GREEN,               COLOUR_DARK_GREEN                                  ) },
     { THEME_WC(WC_OPTIONS),                        STR_THEMES_WINDOW_OPTIONS,                        COLOURS_3(COLOUR_LIGHT_BLUE,               COLOUR_LIGHT_BLUE,               COLOUR_LIGHT_BLUE                                  ) },
     { THEME_WC(WC_FOOTPATH),                       STR_THEMES_WINDOW_FOOTPATH,                       COLOURS_3(COLOUR_DARK_BROWN,               COLOUR_DARK_BROWN,               COLOUR_DARK_BROWN                                  ) },
     { THEME_WC(WC_LAND),                           STR_THEMES_WINDOW_LAND,                           COLOURS_3(COLOUR_DARK_BROWN,               COLOUR_DARK_BROWN,               COLOUR_DARK_BROWN                                  ) },
@@ -294,7 +295,7 @@ UIThemeWindowEntry UIThemeWindowEntry::FromJson(const WindowThemeDesc* wtDesc, c
         ThrowThemeLoadException();
     }
 
-    uint8_t numColours = (uint8_t)json_array_size(jsonColours);
+    uint8_t numColours = static_cast<uint8_t>(json_array_size(jsonColours));
     numColours = std::min(numColours, wtDesc->NumColours);
 
     UIThemeWindowEntry result{};
@@ -303,7 +304,7 @@ UIThemeWindowEntry UIThemeWindowEntry::FromJson(const WindowThemeDesc* wtDesc, c
 
     for (uint8_t i = 0; i < numColours; i++)
     {
-        result.Theme.Colours[i] = (colour_t)json_integer_value(json_array_get(jsonColours, i));
+        result.Theme.Colours[i] = static_cast<colour_t>(json_integer_value(json_array_get(jsonColours, i)));
     }
 
     return result;
@@ -570,7 +571,7 @@ namespace ThemeManager
         if (theme == nullptr)
         {
             // Fall-back to default
-            theme = (UITheme*)&PredefinedThemeRCT2;
+            theme = const_cast<UITheme*>(&PredefinedThemeRCT2);
             LoadTheme(theme);
         }
         else
@@ -589,7 +590,7 @@ namespace ThemeManager
             {
                 if (theme.Path.empty())
                 {
-                    LoadTheme((UITheme*)PredefinedThemes[i].Theme);
+                    LoadTheme(const_cast<UITheme*>(PredefinedThemes[i].Theme));
                 }
                 else
                 {
@@ -605,7 +606,7 @@ namespace ThemeManager
     static void Initialise()
     {
         ThemeManager::GetAvailableThemes(&ThemeManager::AvailableThemes);
-        LoadTheme((UITheme*)&PredefinedThemeRCT2);
+        LoadTheme(const_cast<UITheme*>(&PredefinedThemeRCT2));
         ActiveAvailableThemeIndex = 1;
 
         bool configValid = false;
@@ -687,7 +688,7 @@ void theme_manager_set_active_available_theme(size_t index)
 {
     if (index < ThemeManager::NumPredefinedThemes)
     {
-        ThemeManager::LoadTheme((UITheme*)PredefinedThemes[index].Theme);
+        ThemeManager::LoadTheme(const_cast<UITheme*>(PredefinedThemes[index].Theme));
     }
     else
     {
@@ -743,7 +744,7 @@ void theme_set_colour(rct_windowclass wc, uint8_t index, colour_t colour)
     UIThemeWindowEntry entry{};
     entry.WindowClass = wc;
 
-    auto currentEntry = (UIThemeWindowEntry*)ThemeManager::CurrentTheme->GetEntry(wc);
+    auto currentEntry = const_cast<UIThemeWindowEntry*>(ThemeManager::CurrentTheme->GetEntry(wc));
     if (currentEntry != nullptr)
     {
         entry.Theme = currentEntry->Theme;
@@ -834,7 +835,7 @@ void theme_duplicate(const utf8* name)
 void theme_delete()
 {
     File::Delete(ThemeManager::CurrentThemePath);
-    ThemeManager::LoadTheme((UITheme*)&PredefinedThemeRCT2);
+    ThemeManager::LoadTheme(const_cast<UITheme*>(&PredefinedThemeRCT2));
     ThemeManager::ActiveAvailableThemeIndex = 1;
     String::DiscardDuplicate(&gConfigInterface.current_theme_preset, theme_manager_get_available_theme_config_name(1));
 }

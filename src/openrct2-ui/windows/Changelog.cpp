@@ -32,15 +32,14 @@ enum {
     WIDX_SCROLL
 };
 
-#define WW 500
-#define WH 400
-#define MIN_WW 300
-#define MIN_WH 200
+static constexpr const int32_t WW = 500;
+static constexpr const int32_t WH = 400;
+static constexpr const rct_string_id WINDOW_TITLE = STR_CHANGELOG_TITLE;
+constexpr int32_t MIN_WW = 300;
+constexpr int32_t MIN_WH = 200;
 
 static rct_widget window_changelog_widgets[] = {
-    { WWT_FRAME,            0,  0,          WW - 1, 0,      WH - 1,     0xFFFFFFFF,                     STR_NONE },             // panel / background
-    { WWT_CAPTION,          0,  1,          WW - 2, 1,      14,         STR_CHANGELOG_TITLE,            STR_WINDOW_TITLE_TIP }, // title bar
-    { WWT_CLOSEBOX,         0,  WW - 13,    WW - 3, 2,      13,         STR_CLOSE_X,                    STR_CLOSE_WINDOW_TIP }, // close x button
+    WINDOW_SHIM(WINDOW_TITLE, WW, WH),
     { WWT_RESIZE,           1,  0,          WW - 1, 14,     WH - 1,     0xFFFFFFFF,                     STR_NONE },             // content panel
     { WWT_SCROLL,           1,  3,          WW - 3, 16,     WH - 15,    SCROLL_BOTH,                    STR_NONE },             // scroll area
     { WIDGETS_END },
@@ -147,12 +146,12 @@ static void window_changelog_resize(rct_window* w)
     w->min_height = MIN_WH;
     if (w->width < w->min_width)
     {
-        window_invalidate(w);
+        w->Invalidate();
         w->width = w->min_width;
     }
     if (w->height < w->min_height)
     {
-        window_invalidate(w);
+        w->Invalidate();
         w->height = w->min_height;
     }
 }
@@ -163,7 +162,7 @@ static void window_changelog_scrollgetsize(
     *width = _changelogLongestLineWidth + 4;
 
     const int32_t lineHeight = font_get_line_height(gCurrentFontSpriteBase);
-    *height = (int32_t)(_changelogLines.size() * lineHeight);
+    *height = static_cast<int32_t>(_changelogLines.size() * lineHeight);
 }
 
 static void window_changelog_invalidate(rct_window* w)
@@ -191,15 +190,14 @@ static void window_changelog_scrollpaint(rct_window* w, rct_drawpixelinfo* dpi, 
 
     const int32_t lineHeight = font_get_line_height(gCurrentFontSpriteBase);
 
-    int32_t x = 3;
-    int32_t y = 3 - lineHeight;
+    ScreenCoordsXY screenCoords(3, 3 - lineHeight);
     for (auto line : _changelogLines)
     {
-        y += lineHeight;
-        if (y + lineHeight < dpi->y || y >= dpi->y + dpi->height)
+        screenCoords.y += lineHeight;
+        if (screenCoords.y + lineHeight < dpi->y || screenCoords.y >= dpi->y + dpi->height)
             continue;
 
-        gfx_draw_string(dpi, (char*)line, w->colours[0], x, y);
+        gfx_draw_string(dpi, static_cast<const char*>(line), w->colours[0], screenCoords);
     }
 }
 
@@ -243,7 +241,7 @@ static bool window_changelog_read_file()
     }
 
     // Non-const cast required until C++17 is enabled
-    auto* start = (char*)_changelogText.data();
+    auto* start = static_cast<char*>(_changelogText.data());
     if (_changelogText.size() >= 3 && utf8_is_bom(start))
     {
         start += 3;

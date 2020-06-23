@@ -8,29 +8,45 @@ endif ()
 file(GLOB_RECURSE OPENRCT2_CORE_SOURCES "${CMAKE_CURRENT_LIST_DIR}/*.cpp")
 file(GLOB_RECURSE OPENRCT2_CORE_HEADERS "${CMAKE_CURRENT_LIST_DIR}/*.h"
                                         "${CMAKE_CURRENT_LIST_DIR}/*.hpp")
+list(REMOVE_ITEM OPENRCT2_CORE_HEADERS
+    "${CMAKE_CURRENT_LIST_DIR}/thirdparty/filesystem.hpp"
+    "${CMAKE_CURRENT_LIST_DIR}/thirdparty/linenoise.hpp"
+)
+
 if (APPLE)
     file(GLOB_RECURSE OPENRCT2_CORE_MM_SOURCES "${CMAKE_CURRENT_LIST_DIR}/*.mm")
     set_source_files_properties(${OPENRCT2_CORE_MM_SOURCES} PROPERTIES COMPILE_FLAGS "-x objective-c++ -fmodules")
 endif ()
 
-add_library(${PROJECT_NAME} ${OPENRCT2_CORE_SOURCES} ${OPENRCT2_CORE_MM_SOURCES} ${RCT2_SECTIONS})
+add_library(${PROJECT_NAME} ${OPENRCT2_CORE_SOURCES} ${OPENRCT2_CORE_MM_SOURCES})
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
 SET_CHECK_CXX_FLAGS(${PROJECT_NAME})
 
+# GCC / Clang likes us to pass the -lstdc++fs flag to link C++17 filesystem implementation.
+if (NOT MINGW AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD" AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD")
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        target_link_libraries(${PROJECT_NAME} stdc++fs)
+    endif()
+endif()
+
 if (NOT DISABLE_NETWORK OR NOT DISABLE_HTTP)
-    if (APPLE)
-        # Needed for linking with non-broken OpenSSL on Apple platforms
-        set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/usr/local/opt/openssl/lib/pkgconfig")
-    endif ()
-        
-    find_package(OpenSSL 1.0.0 REQUIRED)
-        
-    target_include_directories(${PROJECT_NAME} PUBLIC ${OPENSSL_INCLUDE_DIR})
-        
-    if(STATIC)
-        target_link_libraries(${PROJECT_NAME} ${SSL_STATIC_LIBRARIES})
+    if (WIN32)
+        target_link_libraries(${PROJECT_NAME} bcrypt)
     else ()
-        target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES})
+        if (APPLE)
+            # Needed for linking with non-broken OpenSSL on Apple platforms
+            set(ENV{PKG_CONFIG_PATH} "$ENV{PKG_CONFIG_PATH}:/usr/local/opt/openssl/lib/pkgconfig")
+        endif ()
+
+        find_package(OpenSSL 1.0.0 REQUIRED)
+
+        target_include_directories(${PROJECT_NAME} PUBLIC ${OPENSSL_INCLUDE_DIR})
+
+        if(STATIC)
+            target_link_libraries(${PROJECT_NAME} ${SSL_STATIC_LIBRARIES})
+        else ()
+            target_link_libraries(${PROJECT_NAME} ${OPENSSL_LIBRARIES})
+        endif()
     endif()
 endif ()
 
@@ -39,19 +55,18 @@ if (NOT DISABLE_NETWORK AND WIN32)
 endif ()
 
 if (NOT DISABLE_HTTP)
-    if (MSVC)
-        find_package(curl REQUIRED)
-        set(LIBCURL_LIBRARIES ${CURL_LIBRARIES})
+    if (WIN32)
+        target_link_libraries(${PROJECT_NAME} winhttp)
     else ()
         PKG_CHECK_MODULES(LIBCURL REQUIRED libcurl)
-    endif ()
-        
-    target_include_directories(${PROJECT_NAME} PRIVATE ${LIBCURL_INCLUDE_DIRS})
-        
-    if (STATIC)
-        target_link_libraries(${PROJECT_NAME} ${LIBCURL_STATIC_LIBRARIES})
-    else ()
-        target_link_libraries(${PROJECT_NAME} ${LIBCURL_LIBRARIES})
+
+        target_include_directories(${PROJECT_NAME} PRIVATE ${LIBCURL_INCLUDE_DIRS})
+
+        if (STATIC)
+            target_link_libraries(${PROJECT_NAME} ${LIBCURL_STATIC_LIBRARIES})
+        else ()
+            target_link_libraries(${PROJECT_NAME} ${LIBCURL_LIBRARIES})
+        endif ()
     endif ()
 endif ()
 
@@ -73,19 +88,32 @@ if (NOT DISABLE_TTF)
     endif ()
 endif ()
 
-find_package(benchmark 1.4 QUIET)
-if (benchmark_FOUND)
-    message("Found Google benchmark, enabling support")
-    set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_DEFINITIONS USE_BENCHMARK)
-    target_link_libraries(${PROJECT_NAME} benchmark::benchmark)
-    target_include_directories(${PROJECT_NAME} PRIVATE ${benchmark_INCLUDE_DIRS})
-else ()
-    message("Google benchmark not found, disabling support")
+if (NOT DISABLE_GOOGLE_BENCHMARK)
+    find_package(benchmark)
+    if (benchmark_FOUND)
+        message("Found Google benchmark, enabling support")
+        set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_DEFINITIONS USE_BENCHMARK)
+        target_link_libraries(${PROJECT_NAME} benchmark::benchmark)
+        target_include_directories(${PROJECT_NAME} PRIVATE ${benchmark_INCLUDE_DIRS})
+    else ()
+        message("Google benchmark not found, disabling support")
+    endif ()
+endif ()
+
+if (ENABLE_SCRIPTING)
+    find_package(duktape CONFIG REQUIRED)
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR} ${DUKTAPE_INCLUDE_DIRS})
+    if (STATIC)
+        target_link_libraries(${PROJECT_NAME} ${DUKTAPE_STATIC_LIBRARY})
+    else ()
+        target_link_libraries(${PROJECT_NAME} ${DUKTAPE_LIBRARY})
+    endif ()
 endif ()
 
 # Third party libraries
 if (MSVC)
-    find_package(jansson 2.5 REQUIRED)
+    find_package(jansson CONFIG REQUIRED)
+    set(JANSSON_LIBRARIES "jansson::jansson")
     find_package(png 1.6 REQUIRED)
     find_package(zlib REQUIRED)
 
@@ -120,6 +148,11 @@ else ()
                                      ${LIBZIP_LIBRARIES})
 endif ()
 
+if (MINGW)
+    # Hardcode libraries used by libzip on mingw
+    target_link_libraries(${PROJECT_NAME} crypto ws2_32)
+endif()
+
 if (UNIX AND NOT ${CMAKE_SYSTEM_NAME} MATCHES "BSD")
     # Include libdl for dlopen
     target_link_libraries(${PROJECT_NAME} dl)
@@ -142,13 +175,6 @@ if (NOT MINGW AND NOT MSVC)
     endif ()
 endif ()
 
-if (NOT APPLE AND NOT MINGW AND NOT MSVC)
-    # This is ugly hack to work around https://bugs.launchpad.net/ubuntu/+source/gcc-5/+bug/1568899.
-    # Once C++17 is enabled (and thus old compilers are no longer supported, this needs to be gone.
-    # We cannot simply detect the _compiler_ version, as the bug exists with the C++ _library_
-    target_link_libraries(${PROJECT_NAME} gcc_s gcc)
-endif ()
-
 if (NOT DISABLE_TTF)
     if (STATIC)
         target_link_libraries(${PROJECT_NAME} ${FREETYPE_STATIC_LIBRARIES})
@@ -163,6 +189,10 @@ if (NOT DISABLE_TTF)
             target_link_libraries(${PROJECT_NAME} ${FONTCONFIG_LIBRARIES})
         endif ()
     endif ()
+
+    if (${CMAKE_SYSTEM_NAME} MATCHES "OpenBSD")
+        target_link_libraries(${PROJECT_NAME} -L${OPENBSD_X11BASE}/lib)
+    endif ()
 endif ()
 
 if (HAVE_DISCORD_RPC)
@@ -173,7 +203,8 @@ endif()
 target_include_directories(${PROJECT_NAME} PRIVATE ${LIBZIP_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${JANSSON_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} PRIVATE ${PNG_INCLUDE_DIRS}
-                                              ${ZLIB_INCLUDE_DIRS})
+                                                   ${ZLIB_INCLUDE_DIRS})
+include_directories(${PROJECT_NAME} SYSTEM ${CMAKE_CURRENT_LIST_DIR}/../thirdparty)
 
 # To avoid unnecessary rebuilds set the current branch and
 # short sha1 only for the two files that use these

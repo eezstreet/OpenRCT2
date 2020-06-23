@@ -11,6 +11,7 @@
 
 #include <memory>
 #include <openrct2/common.h>
+#include <openrct2/world/Location.hpp>
 
 #define SHIFT 0x100
 #define CTRL 0x200
@@ -22,7 +23,7 @@
 #    define PLATFORM_MODIFIER CTRL
 #endif
 
-enum
+enum KeyboardShortcut
 {
     SHORTCUT_CLOSE_TOP_MOST_WINDOW,
     SHORTCUT_CLOSE_ALL_FLOATING_WINDOWS,
@@ -96,6 +97,21 @@ enum
     SHORTCUT_TILE_INSPECTOR,
     SHORTCUT_ADVANCE_TO_NEXT_TICK,
     SHORTCUT_SCENERY_PICKER,
+    SHORTCUT_SCALE_UP,
+    SHORTCUT_SCALE_DOWN,
+    SHORTCUT_INSERT_CORRUPT_ELEMENT,
+    SHORTCUT_COPY_ELEMENT,
+    SHORTCUT_PASTE_ELEMENT,
+    SHORTCUT_REMOVE_ELEMENT,
+    SHORTCUT_MOVE_ELEMENT_UP,
+    SHORTCUT_MOVE_ELEMENT_DOWN,
+    SHORTCUT_INCREASE_X_COORD,
+    SHORTCUT_DECREASE_X_COORD,
+    SHORTCUT_INCREASE_Y_COORD,
+    SHORTCUT_DECREASE_Y_COORD,
+    SHORTCUT_INCREASE_ELEM_HEIGHT,
+    SHORTCUT_DECREASE_ELEM_HEIGHT,
+    SHORTCUT_TOGGLE_CLEARANCE_CHECKS,
 
     SHORTCUT_COUNT,
 
@@ -131,14 +147,13 @@ namespace OpenRCT2
 
             void Set(int32_t key);
             int32_t GetFromKey(int32_t key);
-            void GetKeyboardMapScroll(const uint8_t* keysState, int32_t* x, int32_t* y) const;
+            ScreenCoordsXY GetKeyboardMapScroll(const uint8_t* keysState) const;
         };
     } // namespace Input
 } // namespace OpenRCT2
 
-/** The current shortcut being changed. */
+// The current shortcut being changed.
 extern uint8_t gKeyboardShortcutChangeId;
-extern const rct_string_id ShortcutStringIds[SHORTCUT_COUNT];
 
 void keyboard_shortcuts_reset();
 bool keyboard_shortcuts_load();
@@ -151,4 +166,4 @@ void keyboard_shortcut_handle(int32_t key);
 void keyboard_shortcut_handle_command(int32_t shortcutIndex);
 void keyboard_shortcut_format_string(char* buffer, size_t size, uint16_t shortcutKey);
 
-void get_keyboard_map_scroll(const uint8_t* keysState, int32_t* x, int32_t* y);
+ScreenCoordsXY get_keyboard_map_scroll(const uint8_t* keysState);

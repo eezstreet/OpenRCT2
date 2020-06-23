@@ -30,12 +30,13 @@ namespace OpenRCT2::Ui
         virtual rct_window* OpenIntent(Intent * intent) abstract;
         virtual void BroadcastIntent(const Intent& intent) abstract;
         virtual rct_window* ShowError(rct_string_id title, rct_string_id message) abstract;
+        virtual rct_window* ShowError(const std::string_view& title, const std::string_view& message) abstract;
         virtual void ForceClose(rct_windowclass windowClass) abstract;
         virtual void UpdateMapTooltip() abstract;
         virtual void HandleInput() abstract;
         virtual void HandleKeyboard(bool isTitle) abstract;
         virtual std::string GetKeyboardShortcutString(int32_t shortcut) abstract;
-        virtual void SetMainView(int32_t x, int32_t y, int32_t zoom, int32_t rotation) abstract;
+        virtual void SetMainView(const ScreenCoordsXY& viewPos, ZoomLevel zoom, int32_t rotation) abstract;
         virtual void UpdateMouseWheel() abstract;
         virtual rct_window* GetOwner(const rct_viewport* viewport) abstract;
     };

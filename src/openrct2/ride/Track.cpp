@@ -223,32 +223,32 @@ const rct_trackdefinition TrackDefinitions[256] =
     { TRACK_FLAT,                   TRACK_SLOPE_NONE,           TRACK_SLOPE_DOWN_25,        TRACK_BANK_LEFT,        TRACK_BANK_NONE,        0                  },  // ELEM_LEFT_QUARTER_TURN_3_TILES_25_DEG_DOWN_TO_LEFT_BANK
     { TRACK_FLAT,                   TRACK_SLOPE_NONE,           TRACK_SLOPE_DOWN_25,        TRACK_BANK_RIGHT,       TRACK_BANK_NONE,        0                  },  // ELEM_RIGHT_QUARTER_TURN_3_TILES_25_DEG_DOWN_TO_RIGHT_BANK
     { TRACK_POWERED_LIFT,           TRACK_SLOPE_UP_25,          TRACK_SLOPE_UP_25,          TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                  },  // ELEM_POWERED_LIFT
-    { TRACK_HALF_LOOP_LARGE,        TRACK_SLOPE_NONE,           TRACK_SLOPE_UP_25,          TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        64                 },  // ELEM_LEFT_LARGE_HALF_LOOP_UP
-    { TRACK_HALF_LOOP_LARGE,        TRACK_SLOPE_NONE,           TRACK_SLOPE_UP_25,          TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        64                 },  // ELEM_RIGHT_LARGE_HALF_LOOP_UP
-    { TRACK_HALF_LOOP_LARGE,        TRACK_SLOPE_DOWN_25,        TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_UPSIDE_DOWN, -64                },  // ELEM_RIGHT_LARGE_HALF_LOOP_DOWN
-    { TRACK_HALF_LOOP_LARGE,        TRACK_SLOPE_DOWN_25,        TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_UPSIDE_DOWN, -64                },  // ELEM_LEFT_LARGE_HALF_LOOP_DOWN
-    { TRACK_INLINE_TWIST_UNINVERTED,TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        0                  },  // ELEM_LEFT_FLYER_TWIST_UP
-    { TRACK_INLINE_TWIST_UNINVERTED,TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        0                  },  // ELEM_RIGHT_FLYER_TWIST_UP
-    { TRACK_INLINE_TWIST_INVERTED,  TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        0                  },  // ELEM_LEFT_FLYER_TWIST_DOWN
-    { TRACK_INLINE_TWIST_INVERTED,  TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        0                  },  // ELEM_RIGHT_FLYER_TWIST_DOWN
-    { TRACK_HALF_LOOP_UNINVERTED,   TRACK_SLOPE_NONE,           TRACK_SLOPE_UP_25,          TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        64                 },  // ELEM_FLYER_HALF_LOOP_UP
-    { TRACK_HALF_LOOP_INVERTED,     TRACK_SLOPE_DOWN_25,        TRACK_SLOPE_NONE,           TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        -64                },  // ELEM_FLYER_HALF_LOOP_DOWN
-    { TRACK_190,                    TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        0                  },  // ELEM_LEFT_FLYER_CORKSCREW_UP
-    { TRACK_190,                    TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        0                  },  // ELEM_RIGHT_FLYER_CORKSCREW_UP
-    { TRACK_192,                    TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        -32                },  // ELEM_LEFT_FLYER_CORKSCREW_DOWN
-    { TRACK_192,                    TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        -32                },  // ELEM_RIGHT_FLYER_CORKSCREW_DOWN
-    { TRACK_194,                    TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                  },  // ELEM_HEARTLINE_TRANSFER_UP
-    { TRACK_194,                    TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                  },  // ELEM_HEARTLINE_TRANSFER_DOWN
-    { TRACK_HEARTLINE_ROLL,         TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                  },  // ELEM_LEFT_HEARTLINE_ROLL
-    { TRACK_HEARTLINE_ROLL,         TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                  },  // ELEM_RIGHT_HEARTLINE_ROLL
-    { TRACK_MINI_GOLF_HOLE,         TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                  },  // ELEM_MINI_GOLF_HOLE_A
-    { TRACK_MINI_GOLF_HOLE,         TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                  },  // ELEM_MINI_GOLF_HOLE_B
-    { TRACK_MINI_GOLF_HOLE,         TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                  },  // ELEM_MINI_GOLF_HOLE_C
-    { TRACK_MINI_GOLF_HOLE,         TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                  },  // ELEM_MINI_GOLF_HOLE_D
-    { TRACK_MINI_GOLF_HOLE,         TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                  },  // ELEM_MINI_GOLF_HOLE_E
-    { TRACK_QUARTER_LOOP_INVERTED,  TRACK_SLOPE_DOWN_90,        TRACK_SLOPE_NONE,           TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        0                  },  // ELEM_MULTIDIM_INVERTED_FLAT_TO_90_DEG_QUARTER_LOOP_DOWN
-    { TRACK_QUARTER_LOOP,           TRACK_SLOPE_NONE,           TRACK_SLOPE_UP_90,          TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        0                  },  // ELEM_90_DEG_TO_INVERTED_FLAT_QUARTER_LOOP_UP
-    { TRACK_QUARTER_LOOP,           TRACK_SLOPE_DOWN_90,        TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_UPSIDE_DOWN, 0                  },  // ELEM_INVERTED_FLAT_TO_90_DEG_QUARTER_LOOP_DOWN
+    {TRACK_HALF_LOOP_LARGE,         TRACK_SLOPE_NONE,    TRACK_SLOPE_UP_25, TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        64                 },  // ELEM_LEFT_LARGE_HALF_LOOP_UP
+    {TRACK_HALF_LOOP_LARGE,         TRACK_SLOPE_NONE,    TRACK_SLOPE_UP_25, TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        64                 },  // ELEM_RIGHT_LARGE_HALF_LOOP_UP
+    {TRACK_HALF_LOOP_LARGE,         TRACK_SLOPE_DOWN_25, TRACK_SLOPE_NONE,  TRACK_BANK_NONE,        TRACK_BANK_UPSIDE_DOWN, -64                },  // ELEM_RIGHT_LARGE_HALF_LOOP_DOWN
+    {TRACK_HALF_LOOP_LARGE,         TRACK_SLOPE_DOWN_25, TRACK_SLOPE_NONE,  TRACK_BANK_NONE,        TRACK_BANK_UPSIDE_DOWN, -64                },  // ELEM_LEFT_LARGE_HALF_LOOP_DOWN
+    {TRACK_INLINE_TWIST_UNINVERTED, TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        0                  },  // ELEM_LEFT_FLYER_TWIST_UP
+    {TRACK_INLINE_TWIST_UNINVERTED, TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        0                  },  // ELEM_RIGHT_FLYER_TWIST_UP
+    {TRACK_INLINE_TWIST_INVERTED,   TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        0                  },  // ELEM_LEFT_FLYER_TWIST_DOWN
+    {TRACK_INLINE_TWIST_INVERTED,   TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        0                  },  // ELEM_RIGHT_FLYER_TWIST_DOWN
+    {TRACK_HALF_LOOP_UNINVERTED,    TRACK_SLOPE_NONE,    TRACK_SLOPE_UP_25, TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        64                 },  // ELEM_FLYER_HALF_LOOP_UP
+    {TRACK_HALF_LOOP_INVERTED,      TRACK_SLOPE_DOWN_25, TRACK_SLOPE_NONE,  TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        -64                },  // ELEM_FLYER_HALF_LOOP_DOWN
+    {TRACK_CORKSCREW_UNINVERTED,    TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        0                  },  // ELEM_LEFT_FLYER_CORKSCREW_UP
+    {TRACK_CORKSCREW_UNINVERTED,    TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        0                  },  // ELEM_RIGHT_FLYER_CORKSCREW_UP
+    {TRACK_CORKSCREW_INVERTED,      TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        -32                },  // ELEM_LEFT_FLYER_CORKSCREW_DOWN
+    {TRACK_CORKSCREW_INVERTED,      TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        -32                },  // ELEM_RIGHT_FLYER_CORKSCREW_DOWN
+    {TRACK_HEARTLINE_TRANSFER,      TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                  },  // ELEM_HEARTLINE_TRANSFER_UP
+    {TRACK_HEARTLINE_TRANSFER,      TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                  },  // ELEM_HEARTLINE_TRANSFER_DOWN
+    {TRACK_HEARTLINE_ROLL,          TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                  },  // ELEM_LEFT_HEARTLINE_ROLL
+    {TRACK_HEARTLINE_ROLL,          TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                  },  // ELEM_RIGHT_HEARTLINE_ROLL
+    {TRACK_MINI_GOLF_HOLE,          TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                  },  // ELEM_MINI_GOLF_HOLE_A
+    {TRACK_MINI_GOLF_HOLE,          TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                  },  // ELEM_MINI_GOLF_HOLE_B
+    {TRACK_MINI_GOLF_HOLE,          TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                  },  // ELEM_MINI_GOLF_HOLE_C
+    {TRACK_MINI_GOLF_HOLE,          TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                  },  // ELEM_MINI_GOLF_HOLE_D
+    {TRACK_MINI_GOLF_HOLE,          TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                  },  // ELEM_MINI_GOLF_HOLE_E
+    {TRACK_QUARTER_LOOP_INVERTED,   TRACK_SLOPE_DOWN_90, TRACK_SLOPE_NONE,  TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        0                  },  // ELEM_MULTIDIM_INVERTED_FLAT_TO_90_DEG_QUARTER_LOOP_DOWN
+    {TRACK_QUARTER_LOOP,            TRACK_SLOPE_NONE,    TRACK_SLOPE_UP_90, TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        0                  },  // ELEM_90_DEG_TO_INVERTED_FLAT_QUARTER_LOOP_UP
+    {TRACK_QUARTER_LOOP,            TRACK_SLOPE_DOWN_90, TRACK_SLOPE_NONE,  TRACK_BANK_NONE,        TRACK_BANK_UPSIDE_DOWN, 0                  },  // ELEM_INVERTED_FLAT_TO_90_DEG_QUARTER_LOOP_DOWN
     { TRACK_LIFT_HILL_CURVED,       TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                  },  // ELEM_LEFT_CURVED_LIFT_HILL
     { TRACK_LIFT_HILL_CURVED,       TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                  },  // ELEM_RIGHT_CURVED_LIFT_HILL
     { TRACK_REVERSER,               TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                  },  // ELEM_LEFT_REVERSER
@@ -479,38 +479,38 @@ const rct_trackdefinition FlatRideTrackDefinitions[256] =
     { TRACK_BARREL_ROLL,            TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_UPSIDE_DOWN,TRACK_BANK_NONE,         0                           },  // 174
     { TRACK_BARREL_ROLL,            TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_UPSIDE_DOWN,TRACK_BANK_NONE,         0                           },  // 175
     { TRACK_BARREL_ROLL,            TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_UPSIDE_DOWN, 0                           },  // 176
-    { TRACK_BARREL_ROLL,            TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_UPSIDE_DOWN, 0                           },  // 177
-    { TRACK_FLAT,                   TRACK_SLOPE_UP_25,          TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_LEFT,        0                           },  // 178
-    { TRACK_FLAT,                   TRACK_SLOPE_UP_25,          TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_RIGHT,       0                           },  // 179
-    { TRACK_FLAT,                   TRACK_SLOPE_NONE,           TRACK_SLOPE_DOWN_25,        TRACK_BANK_LEFT,        TRACK_BANK_NONE,        0                           },  // 180
-    { TRACK_FLAT,                   TRACK_SLOPE_NONE,           TRACK_SLOPE_DOWN_25,        TRACK_BANK_RIGHT,       TRACK_BANK_NONE,        0                           },  // 181
-    { TRACK_POWERED_LIFT,           TRACK_SLOPE_UP_25,          TRACK_SLOPE_UP_25,          TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                           },  // 182
-    { TRACK_HALF_LOOP_LARGE,        TRACK_SLOPE_NONE,           TRACK_SLOPE_UP_25,          TRACK_BANK_UPSIDE_DOWN,TRACK_BANK_NONE,         64                          },  // 183
-    { TRACK_HALF_LOOP_LARGE,        TRACK_SLOPE_NONE,           TRACK_SLOPE_UP_25,          TRACK_BANK_UPSIDE_DOWN,TRACK_BANK_NONE,         64                          },  // 184
-    { TRACK_HALF_LOOP_LARGE,        TRACK_SLOPE_DOWN_25,        TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_UPSIDE_DOWN, -64                         },  // 185
-    { TRACK_HALF_LOOP_LARGE,        TRACK_SLOPE_DOWN_25,        TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_UPSIDE_DOWN, -64                         },  // 186
-    { TRACK_190,                    TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_UPSIDE_DOWN,TRACK_BANK_NONE,         0                           },  // 187
-    { TRACK_190,                    TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_UPSIDE_DOWN,TRACK_BANK_NONE,         0                           },  // 188
-    { TRACK_192,                    TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_UPSIDE_DOWN,TRACK_BANK_NONE,         0                           },  // 189
-    { TRACK_192,                    TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_UPSIDE_DOWN,TRACK_BANK_NONE,         0                           },  // 190
-    { TRACK_190,                    TRACK_SLOPE_NONE,           TRACK_SLOPE_UP_25,          TRACK_BANK_UPSIDE_DOWN,TRACK_BANK_NONE,         64                          },  // 191
-    { TRACK_192,                    TRACK_SLOPE_DOWN_25,        TRACK_SLOPE_NONE,           TRACK_BANK_UPSIDE_DOWN,TRACK_BANK_NONE,         -64                         },  // 192
-    { TRACK_190,                    TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_UPSIDE_DOWN,TRACK_BANK_NONE,         0                           },  // 193
-    { TRACK_190,                    TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_UPSIDE_DOWN,TRACK_BANK_NONE,         0                           },  // 194
-    { TRACK_192,                    TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_UPSIDE_DOWN,TRACK_BANK_NONE,         -32                         },  // 195
-    { TRACK_192,                    TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_UPSIDE_DOWN,TRACK_BANK_NONE,         -32                         },  // 196
-    { TRACK_194,                    TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                           },  // 197
-    { TRACK_194,                    TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                           },  // 198
-    { TRACK_HEARTLINE_ROLL,         TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                           },  // 199
-    { TRACK_HEARTLINE_ROLL,         TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                           },  // 200
-    { TRACK_MINI_GOLF_HOLE,         TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                           },  // 201
-    { TRACK_MINI_GOLF_HOLE,         TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                           },  // 202
-    { TRACK_MINI_GOLF_HOLE,         TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                           },  // 203
-    { TRACK_MINI_GOLF_HOLE,         TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                           },  // 204
-    { TRACK_MINI_GOLF_HOLE,         TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                           },  // 205
-    { TRACK_FLAT,                   TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                           },  // 206
-    { TRACK_FLAT,                   TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                           },  // 207
-    { TRACK_FLAT,                   TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                           },  // 208
+    {TRACK_BARREL_ROLL,          TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,    TRACK_BANK_NONE,        TRACK_BANK_UPSIDE_DOWN, 0                           },  // 177
+    {TRACK_FLAT,                 TRACK_SLOPE_UP_25,   TRACK_SLOPE_NONE,    TRACK_BANK_NONE,        TRACK_BANK_LEFT,        0                           },  // 178
+    {TRACK_FLAT,                 TRACK_SLOPE_UP_25,   TRACK_SLOPE_NONE,    TRACK_BANK_NONE,        TRACK_BANK_RIGHT,       0                           },  // 179
+    {TRACK_FLAT,                 TRACK_SLOPE_NONE,    TRACK_SLOPE_DOWN_25, TRACK_BANK_LEFT,        TRACK_BANK_NONE,        0                           },  // 180
+    {TRACK_FLAT,                 TRACK_SLOPE_NONE,    TRACK_SLOPE_DOWN_25, TRACK_BANK_RIGHT,       TRACK_BANK_NONE,        0                           },  // 181
+    {TRACK_POWERED_LIFT,         TRACK_SLOPE_UP_25,   TRACK_SLOPE_UP_25,   TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                           },  // 182
+    {TRACK_HALF_LOOP_LARGE,      TRACK_SLOPE_NONE,    TRACK_SLOPE_UP_25,   TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        64                          },  // 183
+    {TRACK_HALF_LOOP_LARGE,      TRACK_SLOPE_NONE,    TRACK_SLOPE_UP_25,   TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE,        64                          },  // 184
+    {TRACK_HALF_LOOP_LARGE,      TRACK_SLOPE_DOWN_25, TRACK_SLOPE_NONE,    TRACK_BANK_NONE,        TRACK_BANK_UPSIDE_DOWN, -64                         },  // 185
+    {TRACK_HALF_LOOP_LARGE,      TRACK_SLOPE_DOWN_25, TRACK_SLOPE_NONE,    TRACK_BANK_NONE,        TRACK_BANK_UPSIDE_DOWN, -64                         },  // 186
+    {TRACK_CORKSCREW_UNINVERTED, TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE, 0                           },  // 187
+    {TRACK_CORKSCREW_UNINVERTED, TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE, 0                           },  // 188
+    {TRACK_CORKSCREW_INVERTED,   TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE, 0                           },  // 189
+    {TRACK_CORKSCREW_INVERTED,   TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE, 0                           },  // 190
+    {TRACK_CORKSCREW_UNINVERTED, TRACK_SLOPE_NONE,    TRACK_SLOPE_UP_25, TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE, 64                          },  // 191
+    {TRACK_CORKSCREW_INVERTED,   TRACK_SLOPE_DOWN_25, TRACK_SLOPE_NONE,  TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE, -64                         },  // 192
+    {TRACK_CORKSCREW_UNINVERTED, TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE, 0                           },  // 193
+    {TRACK_CORKSCREW_UNINVERTED, TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE, 0                           },  // 194
+    {TRACK_CORKSCREW_INVERTED,   TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE, -32                         },  // 195
+    {TRACK_CORKSCREW_INVERTED,   TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_UPSIDE_DOWN, TRACK_BANK_NONE, -32                         },  // 196
+    {TRACK_HEARTLINE_TRANSFER,   TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_NONE,        TRACK_BANK_NONE, 0                           },  // 197
+    {TRACK_HEARTLINE_TRANSFER,   TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_NONE,        TRACK_BANK_NONE, 0                           },  // 198
+    {TRACK_HEARTLINE_ROLL,       TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_NONE,        TRACK_BANK_NONE, 0                           },  // 199
+    {TRACK_HEARTLINE_ROLL,       TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_NONE,        TRACK_BANK_NONE, 0                           },  // 200
+    {TRACK_MINI_GOLF_HOLE,       TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_NONE,        TRACK_BANK_NONE, 0                           },  // 201
+    {TRACK_MINI_GOLF_HOLE,       TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_NONE,        TRACK_BANK_NONE, 0                           },  // 202
+    {TRACK_MINI_GOLF_HOLE,       TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_NONE,        TRACK_BANK_NONE, 0                           },  // 203
+    {TRACK_MINI_GOLF_HOLE,       TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_NONE,        TRACK_BANK_NONE, 0                           },  // 204
+    {TRACK_MINI_GOLF_HOLE,       TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_NONE,        TRACK_BANK_NONE, 0                           },  // 205
+    {TRACK_FLAT,                 TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_NONE,        TRACK_BANK_NONE, 0                           },  // 206
+    {TRACK_FLAT,                 TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_NONE,        TRACK_BANK_NONE, 0                           },  // 207
+    {TRACK_FLAT,                 TRACK_SLOPE_NONE,    TRACK_SLOPE_NONE,  TRACK_BANK_NONE,        TRACK_BANK_NONE, 0                           },  // 208
     { TRACK_LIFT_HILL_CURVED,       TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                           },  // 209
     { TRACK_LIFT_HILL_CURVED,       TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                           },  // 210
     { TRACK_REVERSER,               TRACK_SLOPE_NONE,           TRACK_SLOPE_NONE,           TRACK_BANK_NONE,        TRACK_BANK_NONE,        0                           },  // 211
@@ -596,20 +596,22 @@ const rct_preview_track* get_track_def_from_ride_index(ride_id_t rideIndex, int3
     return get_track_def_from_ride(get_ride(rideIndex), trackType);
 }
 
-static TileElement* find_station_element(int32_t x, int32_t y, int32_t z, int32_t direction, ride_id_t rideIndex)
+static TileElement* find_station_element(const CoordsXYZD& loc, ride_id_t rideIndex)
 {
-    TileElement* tileElement = map_get_first_element_at(x >> 5, y >> 5);
+    TileElement* tileElement = map_get_first_element_at(loc);
+    if (tileElement == nullptr)
+        return nullptr;
     do
     {
-        if (z != tileElement->base_height)
+        if (loc.z != tileElement->GetBaseZ())
             continue;
         if (tileElement->GetType() != TILE_ELEMENT_TYPE_TRACK)
             continue;
-        if (tileElement->GetDirection() != direction)
+        if (tileElement->GetDirection() != loc.direction)
             continue;
         if (tileElement->AsTrack()->GetRideIndex() != rideIndex)
             continue;
-        if (!track_element_is_station(tileElement))
+        if (!tileElement->AsTrack()->IsStation())
             continue;
 
         return tileElement;
@@ -617,13 +619,14 @@ static TileElement* find_station_element(int32_t x, int32_t y, int32_t z, int32_
     return nullptr;
 }
 
-static void ride_remove_station(Ride* ride, int32_t x, int32_t y, int32_t z)
+static void ride_remove_station(Ride* ride, const CoordsXYZ& location)
 {
     for (int32_t i = 0; i < MAX_STATIONS; i++)
     {
-        if (ride->stations[i].Start.x == (x >> 5) && ride->stations[i].Start.y == (y >> 5) && ride->stations[i].Height == z)
+        auto stationStart = ride->stations[i].GetStart();
+        if (stationStart == location)
         {
-            ride->stations[i].Start.xy = RCT_XY8_UNDEFINED;
+            ride->stations[i].Start.setNull();
             ride->num_stations--;
             break;
         }
@@ -634,16 +637,17 @@ static void ride_remove_station(Ride* ride, int32_t x, int32_t y, int32_t z)
  *
  *  rct2: 0x006C4D89
  */
-bool track_add_station_element(int32_t x, int32_t y, int32_t z, int32_t direction, ride_id_t rideIndex, int32_t flags)
+bool track_add_station_element(CoordsXYZD loc, ride_id_t rideIndex, int32_t flags, bool fromTrackDesign)
 {
-    int32_t stationX0 = x;
-    int32_t stationY0 = y;
-    int32_t stationX1 = x;
-    int32_t stationY1 = y;
+    auto ride = get_ride(rideIndex);
+    if (ride == nullptr)
+        return false;
+
+    CoordsXY stationBackLoc = loc;
+    CoordsXY stationFrontLoc = loc;
     int32_t stationLength = 1;
 
-    Ride* ride = get_ride(rideIndex);
-    if (ride_type_has_flag(ride->type, RIDE_TYPE_FLAG_3))
+    if (ride_type_has_flag(ride->type, RIDE_TYPE_FLAG_HAS_SINGLE_PIECE_STATION))
     {
         if (ride->num_stations >= MAX_STATIONS)
         {
@@ -652,12 +656,12 @@ bool track_add_station_element(int32_t x, int32_t y, int32_t z, int32_t directio
         }
         if (flags & GAME_COMMAND_FLAG_APPLY)
         {
-            int8_t stationIndex = ride_get_first_empty_station_start(ride);
-            assert(stationIndex != -1);
+            auto stationIndex = ride_get_first_empty_station_start(ride);
+            assert(stationIndex != STATION_INDEX_NULL);
 
-            ride->stations[stationIndex].Start.x = (x >> 5);
-            ride->stations[stationIndex].Start.y = (y >> 5);
-            ride->stations[stationIndex].Height = z;
+            ride->stations[stationIndex].Start.x = loc.x;
+            ride->stations[stationIndex].Start.y = loc.y;
+            ride->stations[stationIndex].Height = loc.z / COORDS_Z_STEP;
             ride->stations[stationIndex].Depart = 1;
             ride->stations[stationIndex].Length = 0;
             ride->num_stations++;
@@ -668,56 +672,53 @@ bool track_add_station_element(int32_t x, int32_t y, int32_t z, int32_t directio
     TileElement* stationElement;
 
     // Search backwards for more station
-    x = stationX0;
-    y = stationY0;
+    loc = { stationBackLoc, loc.z, loc.direction };
     do
     {
-        x -= CoordsDirectionDelta[direction].x;
-        y -= CoordsDirectionDelta[direction].y;
+        loc -= CoordsDirectionDelta[loc.direction];
 
-        stationElement = find_station_element(x, y, z, direction, rideIndex);
+        stationElement = find_station_element(loc, rideIndex);
         if (stationElement != nullptr)
         {
             if (stationElement->AsTrack()->GetTrackType() == TRACK_ELEM_END_STATION)
             {
                 if (flags & GAME_COMMAND_FLAG_APPLY)
                 {
-                    ride_remove_station(ride, x, y, z);
+                    ride_remove_station(ride, loc);
                 }
             }
 
-            stationX0 = x;
-            stationY0 = y;
+            stationBackLoc = loc;
             stationLength++;
         }
     } while (stationElement != nullptr);
 
     // Search forwards for more station
-    x = stationX1;
-    y = stationY1;
+    loc = { stationFrontLoc, loc.z, loc.direction };
     do
     {
-        x += CoordsDirectionDelta[direction].x;
-        y += CoordsDirectionDelta[direction].y;
+        loc += CoordsDirectionDelta[loc.direction];
 
-        stationElement = find_station_element(x, y, z, direction, rideIndex);
+        stationElement = find_station_element(loc, rideIndex);
         if (stationElement != nullptr)
         {
             if (stationElement->AsTrack()->GetTrackType() == TRACK_ELEM_END_STATION)
             {
                 if (flags & GAME_COMMAND_FLAG_APPLY)
                 {
-                    ride_remove_station(ride, x, y, z);
+                    ride_remove_station(ride, loc);
                 }
             }
 
-            stationX1 = x;
-            stationY1 = y;
+            stationFrontLoc = loc;
             stationLength++;
         }
     } while (stationElement != nullptr);
 
-    if (stationX0 == stationX1 && stationY0 == stationY1 && ride->num_stations >= MAX_STATIONS)
+    // When attempting to place a track design, it sometimes happens that the front and back of station 0 are built,
+    // but the middle is not. Allow this, so the track place function can actually finish building all 4 stations.
+    // This _might_ cause issues if the track designs is bugged and actually has 5.
+    if (stationBackLoc == stationFrontLoc && ride->num_stations >= MAX_STATIONS && !fromTrackDesign)
     {
         gGameCommandErrorText = STR_NO_MORE_STATIONS_ALLOWED_ON_THIS_RIDE;
         return false;
@@ -731,33 +732,36 @@ bool track_add_station_element(int32_t x, int32_t y, int32_t z, int32_t directio
 
     if (flags & GAME_COMMAND_FLAG_APPLY)
     {
-        x = stationX1;
-        y = stationY1;
+        loc = { stationFrontLoc, loc.z, loc.direction };
 
         bool finaliseStationDone;
         do
         {
             finaliseStationDone = true;
 
-            stationElement = find_station_element(x, y, z, direction, rideIndex);
+            stationElement = find_station_element(loc, rideIndex);
             if (stationElement != nullptr)
             {
                 int32_t targetTrackType;
-                if (x == stationX1 && y == stationY1)
+                if (stationFrontLoc == loc)
                 {
-                    int8_t stationIndex = ride_get_first_empty_station_start(ride);
-                    assert(stationIndex != -1);
-
-                    ride->stations[stationIndex].Start.x = (x >> 5);
-                    ride->stations[stationIndex].Start.y = (y >> 5);
-                    ride->stations[stationIndex].Height = z;
-                    ride->stations[stationIndex].Depart = 1;
-                    ride->stations[stationIndex].Length = stationLength;
-                    ride->num_stations++;
+                    auto stationIndex = ride_get_first_empty_station_start(ride);
+                    if (stationIndex == STATION_INDEX_NULL)
+                    {
+                        log_verbose("No empty station starts, not updating metadata! This can happen with hacked rides.");
+                    }
+                    else
+                    {
+                        ride->stations[stationIndex].Start = loc;
+                        ride->stations[stationIndex].Height = loc.z / COORDS_Z_STEP;
+                        ride->stations[stationIndex].Depart = 1;
+                        ride->stations[stationIndex].Length = stationLength;
+                        ride->num_stations++;
+                    }
 
                     targetTrackType = TRACK_ELEM_END_STATION;
                 }
-                else if (x == stationX0 && y == stationY0)
+                else if (stationBackLoc == loc)
                 {
                     targetTrackType = TRACK_ELEM_BEGIN_STATION;
                 }
@@ -767,12 +771,11 @@ bool track_add_station_element(int32_t x, int32_t y, int32_t z, int32_t directio
                 }
                 stationElement->AsTrack()->SetTrackType(targetTrackType);
 
-                map_invalidate_element(x, y, stationElement);
+                map_invalidate_element(loc, stationElement);
 
-                if (x != stationX0 || y != stationY0)
+                if (stationBackLoc != loc)
                 {
-                    x -= CoordsDirectionDelta[direction].x;
-                    y -= CoordsDirectionDelta[direction].y;
+                    loc -= CoordsDirectionDelta[loc.direction];
                     finaliseStationDone = false;
                 }
             }
@@ -785,8 +788,12 @@ bool track_add_station_element(int32_t x, int32_t y, int32_t z, int32_t directio
  *
  *  rct2: 0x006C494B
  */
-bool track_remove_station_element(int32_t x, int32_t y, int32_t z, int32_t direction, ride_id_t rideIndex, int32_t flags)
+bool track_remove_station_element(int32_t x, int32_t y, int32_t z, Direction direction, ride_id_t rideIndex, int32_t flags)
 {
+    auto ride = get_ride(rideIndex);
+    if (ride == nullptr)
+        return false;
+
     int32_t removeX = x;
     int32_t removeY = y;
     int32_t stationX0 = x;
@@ -796,15 +803,14 @@ bool track_remove_station_element(int32_t x, int32_t y, int32_t z, int32_t direc
     int32_t stationLength = 0;
     int32_t byte_F441D1 = -1;
 
-    Ride* ride = get_ride(rideIndex);
-    if (ride_type_has_flag(ride->type, RIDE_TYPE_FLAG_3))
+    if (ride_type_has_flag(ride->type, RIDE_TYPE_FLAG_HAS_SINGLE_PIECE_STATION))
     {
-        TileElement* tileElement = map_get_track_element_at_with_direction_from_ride(x, y, z, direction, rideIndex);
+        TileElement* tileElement = map_get_track_element_at_with_direction_from_ride({ x, y, z << 3, direction }, rideIndex);
         if (tileElement != nullptr)
         {
             if (flags & GAME_COMMAND_FLAG_APPLY)
             {
-                ride_remove_station(ride, x, y, z);
+                ride_remove_station(ride, { x, y, z * COORDS_Z_STEP });
             }
         }
         return true;
@@ -815,13 +821,13 @@ bool track_remove_station_element(int32_t x, int32_t y, int32_t z, int32_t direc
     // Search backwards for more station
     x = stationX0;
     y = stationY0;
-    while ((stationElement = find_station_element(x, y, z, direction, rideIndex)) != nullptr)
+    while ((stationElement = find_station_element({ x, y, z * COORDS_Z_STEP, direction }, rideIndex)) != nullptr)
     {
         if (stationElement->AsTrack()->GetTrackType() == TRACK_ELEM_END_STATION)
         {
             if (flags & GAME_COMMAND_FLAG_APPLY)
             {
-                ride_remove_station(ride, x, y, z);
+                ride_remove_station(ride, { x, y, z * COORDS_Z_STEP });
             }
         }
 
@@ -841,14 +847,14 @@ bool track_remove_station_element(int32_t x, int32_t y, int32_t z, int32_t direc
         x += CoordsDirectionDelta[direction].x;
         y += CoordsDirectionDelta[direction].y;
 
-        stationElement = find_station_element(x, y, z, direction, rideIndex);
+        stationElement = find_station_element({ x, y, z * COORDS_Z_STEP, direction }, rideIndex);
         if (stationElement != nullptr)
         {
             if (stationElement->AsTrack()->GetTrackType() == TRACK_ELEM_END_STATION)
             {
                 if (flags & GAME_COMMAND_FLAG_APPLY)
                 {
-                    ride_remove_station(ride, x, y, z);
+                    ride_remove_station(ride, { x, y, z * COORDS_Z_STEP });
                 }
             }
 
@@ -881,22 +887,27 @@ bool track_remove_station_element(int32_t x, int32_t y, int32_t z, int32_t direc
 
         if (x != removeX || y != removeY)
         {
-            stationElement = find_station_element(x, y, z, direction, rideIndex);
+            stationElement = find_station_element({ x, y, z * COORDS_Z_STEP, direction }, rideIndex);
             if (stationElement != nullptr)
             {
                 int32_t targetTrackType;
                 if (x == stationX1 && y == stationY1)
                 {
                 loc_6C4BF5:;
-                    int8_t stationIndex = ride_get_first_empty_station_start(ride);
-                    assert(stationIndex != -1);
-
-                    ride->stations[stationIndex].Start.x = (x >> 5);
-                    ride->stations[stationIndex].Start.y = (y >> 5);
-                    ride->stations[stationIndex].Height = z;
-                    ride->stations[stationIndex].Depart = 1;
-                    ride->stations[stationIndex].Length = stationLength != 0 ? stationLength : byte_F441D1;
-                    ride->num_stations++;
+                    auto stationIndex = ride_get_first_empty_station_start(ride);
+                    if (stationIndex == STATION_INDEX_NULL)
+                    {
+                        log_verbose("No empty station starts, not updating metadata! This can happen with hacked rides.");
+                    }
+                    else
+                    {
+                        ride->stations[stationIndex].Start.x = x;
+                        ride->stations[stationIndex].Start.y = y;
+                        ride->stations[stationIndex].Height = z;
+                        ride->stations[stationIndex].Depart = 1;
+                        ride->stations[stationIndex].Length = stationLength != 0 ? stationLength : byte_F441D1;
+                        ride->num_stations++;
+                    }
 
                     stationLength = 0;
                     targetTrackType = TRACK_ELEM_END_STATION;
@@ -929,7 +940,7 @@ bool track_remove_station_element(int32_t x, int32_t y, int32_t z, int32_t direc
                 }
                 stationElement->AsTrack()->SetTrackType(targetTrackType);
 
-                map_invalidate_element(x, y, stationElement);
+                map_invalidate_element({ x, y }, stationElement);
             }
         }
 
@@ -958,7 +969,7 @@ bool track_circuit_iterator_previous(track_circuit_iterator* it)
 
     if (it->first == nullptr)
     {
-        if (!track_block_get_previous(it->last.x, it->last.y, it->last.element, &trackBeginEnd))
+        if (!track_block_get_previous({ it->last.x, it->last.y, it->last.element }, &trackBeginEnd))
             return false;
 
         it->current.x = trackBeginEnd.begin_x;
@@ -981,7 +992,7 @@ bool track_circuit_iterator_previous(track_circuit_iterator* it)
         it->firstIteration = false;
         it->last = it->current;
 
-        if (track_block_get_previous(it->last.x, it->last.y, it->last.element, &trackBeginEnd))
+        if (track_block_get_previous({ it->last.x, it->last.y, it->last.element }, &trackBeginEnd))
         {
             it->current.x = trackBeginEnd.end_x;
             it->current.y = trackBeginEnd.end_y;
@@ -1037,7 +1048,7 @@ void track_get_back(CoordsXYE* input, CoordsXYE* output)
     lastTrack = *input;
     do
     {
-        result = track_block_get_previous(lastTrack.x, lastTrack.y, lastTrack.element, &currentTrack);
+        result = track_block_get_previous(lastTrack, &currentTrack);
         if (result)
         {
             lastTrack.x = currentTrack.begin_x;
@@ -1068,18 +1079,18 @@ void track_get_front(CoordsXYE* input, CoordsXYE* output)
 
 bool TrackElement::HasChain() const
 {
-    return type & TRACK_ELEMENT_TYPE_FLAG_CHAIN_LIFT;
+    return Flags2 & TRACK_ELEMENT_FLAGS2_CHAIN_LIFT;
 }
 
 void TrackElement::SetHasChain(bool on)
 {
     if (on)
     {
-        type |= TRACK_ELEMENT_TYPE_FLAG_CHAIN_LIFT;
+        Flags2 |= TRACK_ELEMENT_FLAGS2_CHAIN_LIFT;
     }
     else
     {
-        type &= ~TRACK_ELEMENT_TYPE_FLAG_CHAIN_LIFT;
+        Flags2 &= ~TRACK_ELEMENT_FLAGS2_CHAIN_LIFT;
     }
 }
 
@@ -1111,14 +1122,18 @@ bool track_element_is_block_start(TileElement* trackElement)
 
 int32_t track_get_actual_bank(TileElement* tileElement, int32_t bank)
 {
-    Ride* ride = get_ride(tileElement->AsTrack()->GetRideIndex());
-    bool isInverted = tileElement->AsTrack()->IsInverted();
-    return track_get_actual_bank_2(ride->type, isInverted, bank);
+    auto ride = get_ride(tileElement->AsTrack()->GetRideIndex());
+    if (ride != nullptr)
+    {
+        bool isInverted = tileElement->AsTrack()->IsInverted();
+        return track_get_actual_bank_2(ride->type, isInverted, bank);
+    }
+    return bank;
 }
 
 int32_t track_get_actual_bank_2(int32_t rideType, bool isInverted, int32_t bank)
 {
-    if (RideData4[rideType].flags & RIDE_TYPE_FLAG4_HAS_ALTERNATIVE_TRACK_TYPE)
+    if (RideTypeDescriptors[rideType].Flags & RIDE_TYPE_FLAG_HAS_ALTERNATIVE_TRACK_TYPE)
     {
         if (isInverted)
         {
@@ -1135,19 +1150,26 @@ int32_t track_get_actual_bank_2(int32_t rideType, bool isInverted, int32_t bank)
     return bank;
 }
 
-int32_t track_get_actual_bank_3(rct_vehicle* vehicle, TileElement* tileElement)
+int32_t track_get_actual_bank_3(Vehicle* vehicle, TileElement* tileElement)
 {
-    bool isInverted = ((vehicle->update_flags & VEHICLE_UPDATE_FLAG_USE_INVERTED_SPRITES) > 0)
-        ^ tileElement->AsTrack()->IsInverted();
-    int32_t trackType = tileElement->AsTrack()->GetTrackType();
-    int32_t rideType = get_ride(tileElement->AsTrack()->GetRideIndex())->type;
-    int32_t bankStart = TrackDefinitions[trackType].bank_start;
-    return track_get_actual_bank_2(rideType, isInverted, bankStart);
+    auto trackType = tileElement->AsTrack()->GetTrackType();
+    auto bankStart = TrackDefinitions[trackType].bank_start;
+    auto ride = get_ride(tileElement->AsTrack()->GetRideIndex());
+    if (ride == nullptr)
+        return bankStart;
+
+    bool isInverted = vehicle->HasUpdateFlag(VEHICLE_UPDATE_FLAG_USE_INVERTED_SPRITES) ^ tileElement->AsTrack()->IsInverted();
+    return track_get_actual_bank_2(ride->type, isInverted, bankStart);
 }
 
-bool track_element_is_station(TileElement* trackElement)
+bool TrackElement::IsStation() const
 {
-    switch (trackElement->AsTrack()->GetTrackType())
+    return track_type_is_station(GetTrackType());
+}
+
+bool track_type_is_station(track_type_t trackType)
+{
+    switch (trackType)
     {
         case TRACK_ELEM_END_STATION:
         case TRACK_ELEM_BEGIN_STATION:
@@ -1202,220 +1224,228 @@ bool track_element_has_speed_setting(uint8_t trackType)
 
 uint8_t TrackElement::GetSeatRotation() const
 {
-    return colour >> 4;
+    return ColourScheme >> 4;
 }
 
 void TrackElement::SetSeatRotation(uint8_t newSeatRotation)
 {
-    colour &= 0x0F;
-    colour |= (newSeatRotation << 4);
+    ColourScheme &= ~TRACK_ELEMENT_COLOUR_SEAT_ROTATION_MASK;
+    ColourScheme |= (newSeatRotation << 4);
 }
 
 bool TrackElement::IsTakingPhoto() const
 {
-    return (sequence & MAP_ELEM_TRACK_SEQUENCE_TAKING_PHOTO_MASK) != 0;
+    return OnridePhotoBits != 0;
 }
 
 void TrackElement::SetPhotoTimeout()
 {
-    sequence &= MAP_ELEM_TRACK_SEQUENCE_SEQUENCE_MASK;
-    sequence |= (3 << 4);
+    OnridePhotoBits = 3;
 }
 
 void TrackElement::SetPhotoTimeout(uint8_t value)
 {
-    sequence &= MAP_ELEM_TRACK_SEQUENCE_SEQUENCE_MASK;
-    sequence |= (value << 4);
+    OnridePhotoBits = value;
+}
+
+uint8_t TrackElement::GetPhotoTimeout() const
+{
+    return OnridePhotoBits;
 }
 
 void TrackElement::DecrementPhotoTimeout()
 {
-    // We should only touch the upper 4 bits, avoid underflow into the lower 4.
-    if (sequence & MAP_ELEM_TRACK_SEQUENCE_TAKING_PHOTO_MASK)
-    {
-        sequence -= (1 << 4);
-    }
+    OnridePhotoBits = std::max(0, OnridePhotoBits - 1);
 }
 
 uint16_t TrackElement::GetMazeEntry() const
 {
-    return mazeEntry;
+    return MazeEntry;
 }
 
 void TrackElement::SetMazeEntry(uint16_t newMazeEntry)
 {
-    mazeEntry = newMazeEntry;
+    MazeEntry = newMazeEntry;
 }
 
 void TrackElement::MazeEntryAdd(uint16_t addVal)
 {
-    mazeEntry |= addVal;
+    MazeEntry |= addVal;
 }
 
 void TrackElement::MazeEntrySubtract(uint16_t subVal)
 {
-    mazeEntry &= ~subVal;
+    MazeEntry &= ~subVal;
 }
 
-uint8_t TrackElement::GetTrackType() const
+uint16_t TrackElement::GetTrackType() const
 {
-    return trackType;
+    return TrackType;
 }
 
-void TrackElement::SetTrackType(uint8_t newType)
+void TrackElement::SetTrackType(uint16_t newType)
 {
-    trackType = newType;
+    TrackType = newType;
 }
 
 uint8_t TrackElement::GetSequenceIndex() const
 {
-    return sequence & MAP_ELEM_TRACK_SEQUENCE_SEQUENCE_MASK;
+    return Sequence;
 }
 
 void TrackElement::SetSequenceIndex(uint8_t newSequenceIndex)
 {
-    sequence &= ~MAP_ELEM_TRACK_SEQUENCE_SEQUENCE_MASK;
-    sequence |= (newSequenceIndex & MAP_ELEM_TRACK_SEQUENCE_SEQUENCE_MASK);
+    Sequence = newSequenceIndex;
 }
 
 uint8_t TrackElement::GetStationIndex() const
 {
-    return (sequence & MAP_ELEM_TRACK_SEQUENCE_STATION_INDEX_MASK) >> 4;
+    return StationIndex;
 }
 
 void TrackElement::SetStationIndex(uint8_t newStationIndex)
 {
-    sequence &= ~MAP_ELEM_TRACK_SEQUENCE_STATION_INDEX_MASK;
-    sequence |= (newStationIndex << 4);
+    StationIndex = newStationIndex;
 }
 
 uint8_t TrackElement::GetDoorAState() const
 {
-    return (colour & TRACK_ELEMENT_DOOR_A_MASK) >> 2;
+    return (ColourScheme & TRACK_ELEMENT_COLOUR_DOOR_A_MASK) >> 2;
 }
 
 uint8_t TrackElement::GetDoorBState() const
 {
-    return (colour & TRACK_ELEMENT_DOOR_B_MASK) >> 5;
+    return (ColourScheme & TRACK_ELEMENT_COLOUR_DOOR_B_MASK) >> 5;
+}
+
+void TrackElement::SetDoorAState(uint8_t newState)
+{
+    ColourScheme &= ~TRACK_ELEMENT_COLOUR_DOOR_A_MASK;
+    ColourScheme |= ((newState << 2) & TRACK_ELEMENT_COLOUR_DOOR_A_MASK);
+}
+
+void TrackElement::SetDoorBState(uint8_t newState)
+{
+    ColourScheme &= ~TRACK_ELEMENT_COLOUR_DOOR_B_MASK;
+    ColourScheme |= ((newState << 5) & TRACK_ELEMENT_COLOUR_DOOR_B_MASK);
 }
 
 ride_id_t TrackElement::GetRideIndex() const
 {
-    return rideIndex;
+    return RideIndex;
 }
 
 void TrackElement::SetRideIndex(ride_id_t newRideIndex)
 {
-    rideIndex = newRideIndex;
+    RideIndex = newRideIndex;
 }
 
 uint8_t TrackElement::GetColourScheme() const
 {
-    return colour & 0x3;
+    return ColourScheme & TRACK_ELEMENT_COLOUR_SCHEME_MASK;
 }
 
 void TrackElement::SetColourScheme(uint8_t newColourScheme)
 {
-    colour &= ~0x3;
-    colour |= (newColourScheme & 0x3);
+    ColourScheme &= ~TRACK_ELEMENT_COLOUR_SCHEME_MASK;
+    ColourScheme |= (newColourScheme & TRACK_ELEMENT_COLOUR_SCHEME_MASK);
 }
 
 bool TrackElement::HasCableLift() const
 {
-    return colour & TRACK_ELEMENT_COLOUR_FLAG_CABLE_LIFT;
+    return Flags2 & TRACK_ELEMENT_FLAGS2_CABLE_LIFT;
 }
 
 void TrackElement::SetHasCableLift(bool on)
 {
-    colour &= ~TRACK_ELEMENT_COLOUR_FLAG_CABLE_LIFT;
+    Flags2 &= ~TRACK_ELEMENT_FLAGS2_CABLE_LIFT;
     if (on)
-        colour |= TRACK_ELEMENT_COLOUR_FLAG_CABLE_LIFT;
+        Flags2 |= TRACK_ELEMENT_FLAGS2_CABLE_LIFT;
 }
 
 bool TrackElement::IsInverted() const
 {
-    return colour & TRACK_ELEMENT_COLOUR_FLAG_INVERTED;
+    return Flags2 & TRACK_ELEMENT_FLAGS2_INVERTED;
 }
 
 void TrackElement::SetInverted(bool inverted)
 {
     if (inverted)
     {
-        colour |= TRACK_ELEMENT_COLOUR_FLAG_INVERTED;
+        Flags2 |= TRACK_ELEMENT_FLAGS2_INVERTED;
     }
     else
     {
-        colour &= ~TRACK_ELEMENT_COLOUR_FLAG_INVERTED;
+        Flags2 &= ~TRACK_ELEMENT_FLAGS2_INVERTED;
     }
 }
 
 bool TrackElement::BlockBrakeClosed() const
 {
-    return (flags & TILE_ELEMENT_FLAG_BLOCK_BRAKE_CLOSED) != 0;
+    return (Flags2 & TRACK_ELEMENT_FLAGS2_BLOCK_BRAKE_CLOSED) != 0;
 }
 
 void TrackElement::SetBlockBrakeClosed(bool isClosed)
 {
     if (isClosed)
     {
-        flags |= TILE_ELEMENT_FLAG_BLOCK_BRAKE_CLOSED;
+        Flags2 |= TRACK_ELEMENT_FLAGS2_BLOCK_BRAKE_CLOSED;
     }
     else
     {
-        flags &= ~TILE_ELEMENT_FLAG_BLOCK_BRAKE_CLOSED;
+        Flags2 &= ~TRACK_ELEMENT_FLAGS2_BLOCK_BRAKE_CLOSED;
     }
 }
 
 bool TrackElement::IsIndestructible() const
 {
-    return (flags & TILE_ELEMENT_FLAG_INDESTRUCTIBLE_TRACK_PIECE) != 0;
+    return (Flags2 & TRACK_ELEMENT_FLAGS2_INDESTRUCTIBLE_TRACK_PIECE) != 0;
 }
 
 void TrackElement::SetIsIndestructible(bool isIndestructible)
 {
     if (isIndestructible)
     {
-        flags |= TILE_ELEMENT_FLAG_INDESTRUCTIBLE_TRACK_PIECE;
+        Flags2 |= TRACK_ELEMENT_FLAGS2_INDESTRUCTIBLE_TRACK_PIECE;
     }
     else
     {
-        flags &= ~TILE_ELEMENT_FLAG_INDESTRUCTIBLE_TRACK_PIECE;
+        Flags2 &= ~TRACK_ELEMENT_FLAGS2_INDESTRUCTIBLE_TRACK_PIECE;
     }
 }
 
 uint8_t TrackElement::GetBrakeBoosterSpeed() const
 {
-    return (sequence >> 4) << 1;
+    return BrakeBoosterSpeed << 1;
 }
 
 void TrackElement::SetBrakeBoosterSpeed(uint8_t speed)
 {
-    sequence &= ~0b11110000;
-    sequence |= ((speed >> 1) << 4);
+    BrakeBoosterSpeed = (speed >> 1);
 }
 
-uint8_t TrackElement::HasGreenLight() const
+bool TrackElement::HasGreenLight() const
 {
-    return (sequence & MAP_ELEM_TRACK_SEQUENCE_GREEN_LIGHT) != 0;
+    return (Flags2 & TRACK_ELEMENT_FLAGS2_HAS_GREEN_LIGHT) != 0;
 }
 
-void TrackElement::SetHasGreenLight(uint8_t greenLight)
+void TrackElement::SetHasGreenLight(bool on)
 {
-    sequence &= ~MAP_ELEM_TRACK_SEQUENCE_GREEN_LIGHT;
-    if (greenLight)
+    Flags2 &= ~TRACK_ELEMENT_FLAGS2_HAS_GREEN_LIGHT;
+    if (on)
     {
-        sequence |= MAP_ELEM_TRACK_SEQUENCE_GREEN_LIGHT;
+        Flags2 |= TRACK_ELEMENT_FLAGS2_HAS_GREEN_LIGHT;
     }
 }
 
 bool TrackElement::IsHighlighted() const
 {
-    return (type & TILE_ELEMENT_TYPE_FLAG_HIGHLIGHT);
+    return (Flags2 & TRACK_ELEMENT_FLAGS2_HIGHLIGHT);
 }
 
 void TrackElement::SetHighlight(bool on)
 {
-    type &= ~TILE_ELEMENT_TYPE_FLAG_HIGHLIGHT;
+    Flags2 &= ~TRACK_ELEMENT_FLAGS2_HIGHLIGHT;
     if (on)
-        type |= TILE_ELEMENT_TYPE_FLAG_HIGHLIGHT;
+        Flags2 |= TRACK_ELEMENT_FLAGS2_HIGHLIGHT;
 }

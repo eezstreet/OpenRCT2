@@ -14,30 +14,20 @@
 #include "../util/Util.h"
 #include "Sprite.h"
 
-bool rct_sprite::IsBalloon()
+template<> bool SpriteBase::Is<Balloon>() const
 {
-    return this->balloon.sprite_identifier == SPRITE_IDENTIFIER_MISC && this->balloon.type == SPRITE_MISC_BALLOON;
+    return sprite_identifier == SPRITE_IDENTIFIER_MISC && type == SPRITE_MISC_BALLOON;
 }
 
-rct_balloon* rct_sprite::AsBalloon()
+void Balloon::Update()
 {
-    rct_balloon* result = nullptr;
-    if (IsBalloon())
-    {
-        result = (rct_balloon*)this;
-    }
-    return result;
-}
-
-void rct_balloon::Update()
-{
-    invalidate_sprite_2((rct_sprite*)this);
+    Invalidate2();
     if (popped == 1)
     {
         frame++;
         if (frame >= 5)
         {
-            sprite_remove((rct_sprite*)this);
+            sprite_remove(this);
         }
     }
     else
@@ -47,7 +37,12 @@ void rct_balloon::Update()
         {
             time_to_move = 0;
             frame++;
-            sprite_move(x, y, z + 1, (rct_sprite*)this);
+            // NOTE: To keep S6 Compatibility this field needs to roll over after 1 byte
+            if (frame == 256)
+            {
+                frame = 0;
+            }
+            MoveTo({ x, y, z + 1 });
 
             int32_t maxZ = 1967 - ((x ^ y) & 31);
             if (z >= maxZ)
@@ -58,7 +53,7 @@ void rct_balloon::Update()
     }
 }
 
-void rct_balloon::Press()
+void Balloon::Press()
 {
     if (popped != 1)
     {
@@ -72,19 +67,19 @@ void rct_balloon::Press()
         else
         {
             int16_t shift = ((random & 0x80000000) ? -6 : 6);
-            sprite_move(x + shift, y, z, (rct_sprite*)this);
+            MoveTo({ x + shift, y, z });
         }
     }
 }
 
-void rct_balloon::Pop()
+void Balloon::Pop()
 {
     popped = 1;
     frame = 0;
-    audio_play_sound_at_location(SoundId::BalloonPop, x, y, z);
+    audio_play_sound_at_location(SoundId::BalloonPop, { x, y, z });
 }
 
-void create_balloon(int32_t x, int32_t y, int32_t z, int32_t colour, bool isPopped)
+void create_balloon(const CoordsXYZ& balloonPos, int32_t colour, bool isPopped)
 {
     rct_sprite* sprite = create_sprite(SPRITE_IDENTIFIER_MISC);
     if (sprite != nullptr)
@@ -93,7 +88,7 @@ void create_balloon(int32_t x, int32_t y, int32_t z, int32_t colour, bool isPopp
         sprite->balloon.sprite_height_negative = 22;
         sprite->balloon.sprite_height_positive = 11;
         sprite->balloon.sprite_identifier = SPRITE_IDENTIFIER_MISC;
-        sprite_move(x, y, z, sprite);
+        sprite->balloon.MoveTo(balloonPos);
         sprite->balloon.type = SPRITE_MISC_BALLOON;
         sprite->balloon.time_to_move = 0;
         sprite->balloon.frame = 0;
@@ -102,7 +97,7 @@ void create_balloon(int32_t x, int32_t y, int32_t z, int32_t colour, bool isPopp
     }
 }
 
-void balloon_update(rct_balloon* balloon)
+void balloon_update(Balloon* balloon)
 {
     balloon->Update();
 }

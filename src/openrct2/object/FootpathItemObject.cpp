@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2019 OpenRCT2 developers
+ * Copyright (c) 2014-2020 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -27,8 +27,8 @@ void FootpathItemObject::ReadLegacy(IReadObjectContext* context, IStream* stream
     _legacyType.path_bit.draw_type = stream->ReadValue<uint8_t>();
     _legacyType.path_bit.tool_id = stream->ReadValue<uint8_t>();
     _legacyType.path_bit.price = stream->ReadValue<int16_t>();
-    _legacyType.path_bit.scenery_tab_id = stream->ReadValue<uint8_t>();
-    stream->Seek(1, STREAM_SEEK_CURRENT);
+    _legacyType.path_bit.scenery_tab_id = OBJECT_ENTRY_INDEX_NULL;
+    stream->Seek(2, STREAM_SEEK_CURRENT);
 
     GetStringTable().Read(context, stream, OBJ_STRING_ID_NAME);
 
@@ -45,7 +45,7 @@ void FootpathItemObject::ReadLegacy(IReadObjectContext* context, IStream* stream
 
     // Add path bits to 'Signs and items for footpaths' group, rather than lumping them in the Miscellaneous tab.
     // Since this is already done the other way round for original items, avoid adding those to prevent duplicates.
-    auto identifier = GetIdentifier();
+    auto identifier = GetLegacyIdentifier();
 
     auto& objectRepository = context->GetObjectRepository();
     auto item = objectRepository.FindObject(identifier);
@@ -67,7 +67,7 @@ void FootpathItemObject::Load()
     _legacyType.name = language_allocate_object_string(GetName());
     _legacyType.image = gfx_object_allocate_images(GetImageTable().GetImages(), GetImageTable().GetCount());
 
-    _legacyType.path_bit.scenery_tab_id = 0xFF;
+    _legacyType.path_bit.scenery_tab_id = OBJECT_ENTRY_INDEX_NULL;
 }
 
 void FootpathItemObject::Unload()

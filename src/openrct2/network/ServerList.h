@@ -10,9 +10,9 @@
 #pragma once
 
 #include "../common.h"
-#include "../core/Optional.hpp"
 
 #include <future>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -22,20 +22,20 @@ struct INetworkEndpoint;
 
 struct ServerListEntry
 {
-    std::string address;
-    std::string name;
-    std::string description;
-    std::string version;
-    bool requiresPassword{};
-    bool favourite{};
-    uint8_t players{};
-    uint8_t maxplayers{};
-    bool local{};
+    std::string Address;
+    std::string Name;
+    std::string Description;
+    std::string Version;
+    bool RequiresPassword{};
+    bool Favourite{};
+    uint8_t Players{};
+    uint8_t MaxPlayers{};
+    bool Local{};
 
     int32_t CompareTo(const ServerListEntry& other) const;
     bool IsVersionValid() const;
 
-    static opt::optional<ServerListEntry> FromJson(const json_t* root);
+    static std::optional<ServerListEntry> FromJson(const json_t* root);
 };
 
 class ServerList

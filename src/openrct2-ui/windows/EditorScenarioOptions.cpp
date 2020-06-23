@@ -31,6 +31,10 @@
 #include <openrct2/world/Climate.h>
 #include <openrct2/world/Park.h>
 
+static constexpr const rct_string_id WINDOW_TITLE = STR_SCENARIO_OPTIONS_FINANCIAL;
+static constexpr const int32_t WH = 149;
+static constexpr const int32_t WW = 280;
+
 #pragma region Widgets
 
 // clang-format off
@@ -151,9 +155,7 @@ enum {
 };
 
 static rct_widget window_editor_scenario_options_financial_widgets[] = {
-    { WWT_FRAME,            0,  0,      279,    0,      148,    STR_NONE,                               STR_NONE                                    },
-    { WWT_CAPTION,          0,  1,      278,    1,      14,     STR_SCENARIO_OPTIONS_FINANCIAL,         STR_WINDOW_TITLE_TIP                        },
-    { WWT_CLOSEBOX,         0,  267,    277,    2,      13,     STR_CLOSE_X,                            STR_CLOSE_WINDOW_TIP                        },
+    WINDOW_SHIM(WINDOW_TITLE, WW, WH),
     { WWT_RESIZE,           1,  0,      279,    43,     148,    STR_NONE,                               STR_NONE                                    },
     { WWT_TAB,              1,  3,      33,     17,     43,     IMAGE_TYPE_REMAP | SPR_TAB,             STR_SCENARIO_OPTIONS_FINANCIAL_TIP          },
     { WWT_TAB,              1,  34,     64,     17,     46,     IMAGE_TYPE_REMAP | SPR_TAB,             STR_SCENARIO_OPTIONS_GUESTS_TIP             },
@@ -459,7 +461,6 @@ rct_window* window_editor_scenario_options_open()
     w->enabled_widgets = window_editor_scenario_options_page_enabled_widgets[0];
     w->hold_down_widgets = window_editor_scenario_options_page_hold_down_widgets[0];
     window_init_scroll_widgets(w);
-    w->var_4AE = 0;
     w->page = 0;
 
     return w;
@@ -499,7 +500,7 @@ static void window_editor_scenario_options_draw_tab_images(rct_window* w, rct_dr
     if (w->page == WINDOW_EDITOR_SCENARIO_OPTIONS_PAGE_FINANCIAL)
         spriteIndex += (w->frame_no / 2) % 8;
 
-    gfx_draw_sprite(dpi, spriteIndex, w->x + widget->left, w->y + widget->top, 0);
+    gfx_draw_sprite(dpi, spriteIndex, w->windowPos.x + widget->left, w->windowPos.y + widget->top, 0);
 
     // Tab 2
     widget = &w->widgets[WIDX_TAB_2];
@@ -507,12 +508,12 @@ static void window_editor_scenario_options_draw_tab_images(rct_window* w, rct_dr
     if (w->page == WINDOW_EDITOR_SCENARIO_OPTIONS_PAGE_GUESTS)
         spriteIndex += (w->frame_no / 4) % 8;
 
-    gfx_draw_sprite(dpi, spriteIndex, w->x + widget->left, w->y + widget->top, 0);
+    gfx_draw_sprite(dpi, spriteIndex, w->windowPos.x + widget->left, w->windowPos.y + widget->top, 0);
 
     // Tab 3
     widget = &w->widgets[WIDX_TAB_3];
     spriteIndex = SPR_TAB_PARK;
-    gfx_draw_sprite(dpi, spriteIndex, w->x + widget->left, w->y + widget->top, 0);
+    gfx_draw_sprite(dpi, spriteIndex, w->windowPos.x + widget->left, w->windowPos.y + widget->top, 0);
 }
 
 /**
@@ -531,11 +532,11 @@ static void window_editor_scenario_options_set_page(rct_window* w, int32_t page)
     w->hold_down_widgets = window_editor_scenario_options_page_hold_down_widgets[page];
     w->event_handlers = window_editor_scenario_options_page_events[page];
     w->widgets = window_editor_scenario_options_widgets[page];
-    window_invalidate(w);
+    w->Invalidate();
     window_event_resize_call(w);
     window_event_invalidate_call(w);
     window_init_scroll_widgets(w);
-    window_invalidate(w);
+    w->Invalidate();
 }
 
 #pragma region Financial
@@ -571,7 +572,7 @@ static void window_editor_scenario_options_financial_mouseup(rct_window* w, rct_
 
             auto scenarioSetSetting = ScenarioSetSettingAction(ScenarioSetSetting::NoMoney, newMoneySetting);
             GameActions::Execute(&scenarioSetSetting);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         }
         case WIDX_FORBID_MARKETING:
@@ -579,7 +580,7 @@ static void window_editor_scenario_options_financial_mouseup(rct_window* w, rct_
             auto scenarioSetSetting = ScenarioSetSettingAction(
                 ScenarioSetSetting::ForbidMarketingCampaigns, gParkFlags & PARK_FLAGS_FORBID_MARKETING_CAMPAIGN ? 0 : 1);
             GameActions::Execute(&scenarioSetSetting);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         }
     }
@@ -643,8 +644,9 @@ static void window_editor_scenario_options_show_climate_dropdown(rct_window* w)
         gDropdownItemsArgs[i] = ClimateNames[i];
     }
     window_dropdown_show_text_custom_width(
-        w->x + dropdownWidget->left, w->y + dropdownWidget->top, dropdownWidget->bottom - dropdownWidget->top + 1,
-        w->colours[1], 0, DROPDOWN_FLAG_STAY_OPEN, CLIMATE_COUNT, dropdownWidget->right - dropdownWidget->left - 3);
+        { w->windowPos.x + dropdownWidget->left, w->windowPos.y + dropdownWidget->top },
+        dropdownWidget->bottom - dropdownWidget->top + 1, w->colours[1], 0, DROPDOWN_FLAG_STAY_OPEN, CLIMATE_COUNT,
+        dropdownWidget->right - dropdownWidget->left - 3);
     dropdown_set_checked(gClimate, true);
 }
 
@@ -703,7 +705,7 @@ static void window_editor_scenario_options_financial_mousedown(rct_window* w, rc
             {
                 context_show_error(STR_CANT_INCREASE_CASH, STR_NONE);
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_INITIAL_CASH_DECREASE:
             if (gInitialCash > MONEY(0, 00))
@@ -716,7 +718,7 @@ static void window_editor_scenario_options_financial_mousedown(rct_window* w, rc
             {
                 context_show_error(STR_CANT_REDUCE_CASH, STR_NONE);
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_INITIAL_LOAN_INCREASE:
             if (gBankLoan < MONEY(5000000, 00))
@@ -729,7 +731,7 @@ static void window_editor_scenario_options_financial_mousedown(rct_window* w, rc
             {
                 context_show_error(STR_CANT_INCREASE_INIT_LOAN, STR_NONE);
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_INITIAL_LOAN_DECREASE:
             if (gBankLoan > MONEY(0, 00))
@@ -742,7 +744,7 @@ static void window_editor_scenario_options_financial_mousedown(rct_window* w, rc
             {
                 context_show_error(STR_CANT_REDUCE_INIT_LOAN, STR_NONE);
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_MAXIMUM_LOAN_INCREASE:
             if (gMaxBankLoan < MONEY(5000000, 00))
@@ -755,7 +757,7 @@ static void window_editor_scenario_options_financial_mousedown(rct_window* w, rc
             {
                 context_show_error(STR_CANT_INCREASE_MAX_LOAN, STR_NONE);
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_MAXIMUM_LOAN_DECREASE:
             if (gMaxBankLoan > MONEY(0, 00))
@@ -768,7 +770,7 @@ static void window_editor_scenario_options_financial_mousedown(rct_window* w, rc
             {
                 context_show_error(STR_CANT_REDUCE_MAX_LOAN, STR_NONE);
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_INTEREST_RATE_INCREASE:
             if (gBankLoanInterestRate < 80)
@@ -781,7 +783,7 @@ static void window_editor_scenario_options_financial_mousedown(rct_window* w, rc
             {
                 context_show_error(STR_CANT_INCREASE_INTEREST_RATE, STR_NONE);
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_INTEREST_RATE_DECREASE:
             if (gBankLoanInterestRate > 0)
@@ -794,7 +796,7 @@ static void window_editor_scenario_options_financial_mousedown(rct_window* w, rc
             {
                 context_show_error(STR_CANT_REDUCE_INTEREST_RATE, STR_NONE);
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
     }
 
@@ -872,55 +874,51 @@ static void window_editor_scenario_options_financial_invalidate(rct_window* w)
  */
 static void window_editor_scenario_options_financial_paint(rct_window* w, rct_drawpixelinfo* dpi)
 {
-    int32_t x, y;
+    ScreenCoordsXY screenCoords{};
 
     window_draw_widgets(w, dpi);
     window_editor_scenario_options_draw_tab_images(w, dpi);
 
     if (w->widgets[WIDX_INITIAL_CASH].type != WWT_EMPTY)
     {
-        x = w->x + 8;
-        y = w->y + w->widgets[WIDX_INITIAL_CASH].top;
-        gfx_draw_string_left(dpi, STR_INIT_CASH_LABEL, nullptr, COLOUR_BLACK, x, y);
+        screenCoords = w->windowPos + ScreenCoordsXY{ 8, w->widgets[WIDX_INITIAL_CASH].top };
+        gfx_draw_string_left(dpi, STR_INIT_CASH_LABEL, nullptr, COLOUR_BLACK, screenCoords);
 
-        x = w->x + w->widgets[WIDX_INITIAL_CASH].left + 1;
-        y = w->y + w->widgets[WIDX_INITIAL_CASH].top;
-        gfx_draw_string_left(dpi, STR_CURRENCY_FORMAT_LABEL, &gInitialCash, COLOUR_BLACK, x, y);
+        screenCoords = w->windowPos
+            + ScreenCoordsXY{ w->widgets[WIDX_INITIAL_CASH].left + 1, w->widgets[WIDX_INITIAL_CASH].top };
+        gfx_draw_string_left(dpi, STR_CURRENCY_FORMAT_LABEL, &gInitialCash, COLOUR_BLACK, screenCoords);
     }
 
     if (w->widgets[WIDX_INITIAL_LOAN].type != WWT_EMPTY)
     {
-        x = w->x + 8;
-        y = w->y + w->widgets[WIDX_INITIAL_LOAN].top;
-        gfx_draw_string_left(dpi, STR_INIT_LOAN_LABEL, nullptr, COLOUR_BLACK, x, y);
+        screenCoords = w->windowPos + ScreenCoordsXY{ 8, w->widgets[WIDX_INITIAL_LOAN].top };
+        gfx_draw_string_left(dpi, STR_INIT_LOAN_LABEL, nullptr, COLOUR_BLACK, screenCoords);
 
-        x = w->x + w->widgets[WIDX_INITIAL_LOAN].left + 1;
-        y = w->y + w->widgets[WIDX_INITIAL_LOAN].top;
-        gfx_draw_string_left(dpi, STR_CURRENCY_FORMAT_LABEL, &gBankLoan, COLOUR_BLACK, x, y);
+        screenCoords = w->windowPos
+            + ScreenCoordsXY{ w->widgets[WIDX_INITIAL_LOAN].left + 1, w->widgets[WIDX_INITIAL_LOAN].top };
+        gfx_draw_string_left(dpi, STR_CURRENCY_FORMAT_LABEL, &gBankLoan, COLOUR_BLACK, screenCoords);
     }
 
     if (w->widgets[WIDX_MAXIMUM_LOAN].type != WWT_EMPTY)
     {
-        x = w->x + 8;
-        y = w->y + w->widgets[WIDX_MAXIMUM_LOAN].top;
-        gfx_draw_string_left(dpi, STR_MAX_LOAN_LABEL, nullptr, COLOUR_BLACK, x, y);
+        screenCoords = w->windowPos + ScreenCoordsXY{ 8, w->widgets[WIDX_MAXIMUM_LOAN].top };
+        gfx_draw_string_left(dpi, STR_MAX_LOAN_LABEL, nullptr, COLOUR_BLACK, screenCoords);
 
-        x = w->x + w->widgets[WIDX_MAXIMUM_LOAN].left + 1;
-        y = w->y + w->widgets[WIDX_MAXIMUM_LOAN].top;
-        gfx_draw_string_left(dpi, STR_CURRENCY_FORMAT_LABEL, &gMaxBankLoan, COLOUR_BLACK, x, y);
+        screenCoords = w->windowPos
+            + ScreenCoordsXY{ w->widgets[WIDX_MAXIMUM_LOAN].left + 1, w->widgets[WIDX_MAXIMUM_LOAN].top };
+        gfx_draw_string_left(dpi, STR_CURRENCY_FORMAT_LABEL, &gMaxBankLoan, COLOUR_BLACK, screenCoords);
     }
 
     if (w->widgets[WIDX_INTEREST_RATE].type != WWT_EMPTY)
     {
-        x = w->x + 8;
-        y = w->y + w->widgets[WIDX_INTEREST_RATE].top;
-        gfx_draw_string_left(dpi, STR_INTEREST_RATE_LABEL, nullptr, COLOUR_BLACK, x, y);
+        screenCoords = w->windowPos + ScreenCoordsXY{ 8, w->widgets[WIDX_INTEREST_RATE].top };
+        gfx_draw_string_left(dpi, STR_INTEREST_RATE_LABEL, nullptr, COLOUR_BLACK, screenCoords);
 
-        x = w->x + w->widgets[WIDX_INTEREST_RATE].left + 1;
-        y = w->y + w->widgets[WIDX_INTEREST_RATE].top;
+        screenCoords = w->windowPos
+            + ScreenCoordsXY{ w->widgets[WIDX_INTEREST_RATE].left + 1, w->widgets[WIDX_INTEREST_RATE].top };
 
-        int16_t interestRate = std::clamp<int16_t>((int16_t)gBankLoanInterestRate, INT16_MIN, INT16_MAX);
-        gfx_draw_string_left(dpi, STR_PERCENT_FORMAT_LABEL, &interestRate, COLOUR_BLACK, x, y);
+        int16_t interestRate = std::clamp<int16_t>(static_cast<int16_t>(gBankLoanInterestRate), INT16_MIN, INT16_MAX);
+        gfx_draw_string_left(dpi, STR_PERCENT_FORMAT_LABEL, &interestRate, COLOUR_BLACK, screenCoords);
     }
 }
 
@@ -949,7 +947,7 @@ static void window_editor_scenario_options_guests_mouseup(rct_window* w, rct_wid
             auto scenarioSetSetting = ScenarioSetSettingAction(
                 ScenarioSetSetting::GuestsPreferLessIntenseRides, gParkFlags & PARK_FLAGS_PREF_LESS_INTENSE_RIDES ? 0 : 1);
             GameActions::Execute(&scenarioSetSetting);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         }
         case WIDX_GUEST_PREFER_MORE_INTENSE_RIDES:
@@ -957,7 +955,7 @@ static void window_editor_scenario_options_guests_mouseup(rct_window* w, rct_wid
             auto scenarioSetSetting = ScenarioSetSettingAction(
                 ScenarioSetSetting::GuestsPreferMoreIntenseRides, gParkFlags & PARK_FLAGS_PREF_MORE_INTENSE_RIDES ? 0 : 1);
             GameActions::Execute(&scenarioSetSetting);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         }
     }
@@ -991,7 +989,7 @@ static void window_editor_scenario_options_guests_mousedown(rct_window* w, rct_w
             {
                 context_show_error(STR_CANT_INCREASE_FURTHER, STR_NONE);
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_CASH_PER_GUEST_DECREASE:
             if (gGuestInitialCash > MONEY(0, 00))
@@ -1004,7 +1002,7 @@ static void window_editor_scenario_options_guests_mousedown(rct_window* w, rct_w
             {
                 context_show_error(STR_CANT_REDUCE_FURTHER, STR_NONE);
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_GUEST_INITIAL_HAPPINESS_INCREASE:
             if (gGuestInitialHappiness < 250)
@@ -1017,7 +1015,7 @@ static void window_editor_scenario_options_guests_mousedown(rct_window* w, rct_w
             {
                 context_show_error(STR_CANT_INCREASE_FURTHER, STR_NONE);
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_GUEST_INITIAL_HAPPINESS_DECREASE:
             if (gGuestInitialHappiness > 40)
@@ -1030,7 +1028,7 @@ static void window_editor_scenario_options_guests_mousedown(rct_window* w, rct_w
             {
                 context_show_error(STR_CANT_REDUCE_FURTHER, STR_NONE);
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_GUEST_INITIAL_HUNGER_INCREASE:
             if (gGuestInitialHunger > 40)
@@ -1043,7 +1041,7 @@ static void window_editor_scenario_options_guests_mousedown(rct_window* w, rct_w
             {
                 context_show_error(STR_CANT_INCREASE_FURTHER, STR_NONE);
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_GUEST_INITIAL_HUNGER_DECREASE:
             if (gGuestInitialHunger < 250)
@@ -1056,7 +1054,7 @@ static void window_editor_scenario_options_guests_mousedown(rct_window* w, rct_w
             {
                 context_show_error(STR_CANT_REDUCE_FURTHER, STR_NONE);
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_GUEST_INITIAL_THIRST_INCREASE:
             if (gGuestInitialThirst > 40)
@@ -1069,7 +1067,7 @@ static void window_editor_scenario_options_guests_mousedown(rct_window* w, rct_w
             {
                 context_show_error(STR_CANT_INCREASE_FURTHER, STR_NONE);
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_GUEST_INITIAL_THIRST_DECREASE:
             if (gGuestInitialThirst < 250)
@@ -1082,7 +1080,7 @@ static void window_editor_scenario_options_guests_mousedown(rct_window* w, rct_w
             {
                 context_show_error(STR_CANT_REDUCE_FURTHER, STR_NONE);
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_GUEST_GENERATION_ALGORITHM_DROPDOWN:
             window_editor_scenario_options_show_guest_generation_dropdown(w);
@@ -1186,8 +1184,8 @@ static void window_editor_scenario_options_guests_invalidate(rct_window* w)
  */
 static void window_editor_scenario_options_guests_paint(rct_window* w, rct_drawpixelinfo* dpi)
 {
-    int32_t x, y, arg;
-    rct_string_id stringId;
+    int32_t arg;
+    ScreenCoordsXY screenCoords{};
 
     window_draw_widgets(w, dpi);
     window_editor_scenario_options_draw_tab_images(w, dpi);
@@ -1195,49 +1193,46 @@ static void window_editor_scenario_options_guests_paint(rct_window* w, rct_drawp
     if (w->widgets[WIDX_CASH_PER_GUEST].type != WWT_EMPTY)
     {
         // Cash per guest label
-        x = w->x + 8;
-        y = w->y + w->widgets[WIDX_CASH_PER_GUEST].top;
-        gfx_draw_string_left(dpi, STR_CASH_PER_GUEST_LABEL, nullptr, COLOUR_BLACK, x, y);
+        screenCoords = w->windowPos + ScreenCoordsXY{ 8, w->widgets[WIDX_CASH_PER_GUEST].top };
+        gfx_draw_string_left(dpi, STR_CASH_PER_GUEST_LABEL, nullptr, COLOUR_BLACK, screenCoords);
 
         // Cash per guest value
-        x = w->x + w->widgets[WIDX_CASH_PER_GUEST].left + 1;
-        y = w->y + w->widgets[WIDX_CASH_PER_GUEST].top;
+        screenCoords = w->windowPos
+            + ScreenCoordsXY{ w->widgets[WIDX_CASH_PER_GUEST].left + 1, w->widgets[WIDX_CASH_PER_GUEST].top };
         arg = gGuestInitialCash;
-        gfx_draw_string_left(dpi, STR_CURRENCY_FORMAT_LABEL, &arg, COLOUR_BLACK, x, y);
+        gfx_draw_string_left(dpi, STR_CURRENCY_FORMAT_LABEL, &arg, COLOUR_BLACK, screenCoords);
     }
 
     // Guest initial happiness label
-    x = w->x + 8;
-    y = w->y + w->widgets[WIDX_GUEST_INITIAL_HAPPINESS].top;
-    gfx_draw_string_left(dpi, STR_GUEST_INIT_HAPPINESS, nullptr, COLOUR_BLACK, x, y);
+    screenCoords = w->windowPos + ScreenCoordsXY{ 8, w->widgets[WIDX_GUEST_INITIAL_HAPPINESS].top };
+    gfx_draw_string_left(dpi, STR_GUEST_INIT_HAPPINESS, nullptr, COLOUR_BLACK, screenCoords);
 
     // Guest initial happiness value
-    x = w->x + w->widgets[WIDX_GUEST_INITIAL_HAPPINESS].left + 1;
-    y = w->y + w->widgets[WIDX_GUEST_INITIAL_HAPPINESS].top;
+    screenCoords = w->windowPos
+        + ScreenCoordsXY{ w->widgets[WIDX_GUEST_INITIAL_HAPPINESS].left + 1,
+                          w->windowPos.y + w->widgets[WIDX_GUEST_INITIAL_HAPPINESS].top };
     arg = (gGuestInitialHappiness * 100) / 255;
-    gfx_draw_string_left(dpi, STR_PERCENT_FORMAT_LABEL, &arg, COLOUR_BLACK, x, y);
+    gfx_draw_string_left(dpi, STR_PERCENT_FORMAT_LABEL, &arg, COLOUR_BLACK, screenCoords);
 
     // Guest initial hunger label
-    x = w->x + 8;
-    y = w->y + w->widgets[WIDX_GUEST_INITIAL_HUNGER].top;
-    gfx_draw_string_left(dpi, STR_GUEST_INIT_HUNGER, nullptr, COLOUR_BLACK, x, y);
+    screenCoords = w->windowPos + ScreenCoordsXY{ 8, w->widgets[WIDX_GUEST_INITIAL_HUNGER].top };
+    gfx_draw_string_left(dpi, STR_GUEST_INIT_HUNGER, nullptr, COLOUR_BLACK, screenCoords);
 
     // Guest initial hunger value
-    x = w->x + w->widgets[WIDX_GUEST_INITIAL_HUNGER].left + 1;
-    y = w->y + w->widgets[WIDX_GUEST_INITIAL_HUNGER].top;
+    screenCoords = w->windowPos
+        + ScreenCoordsXY{ w->widgets[WIDX_GUEST_INITIAL_HUNGER].left + 1, w->widgets[WIDX_GUEST_INITIAL_HUNGER].top };
     arg = ((255 - gGuestInitialHunger) * 100) / 255;
-    gfx_draw_string_left(dpi, STR_PERCENT_FORMAT_LABEL, &arg, COLOUR_BLACK, x, y);
+    gfx_draw_string_left(dpi, STR_PERCENT_FORMAT_LABEL, &arg, COLOUR_BLACK, screenCoords);
 
     // Guest initial thirst label
-    x = w->x + 8;
-    y = w->y + w->widgets[WIDX_GUEST_INITIAL_THIRST].top;
-    gfx_draw_string_left(dpi, STR_GUEST_INIT_THIRST, nullptr, COLOUR_BLACK, x, y);
+    screenCoords = w->windowPos + ScreenCoordsXY{ 8, w->widgets[WIDX_GUEST_INITIAL_THIRST].top };
+    gfx_draw_string_left(dpi, STR_GUEST_INIT_THIRST, nullptr, COLOUR_BLACK, screenCoords);
 
     // Guest initial thirst value
-    x = w->x + w->widgets[WIDX_GUEST_INITIAL_THIRST].left + 1;
-    y = w->y + w->widgets[WIDX_GUEST_INITIAL_THIRST].top;
+    screenCoords = w->windowPos
+        + ScreenCoordsXY{ w->widgets[WIDX_GUEST_INITIAL_THIRST].left + 1, w->widgets[WIDX_GUEST_INITIAL_THIRST].top };
     arg = ((255 - gGuestInitialThirst) * 100) / 255;
-    gfx_draw_string_left(dpi, STR_PERCENT_FORMAT_LABEL, &arg, COLOUR_BLACK, x, y);
+    gfx_draw_string_left(dpi, STR_PERCENT_FORMAT_LABEL, &arg, COLOUR_BLACK, screenCoords);
 
     // Guest Generation
     x = w->x + 8;
@@ -1289,7 +1284,7 @@ static void window_editor_scenario_options_park_mouseup(rct_window* w, rct_widge
             auto scenarioSetSetting = ScenarioSetSettingAction(
                 ScenarioSetSetting::ForbidTreeRemoval, gParkFlags & PARK_FLAGS_FORBID_TREE_REMOVAL ? 0 : 1);
             GameActions::Execute(&scenarioSetSetting);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         }
         case WIDX_FORBID_LANDSCAPE_CHANGES:
@@ -1297,7 +1292,7 @@ static void window_editor_scenario_options_park_mouseup(rct_window* w, rct_widge
             auto scenarioSetSetting = ScenarioSetSettingAction(
                 ScenarioSetSetting::ForbidLandscapeChanges, gParkFlags & PARK_FLAGS_FORBID_LANDSCAPE_CHANGES ? 0 : 1);
             GameActions::Execute(&scenarioSetSetting);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         }
         case WIDX_FORBID_HIGH_CONSTRUCTION:
@@ -1305,7 +1300,7 @@ static void window_editor_scenario_options_park_mouseup(rct_window* w, rct_widge
             auto scenarioSetSetting = ScenarioSetSettingAction(
                 ScenarioSetSetting::ForbidHighConstruction, gParkFlags & PARK_FLAGS_FORBID_HIGH_CONSTRUCTION ? 0 : 1);
             GameActions::Execute(&scenarioSetSetting);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         }
         case WIDX_HARD_PARK_RATING:
@@ -1313,7 +1308,7 @@ static void window_editor_scenario_options_park_mouseup(rct_window* w, rct_widge
             auto scenarioSetSetting = ScenarioSetSettingAction(
                 ScenarioSetSetting::ParkRatingHigherDifficultyLevel, gParkFlags & PARK_FLAGS_DIFFICULT_PARK_RATING ? 0 : 1);
             GameActions::Execute(&scenarioSetSetting);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         }
         case WIDX_HARD_GUEST_GENERATION:
@@ -1322,7 +1317,7 @@ static void window_editor_scenario_options_park_mouseup(rct_window* w, rct_widge
                 ScenarioSetSetting::GuestGenerationHigherDifficultyLevel,
                 gParkFlags & PARK_FLAGS_DIFFICULT_GUEST_GENERATION ? 0 : 1);
             GameActions::Execute(&scenarioSetSetting);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         }
     }
@@ -1358,7 +1353,7 @@ static void window_editor_scenario_options_park_mousedown(rct_window* w, rct_wid
             {
                 context_show_error(STR_CANT_INCREASE_FURTHER, STR_NONE);
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_LAND_COST_DECREASE:
             if (gLandPrice > MONEY(5, 00))
@@ -1371,7 +1366,7 @@ static void window_editor_scenario_options_park_mousedown(rct_window* w, rct_wid
             {
                 context_show_error(STR_CANT_REDUCE_FURTHER, STR_NONE);
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_CONSTRUCTION_RIGHTS_COST_INCREASE:
             if (gConstructionRightsPrice < MONEY(200, 00))
@@ -1384,7 +1379,7 @@ static void window_editor_scenario_options_park_mousedown(rct_window* w, rct_wid
             {
                 context_show_error(STR_CANT_INCREASE_FURTHER, STR_NONE);
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_CONSTRUCTION_RIGHTS_COST_DECREASE:
             if (gConstructionRightsPrice > MONEY(5, 00))
@@ -1397,7 +1392,7 @@ static void window_editor_scenario_options_park_mousedown(rct_window* w, rct_wid
             {
                 context_show_error(STR_CANT_REDUCE_FURTHER, STR_NONE);
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_ENTRY_PRICE_INCREASE:
             if (gParkEntranceFee < MAX_ENTRANCE_FEE)
@@ -1410,7 +1405,7 @@ static void window_editor_scenario_options_park_mousedown(rct_window* w, rct_wid
             {
                 context_show_error(STR_CANT_INCREASE_FURTHER, STR_NONE);
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_ENTRY_PRICE_DECREASE:
             if (gParkEntranceFee > MONEY(0, 00))
@@ -1423,7 +1418,7 @@ static void window_editor_scenario_options_park_mousedown(rct_window* w, rct_wid
             {
                 context_show_error(STR_CANT_REDUCE_FURTHER, STR_NONE);
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_PAY_FOR_PARK_OR_RIDES_DROPDOWN:
             dropdownWidget = widget - 1;
@@ -1436,8 +1431,9 @@ static void window_editor_scenario_options_park_mousedown(rct_window* w, rct_wid
             gDropdownItemsArgs[2] = STR_PAID_ENTRY_PAID_RIDES;
 
             window_dropdown_show_text_custom_width(
-                w->x + dropdownWidget->left, w->y + dropdownWidget->top, dropdownWidget->bottom - dropdownWidget->top - 1,
-                w->colours[1], 0, DROPDOWN_FLAG_STAY_OPEN, 3, dropdownWidget->right - dropdownWidget->left - 3);
+                { w->windowPos.x + dropdownWidget->left, w->windowPos.y + dropdownWidget->top },
+                dropdownWidget->bottom - dropdownWidget->top - 1, w->colours[1], 0, DROPDOWN_FLAG_STAY_OPEN, 3,
+                dropdownWidget->right - dropdownWidget->left - 3);
 
             if (gParkFlags & PARK_FLAGS_UNLOCK_ALL_PRICES)
                 dropdown_set_checked(2, true);
@@ -1476,11 +1472,11 @@ static void window_editor_scenario_options_park_dropdown(rct_window* w, rct_widg
         {
             auto scenarioSetSetting = ScenarioSetSettingAction(ScenarioSetSetting::ParkChargeMethod, dropdownIndex);
             GameActions::Execute(&scenarioSetSetting);
-            window_invalidate(w);
+            w->Invalidate();
             break;
         }
         case WIDX_CLIMATE_DROPDOWN:
-            if (gClimate != (uint8_t)dropdownIndex)
+            if (gClimate != static_cast<uint8_t>(dropdownIndex))
             {
                 auto gameAction = ClimateSetAction(dropdownIndex);
                 GameActions::Execute(&gameAction);
@@ -1612,7 +1608,8 @@ static void window_editor_scenario_options_park_invalidate(rct_window* w)
  */
 static void window_editor_scenario_options_park_paint(rct_window* w, rct_drawpixelinfo* dpi)
 {
-    int32_t x, y, arg;
+    int32_t arg;
+    ScreenCoordsXY screenCoords{};
     rct_string_id stringId;
 
     window_draw_widgets(w, dpi);
@@ -1621,37 +1618,35 @@ static void window_editor_scenario_options_park_paint(rct_window* w, rct_drawpix
     if (w->widgets[WIDX_LAND_COST].type != WWT_EMPTY)
     {
         // Cost to buy land label
-        x = w->x + 8;
-        y = w->y + w->widgets[WIDX_LAND_COST].top;
-        gfx_draw_string_left(dpi, STR_LAND_COST_LABEL, nullptr, COLOUR_BLACK, x, y);
+        screenCoords = w->windowPos + ScreenCoordsXY{ 8, w->widgets[WIDX_LAND_COST].top };
+        gfx_draw_string_left(dpi, STR_LAND_COST_LABEL, nullptr, COLOUR_BLACK, screenCoords);
 
         // Cost to buy land value
-        x = w->x + w->widgets[WIDX_LAND_COST].left + 1;
-        y = w->y + w->widgets[WIDX_LAND_COST].top;
+        screenCoords = w->windowPos + ScreenCoordsXY{ w->widgets[WIDX_LAND_COST].left + 1, w->widgets[WIDX_LAND_COST].top };
         arg = gLandPrice;
-        gfx_draw_string_left(dpi, STR_CURRENCY_FORMAT_LABEL, &arg, COLOUR_BLACK, x, y);
+        gfx_draw_string_left(dpi, STR_CURRENCY_FORMAT_LABEL, &arg, COLOUR_BLACK, screenCoords);
     }
 
     if (w->widgets[WIDX_CONSTRUCTION_RIGHTS_COST].type != WWT_EMPTY)
     {
         // Cost to buy construction rights label
-        x = w->x + 8;
-        y = w->y + w->widgets[WIDX_CONSTRUCTION_RIGHTS_COST].top;
-        gfx_draw_string_left(dpi, STR_RIGHTS_COST_LABEL, nullptr, COLOUR_BLACK, x, y);
+        screenCoords = w->windowPos + ScreenCoordsXY{ 8, w->widgets[WIDX_CONSTRUCTION_RIGHTS_COST].top };
+        gfx_draw_string_left(dpi, STR_RIGHTS_COST_LABEL, nullptr, COLOUR_BLACK, screenCoords);
 
         // Cost to buy construction rights value
-        x = w->x + w->widgets[WIDX_CONSTRUCTION_RIGHTS_COST].left + 1;
-        y = w->y + w->widgets[WIDX_CONSTRUCTION_RIGHTS_COST].top;
+        screenCoords = w->windowPos
+            + ScreenCoordsXY{ w->widgets[WIDX_CONSTRUCTION_RIGHTS_COST].left + 1,
+                              w->widgets[WIDX_CONSTRUCTION_RIGHTS_COST].top };
         arg = gConstructionRightsPrice;
-        gfx_draw_string_left(dpi, STR_CURRENCY_FORMAT_LABEL, &arg, COLOUR_BLACK, x, y);
+        gfx_draw_string_left(dpi, STR_CURRENCY_FORMAT_LABEL, &arg, COLOUR_BLACK, screenCoords);
     }
 
     if (w->widgets[WIDX_PAY_FOR_PARK_OR_RIDES].type != WWT_EMPTY)
     {
         // Pay for park or rides label
-        x = w->x + w->widgets[WIDX_PAY_FOR_PARK_OR_RIDES].left + 1;
-        y = w->y + w->widgets[WIDX_PAY_FOR_PARK_OR_RIDES].top;
-        gfx_draw_string_left(dpi, STR_FREE_PARK_ENTER, nullptr, COLOUR_BLACK, x, y);
+        screenCoords = w->windowPos
+            + ScreenCoordsXY{ w->widgets[WIDX_PAY_FOR_PARK_OR_RIDES].left + 1, w->widgets[WIDX_PAY_FOR_PARK_OR_RIDES].top };
+        gfx_draw_string_left(dpi, STR_FREE_PARK_ENTER, nullptr, COLOUR_BLACK, screenCoords);
 
         // Pay for park and/or rides value
         if (gParkFlags & PARK_FLAGS_UNLOCK_ALL_PRICES)
@@ -1661,27 +1656,25 @@ static void window_editor_scenario_options_park_paint(rct_window* w, rct_drawpix
         else
             stringId = STR_PAY_PARK_ENTER;
 
-        gfx_draw_string_left(dpi, STR_WINDOW_COLOUR_2_STRINGID, &stringId, COLOUR_BLACK, x, y);
+        gfx_draw_string_left(dpi, STR_WINDOW_COLOUR_2_STRINGID, &stringId, COLOUR_BLACK, screenCoords);
     }
 
     if (w->widgets[WIDX_ENTRY_PRICE].type != WWT_EMPTY)
     {
         // Entry price label
-        x = w->x + w->widgets[WIDX_PAY_FOR_PARK_OR_RIDES].right + 8;
-        y = w->y + w->widgets[WIDX_ENTRY_PRICE].top;
-        gfx_draw_string_left(dpi, STR_ENTRY_PRICE_LABEL, nullptr, COLOUR_BLACK, x, y);
+        screenCoords = w->windowPos
+            + ScreenCoordsXY{ w->widgets[WIDX_PAY_FOR_PARK_OR_RIDES].right + 8, w->widgets[WIDX_ENTRY_PRICE].top };
+        gfx_draw_string_left(dpi, STR_ENTRY_PRICE_LABEL, nullptr, COLOUR_BLACK, screenCoords);
 
         // Entry price value
-        x = w->x + w->widgets[WIDX_ENTRY_PRICE].left + 1;
-        y = w->y + w->widgets[WIDX_ENTRY_PRICE].top;
+        screenCoords = w->windowPos + ScreenCoordsXY{ w->widgets[WIDX_ENTRY_PRICE].left + 1, w->widgets[WIDX_ENTRY_PRICE].top };
         arg = gParkEntranceFee;
-        gfx_draw_string_left(dpi, STR_CURRENCY_FORMAT_LABEL, &arg, COLOUR_BLACK, x, y);
+        gfx_draw_string_left(dpi, STR_CURRENCY_FORMAT_LABEL, &arg, COLOUR_BLACK, screenCoords);
     }
 
     // Climate label
-    x = w->x + 8;
-    y = w->y + w->widgets[WIDX_CLIMATE].top;
-    gfx_draw_string_left(dpi, STR_CLIMATE_LABEL, nullptr, COLOUR_BLACK, x, y);
+    screenCoords = w->windowPos + ScreenCoordsXY{ 8, w->widgets[WIDX_CLIMATE].top };
+    gfx_draw_string_left(dpi, STR_CLIMATE_LABEL, nullptr, COLOUR_BLACK, screenCoords);
 
     // Starting Month
     x = w->x + 8;
@@ -1694,22 +1687,21 @@ static void window_editor_scenario_options_park_paint(rct_window* w, rct_drawpix
     gfx_draw_string_left(dpi, STR_ENDING_MONTH, nullptr, COLOUR_BLACK, x, y);
 
     // Climate value
-    x = w->x + w->widgets[WIDX_CLIMATE].left + 1;
-    y = w->y + w->widgets[WIDX_CLIMATE].top;
+    screenCoords = w->windowPos + ScreenCoordsXY{ w->widgets[WIDX_CLIMATE].left + 1, w->widgets[WIDX_CLIMATE].top };
     stringId = ClimateNames[gClimate];
-    gfx_draw_string_left(dpi, STR_WINDOW_COLOUR_2_STRINGID, &stringId, COLOUR_BLACK, x, y);
+    gfx_draw_string_left(dpi, STR_WINDOW_COLOUR_2_STRINGID, &stringId, COLOUR_BLACK, screenCoords);
 
     // Starting Month value
     x = w->x + w->widgets[WIDX_STARTING_MONTH].left + 1;
     y = w->y + w->widgets[WIDX_STARTING_MONTH].top;
     stringId = DateGameMonthNames[gS7Info.starting_month];
-    gfx_draw_string_left(dpi, STR_WINDOW_COLOUR_2_STRINGID, &stringId, COLOUR_BLACK, x, y);
+    gfx_draw_string_left(dpi, STR_WINDOW_COLOUR_2_STRINGID, &stringId, COLOUR_BLACK, screenCoords);
 
     // Ending Month value
     x = w->x + w->widgets[WIDX_ENDING_MONTH].left + 1;
     y = w->y + w->widgets[WIDX_ENDING_MONTH].top;
     stringId = DateGameMonthNames[gS7Info.ending_month];
-    gfx_draw_string_left(dpi, STR_WINDOW_COLOUR_2_STRINGID, &stringId, COLOUR_BLACK, x, y);
+    gfx_draw_string_left(dpi, STR_WINDOW_COLOUR_2_STRINGID, &stringId, COLOUR_BLACK, screenCoords);
 }
 
 #pragma endregion

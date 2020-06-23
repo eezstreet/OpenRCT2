@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2019 OpenRCT2 developers
+ * Copyright (c) 2014-2020 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -63,17 +63,17 @@ static rct_window_event_list window_tooltip_events = {
 static utf8 _tooltipText[sizeof(gCommonStringFormatBuffer)];
 static int16_t _tooltipNumLines;
 
-void window_tooltip_reset(int32_t x, int32_t y)
+void window_tooltip_reset(const ScreenCoordsXY& screenCoords)
 {
-    gTooltipCursorX = x;
-    gTooltipCursorY = y;
+    gTooltipCursorX = screenCoords.x;
+    gTooltipCursorY = screenCoords.y;
     gTooltipTimeout = 0;
     gTooltipWidget.window_classification = 255;
     input_set_state(INPUT_STATE_NORMAL);
     input_set_flag(INPUT_FLAG_4, false);
 }
 
-void window_tooltip_show(rct_string_id id, int32_t x, int32_t y)
+void window_tooltip_show(rct_string_id id, ScreenCoordsXY screenCoords)
 {
     rct_window* w;
     int32_t width, height;
@@ -107,20 +107,20 @@ void window_tooltip_show(rct_string_id id, int32_t x, int32_t y)
 
     int32_t screenWidth = context_get_width();
     int32_t screenHeight = context_get_height();
-    x = std::clamp(x - (width / 2), 0, screenWidth - width);
+    screenCoords.x = std::clamp(screenCoords.x - (width / 2), 0, screenWidth - width);
 
     // TODO The cursor size will be relative to the window DPI.
     //      The amount to offset the y should be adjusted.
 
     int32_t max_y = screenHeight - height;
-    y += 26; // Normally, we'd display the tooltip 26 lower
-    if (y > max_y)
+    screenCoords.y += 26; // Normally, we'd display the tooltip 26 lower
+    if (screenCoords.y > max_y)
         // If y is too large, the tooltip could be forced below the cursor if we'd just clamped y,
         // so we'll subtract a bit more
-        y -= height + 40;
-    y = std::clamp(y, 22, max_y);
+        screenCoords.y -= height + 40;
+    screenCoords.y = std::clamp(screenCoords.y, 22, max_y);
 
-    w = window_create(x, y, width, height, &window_tooltip_events, WC_TOOLTIP, WF_TRANSPARENT | WF_STICK_TO_FRONT);
+    w = window_create(screenCoords, width, height, &window_tooltip_events, WC_TOOLTIP, WF_TRANSPARENT | WF_STICK_TO_FRONT);
     w->widgets = window_tooltip_widgets;
 
     reset_tooltip_not_shown();
@@ -130,7 +130,7 @@ void window_tooltip_show(rct_string_id id, int32_t x, int32_t y)
  *
  *  rct2: 0x006EA10D
  */
-void window_tooltip_open(rct_window* widgetWindow, rct_widgetindex widgetIndex, int32_t x, int32_t y)
+void window_tooltip_open(rct_window* widgetWindow, rct_widgetindex widgetIndex, const ScreenCoordsXY& screenCords)
 {
     rct_widget* widget;
 
@@ -139,7 +139,16 @@ void window_tooltip_open(rct_window* widgetWindow, rct_widgetindex widgetIndex, 
 
     widget = &widgetWindow->widgets[widgetIndex];
     window_event_invalidate_call(widgetWindow);
-    if (widget->tooltip == 0xFFFF)
+
+    rct_string_id stringId = widget->tooltip;
+    if (widget->flags & WIDGET_FLAGS::TOOLTIP_IS_STRING)
+    {
+        stringId = STR_STRING_TOOLTIP;
+        auto ft = Formatter::Common();
+        ft.Add<const char*>(widget->sztooltip);
+    }
+
+    if (stringId == STR_NONE)
         return;
 
     gTooltipWidget.window_classification = widgetWindow->classification;
@@ -149,7 +158,7 @@ void window_tooltip_open(rct_window* widgetWindow, rct_widgetindex widgetIndex, 
     if (window_event_tooltip_call(widgetWindow, widgetIndex) == STR_NONE)
         return;
 
-    window_tooltip_show(widget->tooltip, x, y);
+    window_tooltip_show(stringId, screenCords);
 }
 
 /**
@@ -178,10 +187,10 @@ static void window_tooltip_update(rct_window* w)
  */
 static void window_tooltip_paint(rct_window* w, rct_drawpixelinfo* dpi)
 {
-    int32_t left = w->x;
-    int32_t top = w->y;
-    int32_t right = w->x + w->width - 1;
-    int32_t bottom = w->y + w->height - 1;
+    int32_t left = w->windowPos.x;
+    int32_t top = w->windowPos.y;
+    int32_t right = w->windowPos.x + w->width - 1;
+    int32_t bottom = w->windowPos.y + w->height - 1;
 
     // Background
     gfx_filter_rect(dpi, left + 1, top + 1, right - 1, bottom - 1, PALETTE_45);
@@ -200,7 +209,7 @@ static void window_tooltip_paint(rct_window* w, rct_drawpixelinfo* dpi)
     gfx_filter_pixel(dpi, right - 1, bottom - 1, PALETTE_DARKEN_3);
 
     // Text
-    left = w->x + ((w->width + 1) / 2) - 1;
-    top = w->y + 1;
+    left = w->windowPos.x + ((w->width + 1) / 2) - 1;
+    top = w->windowPos.y + 1;
     draw_string_centred_raw(dpi, left, top, _tooltipNumLines, _tooltipText);
 }

@@ -2,7 +2,9 @@
 
 #include "../common.h"
 
-struct rct_sprite_common
+struct CoordsXYZ;
+
+struct SpriteBase
 {
     uint8_t sprite_identifier;
     uint8_t type;
@@ -22,14 +24,30 @@ struct rct_sprite_common
     uint8_t sprite_width;
     // Height from centre of sprite to top
     uint8_t sprite_height_positive;
+    // Screen Coordinates of sprite
     int16_t sprite_left;
     int16_t sprite_top;
     int16_t sprite_right;
     int16_t sprite_bottom;
+
     uint8_t sprite_direction;
+
+    void MoveTo(const CoordsXYZ& newLocation);
+    void Invalidate0();
+    void Invalidate1();
+    void Invalidate2();
+    template<typename T> bool Is() const;
+    template<typename T> T* As()
+    {
+        return Is<T>() ? reinterpret_cast<T*>(this) : nullptr;
+    }
+    template<typename T> const T* As() const
+    {
+        return Is<T>() ? reinterpret_cast<const T*>(this) : nullptr;
+    }
 };
 
-struct rct_sprite_generic : rct_sprite_common
+struct SpriteGeneric : SpriteBase
 {
     uint16_t frame;
 };

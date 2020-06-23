@@ -7,16 +7,15 @@ An open-source re-implementation of RollerCoaster Tycoon 2. A construction and m
 
 ---
 
-### Build Status
-|             | Windows | Linux / Mac | Download |
-|-------------|---------|-------------|----------|
-| **master**  | [![AppVeyor](https://ci.appveyor.com/api/projects/status/7efnemxhon6i5n34/branch/master?svg=true)](https://ci.appveyor.com/project/IntelOrca/openrct2-ject9) | [![Travis CI](https://travis-ci.org/OpenRCT2/OpenRCT2.svg?branch=master)](https://travis-ci.org/OpenRCT2/OpenRCT2) | [![OpenRCT2.org](https://img.shields.io/badge/master-v0.2.3-green.svg)](https://openrct2.org/downloads/master/latest) |
-| **develop** | [![AppVeyor](https://ci.appveyor.com/api/projects/status/7efnemxhon6i5n34/branch/develop?svg=true)](https://ci.appveyor.com/project/IntelOrca/openrct2-ject9) | [![Travis CI](https://travis-ci.org/OpenRCT2/OpenRCT2.svg?branch=develop)](https://travis-ci.org/OpenRCT2/OpenRCT2) | [![OpenRCT2.org](https://img.shields.io/badge/develop-v0.2.3+-blue.svg)](https://openrct2.org/downloads/develop/latest) |
+### Download
+| Latest release | Latest development build |
+|----------------|--------------------------|
+| [![OpenRCT2.org](https://img.shields.io/badge/master-v0.2.6-green.svg)](https://openrct2.org/downloads/master/latest) | [![OpenRCT2.org](https://img.shields.io/badge/develop-v0.2.6+-blue.svg)](https://openrct2.org/downloads/develop/latest) |
 
 ---
 
 ### Chat
-You only need a [GitHub](https://github.com/), [GitLab](https://gitlab.com), or [Twitter](https://twitter.com) account to access these channels.
+Chat takes place on Discord. You will need to create a Discord account if you don't yet have one.
 
 If you want to help *make* the game, join the developer channel.
 
@@ -26,8 +25,8 @@ If you want to help translate the game to your language, please stop by the Loca
 
 | Language | Non Developer | Developer | Localisation |
 |----------|---------------|-----------|--------------|
-| English | [![Gitter](https://img.shields.io/badge/gitter-general-blue.svg)](https://gitter.im/OpenRCT2/OpenRCT2/non-dev) | [![Gitter](https://img.shields.io/badge/gitter-development-yellowgreen.svg)](https://gitter.im/OpenRCT2/OpenRCT2) | [![Gitter](https://img.shields.io/badge/gitter-localisation-green.svg)](https://gitter.im/OpenRCT2/Localisation) |
-| Nederlands | [![Gitter](https://img.shields.io/badge/gitter-general-blue.svg)](https://gitter.im/OpenRCT2/OpenRCT2/Nederlands) | | |
+| English | [![Discord](https://img.shields.io/badge/discord-general-blue.svg)](https://discord.gg/ZXZd8D8) | [![Discord](https://img.shields.io/badge/discord-development-yellowgreen.svg)](https://discord.gg/fsEwSWs) | [![Discord](https://img.shields.io/badge/discord-localisation-green.svg)](https://discord.gg/sxnrvX9) |
+| Nederlands | [![Discord](https://img.shields.io/badge/discord-general-blue.svg)](https://discord.gg/cQYSXzW) | | |
 
 ---
 
@@ -73,7 +72,8 @@ Some Linux distributions offer native packages already. These packages are usual
 * Fedora 28 i386/amd64: [openrct2](https://copr.fedorainfracloud.org/coprs/nauticalnexus/openrct2/)
 
 Some \*BSD operating systems offer native packages. These packages are usually third-party, but we're trying to resolve issues they are facing.
-* OpenBSD: [games/openrct2](http://openports.se/games/openrct2)
+* FreeBSD: [games/openrct2](https://www.freshports.org/games/openrct2)
+* OpenBSD: [games/openrct2](https://openports.se/games/openrct2)
 
 ---
 
@@ -84,13 +84,8 @@ Some \*BSD operating systems offer native packages. These packages are usually t
 OpenRCT2 requires original files of RollerCoaster Tycoon 2 to play. It can be bought at either [Steam](http://store.steampowered.com/app/285330/) or [GOG.com](http://www.gog.com/game/rollercoaster_tycoon_2).
 
 ### Windows:
-- 7 / 8 / 10
-- Visual Studio 2017 update 7 (Enterprise / Professional / [Community (Free)](https://www.visualstudio.com/vs/community/))
+- Visual Studio 2019 (Enterprise / Professional / [Community (Free)](https://www.visualstudio.com/vs/community/))
   - Desktop development with C++
-  - [Windows 10 SDK (10.0.14393.0)](https://go.microsoft.com/fwlink/p/?LinkId=838916)
-- [7-Zip](http://www.7-zip.org/) (for deployment only)
-- [NSIS](http://nsis.sourceforge.net/) (for deployment only)
-
 
 ### macOS:
 - Xcode 8
@@ -115,6 +110,7 @@ The program can also be built as a command line program using CMake. This type o
 - icu (>= 59.0)
 - zlib
 - gl (commonly provided by Mesa or GPU vendors; only for UI client, can be disabled)
+- duktape (unless scripting is disabled)
 - cmake
 
 ---
@@ -122,11 +118,13 @@ The program can also be built as a command line program using CMake. This type o
 ## 3.2 Compiling and running
 ### Windows:
 1. Check out the repository. This can be done using [GitHub Desktop](https://desktop.github.com) or [other tools](https://help.github.com/articles/which-remote-url-should-i-use).
-2. Open a new Developer Command Prompt for VS 2017, then navigate to the repository (e.g. `cd C:\GitHub\OpenRCT2`).
-3. Run `msbuild openrct2.proj /t:build /p:platform=x64`.
+2. Open a new Developer Command Prompt for VS 2019, then navigate to the repository (e.g. `cd C:\GitHub\OpenRCT2`).
+3. To build the 64-bit version, use `msbuild openrct2.proj /t:build /p:platform=x64`.
+
+   To build the 32-bit version, use `msbuild openrct2.proj /t:build /p:platform=Win32`.
 4. Run the game, `bin\openrct2`
 
-Once you have ran msbuild once, further development can be done within Visual Studio by opening `openrct2.sln`.
+Once you have ran msbuild once, further development can be done within Visual Studio by opening `openrct2.sln`. Make sure to select the correct target platform for which you ran the build in point #3 (`Win32` for the 32-bit version, `x64` for the 64-bit version), otherwise the build will fail in Visual Studio.
 
 Other examples:
 ```
@@ -144,7 +142,7 @@ The recommended way of building OpenRCT2 for macOS is with Xcode. The Xcode buil
 #### CMake:
 A command line version of OpenRCT2 can be built using CMake. This type of build requires you to provide the dependencies yourself. The supported method of doing this is with [Homebrew](http://brew.sh). Once you have Homebrew installed, you can download all the required libraries with this command:
 ```
-brew install cmake openssl jansson libpng sdl2 speexdsp libzip freetype pkg-config
+brew install cmake duktape freetype icu4c jansson libpng libzip openssl pkg-config sdl2 speexdsp
 ```
 
 Once you have the dependencies installed, you can build the project using CMake using the following commands:
@@ -162,10 +160,13 @@ The standard CMake build procedure is to install the [required libraries](https:
 ```
 mkdir build
 cd build
-cmake ../ # set your standard cmake options, e.g. build type here
+cmake ../ # set your standard cmake options, e.g. build type here - For example, -DCMAKE_BUILD_TYPE=RelWithDebInfo
 make # you can parallelise your build job with e.g. -j8 or consider using ninja
 DESTDIR=. make install # the install target creates all the necessary files in places we expect them
 ```
+
+You can also use Ninja in place of Make, if you prefer, see Wiki for details.
+
 Detailed instructions can be found on our [wiki](https://github.com/OpenRCT2/OpenRCT2/wiki/Building-OpenRCT2-on-Linux).
 
 ---
@@ -179,19 +180,19 @@ Please read our [contributing guidelines](https://github.com/OpenRCT2/OpenRCT2/b
 A list of bugs can be found on the [issue tracker](https://github.com/OpenRCT2/OpenRCT2/issues). Feel free to work on any bug and submit a pull request to the develop branch with the fix. Mentioning that you intend to fix a bug on the issue will prevent other people from trying as well.
 
 ## 4.2 New features
-Please talk to the OpenRCT2 team first before starting to develop a new feature. We may already have plans or reasons against it, therefore contacting us will allow us to help you or prevent you from wasting any time. You can talk to us via gitter, see links at the top of this page.
+Please talk to the OpenRCT2 team first before starting to develop a new feature. We may already have plans for or reasons against something that you'd like to work on. Therefore contacting us will allow us to help you or prevent you from wasting any time. You can talk to us via Discord, see links at the top of this page.
 
 ## 4.3 Translation
-You can translate the game into other languages by editing the language files in ```data/language``` directory. Please join discussions and submit pull requests to [OpenRCT2/Localisation](https://github.com/OpenRCT2/Localisation).
+You can translate the game into other languages by editing the language files in ```data/language``` directory. Please join discussions in the [#localisation channel on Discord](https://discordapp.com/invite/sxnrvX9) and submit pull requests to [OpenRCT2/Localisation](https://github.com/OpenRCT2/Localisation).
 
 ## 4.4 Graphics
-You can help create new graphics for the game by visiting the [OpenGraphics project](https://gitter.im/OpenRCT2/OpenGraphics). 3D modellers needed!
+You can help create new graphics for the game by visiting the [OpenGraphics project](https://github.com/OpenRCT2/OpenGraphics). 3D modellers needed!
 
 ## 4.5 Audio
-You can help create the music and sound effects for the game, drop by [the OpenMusic chat](https://gitter.im/OpenRCT2/OpenMusic) to find out more.
+You can help create the music and sound effects for the game. Check out the OpenMusic repository and drop by our [#open-sound-and-music channel on Discord](https://discord.gg/9y8WbcX) to find out more.
 
 ## 4.6 Scenarios
-We also need need scenarios to distribute with the game, when the time comes. For that, we need talented scenario makers! Come chat with us [over here](https://gitter.im/PFCKrutonium/OpenRCT2-OpenScenarios)!
+We would also like to distribute additional scenarios with the game, when the time comes. For that, we need talented scenario makers! Check out the [OpenScenarios repository](https://github.com/PFCKrutonium/OpenRCT2-OpenScenarios).
 
 ---
 
@@ -219,10 +220,7 @@ We also need need scenarios to distribute with the game, when the time comes. Fo
 
 Companies that kindly allow us to use their stuff:
 
-| [DigitalOcean](https://www.digitalocean.com/) | [JetBrains](https://www.jetbrains.com/) | [AppVeyor](https://www.appveyor.com/) | [Travis-CI](https://travis-ci.org/) | [Backtrace](https://backtrace.io/) |
-|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---|
-| [![do_logo_vertical_blue svg](https://user-images.githubusercontent.com/550290/36508276-8b572f0e-175c-11e8-8622-9febbce756b2.png)](https://www.digitalocean.com/) | [![jetbrains](https://user-images.githubusercontent.com/550290/36413299-0e0985ea-161e-11e8-8a01-3ef523b5905b.png)](https://www.jetbrains.com/) | [![AppVeyor](https://user-images.githubusercontent.com/550290/36508339-be413216-175c-11e8-97d8-760ced0931e8.png)](https://www.appveyor.com/) | [![Travis](https://raw.githubusercontent.com/travis-ci/docs-travis-ci-com/4b14eeab25ce8ca9164e177bfb60782a8535a822/images/travis-mascot-200px.png)](https://travis-ci.org/) | [![backtrace](https://user-images.githubusercontent.com/550290/47113259-d0647680-d258-11e8-97c3-1a2c6bde6d11.png)](https://backtrace.io/) |
-| Hosting of various services | CLion and other products | MSVC CI | Linux + macOS CI | Minidump uploads and inspection |
-
-
-
+| [DigitalOcean](https://www.digitalocean.com/) | [JetBrains](https://www.jetbrains.com/) | [Backtrace](https://backtrace.io/) |
+|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
+| [![do_logo_vertical_blue svg](https://user-images.githubusercontent.com/550290/36508276-8b572f0e-175c-11e8-8622-9febbce756b2.png)](https://www.digitalocean.com/) | [![jetbrains](https://user-images.githubusercontent.com/550290/36413299-0e0985ea-161e-11e8-8a01-3ef523b5905b.png)](https://www.jetbrains.com/) | [![backtrace](https://user-images.githubusercontent.com/550290/47113259-d0647680-d258-11e8-97c3-1a2c6bde6d11.png)](https://backtrace.io/) |
+| Hosting of various services | CLion and other products | Minidump uploads and inspection |

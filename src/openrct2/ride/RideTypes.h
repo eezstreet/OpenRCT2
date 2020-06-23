@@ -9,6 +9,32 @@
 
 #pragma once
 
-#include <cstdint>
+#include "../object/Object.h"
 
-typedef uint8_t ride_id_t;
+#include <cstdint>
+#include <limits>
+
+using ride_id_t = uint16_t;
+struct Ride;
+
+constexpr const ride_id_t RIDE_ID_NULL = 0xFF; // std::numeric_limits<ride_id_t>::max();
+constexpr const ride_id_t RideIdNewNull = std::numeric_limits<ride_id_t>::max();
+
+/**
+ * Couples a ride type and subtype together.
+ */
+struct RideSelection
+{
+    uint8_t Type;
+    ObjectEntryIndex EntryIndex;
+
+    bool operator==(const RideSelection& other) const
+    {
+        return Type == other.Type && EntryIndex == other.EntryIndex;
+    }
+
+    bool operator!=(const RideSelection& other) const
+    {
+        return !(*this == other);
+    }
+};

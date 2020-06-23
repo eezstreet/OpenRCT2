@@ -32,7 +32,7 @@ DEFINE_GAME_ACTION(SmallScenerySetColourAction, GAME_COMMAND_SET_SCENERY_COLOUR,
 private:
     CoordsXYZ _loc;
     uint8_t _quadrant;
-    uint8_t _sceneryType;
+    ObjectEntryIndex _sceneryType;
     uint8_t _primaryColour;
     uint8_t _secondaryColour;
 
@@ -40,7 +40,7 @@ public:
     SmallScenerySetColourAction() = default;
 
     SmallScenerySetColourAction(
-        CoordsXYZ loc, uint8_t quadrant, uint8_t sceneryType, uint8_t primaryColour, uint8_t secondaryColour)
+        const CoordsXYZ& loc, uint8_t quadrant, ObjectEntryIndex sceneryType, uint8_t primaryColour, uint8_t secondaryColour)
         : _loc(loc)
         , _quadrant(quadrant)
         , _sceneryType(sceneryType)
@@ -76,21 +76,26 @@ private:
     GameActionResult::Ptr QueryExecute(bool isExecuting) const
     {
         auto res = MakeResult();
-        res->ExpenditureType = RCT_EXPENDITURE_TYPE_LANDSCAPING;
+        res->Expenditure = ExpenditureType::Landscaping;
         res->Position.x = _loc.x + 16;
         res->Position.y = _loc.y + 16;
         res->Position.z = _loc.z;
         res->ErrorTitle = STR_CANT_REPAINT_THIS;
 
+        if (!LocationValid(_loc))
+        {
+            return MakeResult(GA_ERROR::NOT_OWNED, STR_CANT_REPAINT_THIS, STR_LAND_NOT_OWNED_BY_PARK);
+        }
+
         if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) && !gCheatsSandboxMode)
         {
-            if (!map_is_location_owned(_loc.x, _loc.y, _loc.z))
+            if (!map_is_location_owned(_loc))
             {
                 return MakeResult(GA_ERROR::NOT_OWNED, STR_CANT_REPAINT_THIS, STR_LAND_NOT_OWNED_BY_PARK);
             }
         }
 
-        auto sceneryElement = map_get_small_scenery_element_at(_loc.x, _loc.y, _loc.z / 8, _sceneryType, _quadrant);
+        auto sceneryElement = map_get_small_scenery_element_at(_loc, _sceneryType, _quadrant);
 
         if (sceneryElement == nullptr)
         {
@@ -108,7 +113,7 @@ private:
             sceneryElement->SetPrimaryColour(_primaryColour);
             sceneryElement->SetSecondaryColour(_secondaryColour);
 
-            map_invalidate_tile_full(_loc.x, _loc.y);
+            map_invalidate_tile_full(_loc);
         }
 
         return res;

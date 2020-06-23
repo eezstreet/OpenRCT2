@@ -1131,8 +1131,8 @@ STR_1749    :{POP16}{POP16}{POP16}{POP16}{POP16}{POP16}{POP16}{POP16}{POP16}{DUR
 STR_1751    :Kan ikke ændre tidsbegrænsning for denne forlystelse...
 STR_1752    :{SMALLFONT}{BLACK}Vis liste over individuelle gæster i parken
 STR_1753    :{SMALLFONT}{BLACK}Vis en samlet liste over gæster i parken
-STR_1754    :{BLACK}{COMMA16} gæst
-STR_1755    :{BLACK}{COMMA16} gæster
+STR_1754    :{BLACK}{COMMA32} gæst
+STR_1755    :{BLACK}{COMMA32} gæster
 STR_1756    :{WINDOW_COLOUR_2}Entrépris:
 STR_1757    :{WINDOW_COLOUR_2}Pålidelighed: {MOVE_X}{255}{BLACK}{COMMA16}%
 STR_1758    :{SMALLFONT}{BLACK}Bygge tilstand
@@ -1191,7 +1191,7 @@ STR_1813    :Forskellige objekter
 STR_1814    :Aktiviteter
 STR_1815    :Tanker
 STR_1816    :{SMALLFONT}{BLACK}Vælg typen af information der vises i gæste listen
-STR_1817    :({COMMA16})
+STR_1817    :({COMMA32})
 STR_1818    :{WINDOW_COLOUR_2}Alle gæster
 STR_1819    :{WINDOW_COLOUR_2}Alle gæster (opsummeret)
 STR_1820    :{WINDOW_COLOUR_2}Gæster {STRINGID}
@@ -1220,9 +1220,9 @@ STR_1842    :Favorit hos: {COMMA16} gæst
 STR_1843    :Favorit hos: {COMMA16} gæster
 STR_1844    :{SMALLFONT}{BLACK}Vælg hvilken informationstype der skal vises i listen over forlystelser
 STR_1845    :{MONTHYEAR}
-STR_1846    :{COMMA16} gæster
-STR_1847    :{INLINE_SPRITE}{11}{20}{00}{00}{COMMA16} gæster
-STR_1848    :{INLINE_SPRITE}{10}{20}{00}{00}{COMMA16} gæster
+STR_1846    :{COMMA32} gæster
+STR_1847    :{INLINE_SPRITE}{11}{20}{00}{00}{COMMA32} gæster
+STR_1848    :{INLINE_SPRITE}{10}{20}{00}{00}{COMMA32} gæster
 STR_1849    :{WINDOW_COLOUR_2}Spil musik
 STR_1850    :{SMALLFONT}{BLACK}Vælg om der skal spilles musik i denne forlystelse
 STR_1851    :{WINDOW_COLOUR_2}Driftsomkostninger: {BLACK}{CURRENCY2DP} per time
@@ -1580,7 +1580,7 @@ STR_2219    :{RED}{COMMA16} personer er døde i ulykken på {STRINGID}
 STR_2220    :{WINDOW_COLOUR_2}Park Vurdering: {BLACK}{COMMA16}
 STR_2221    :{SMALLFONT}{BLACK}Park Vurdering: {COMMA16}
 STR_2222    :{SMALLFONT}{BLACK}{STRINGID}
-STR_2223    :{WINDOW_COLOUR_2}Gæster i parken: {BLACK}{COMMA16}
+STR_2223    :{WINDOW_COLOUR_2}Gæster i parken: {BLACK}{COMMA32}
 STR_2224    :{WINDOW_COLOUR_2}Penge: {BLACK}{CURRENCY2DP}
 STR_2225    :{WINDOW_COLOUR_2}Penge: {RED}{CURRENCY2DP}
 STR_2226    :{WINDOW_COLOUR_2}Park værdi: {BLACK}{CURRENCY}
@@ -1863,39 +1863,14 @@ STR_2521    :Vis personale liste
 STR_2522    :Vis seneste meddelelser
 STR_2523    :Vis kort
 STR_2524    :Skærmbillede
-### The following need to be reordered to match SDL_keycode layout.
-STR_2525    :???
-STR_2526    :???
-STR_2527    :???
-STR_2528    :???
-STR_2529    :???
-STR_2530    :???
-STR_2531    :???
-STR_2532    :???
 STR_2533    :Backspace
 STR_2534    :Tabulator
-STR_2535    :???
-STR_2536    :???
 STR_2537    :Clear
 STR_2538    :Enter
-STR_2539    :???
-STR_2540    :???
-STR_2541    :???
-STR_2542    :???
 STR_2543    :Alt/Menu
 STR_2544    :Pause
 STR_2545    :Caps
-STR_2546    :???
-STR_2547    :???
-STR_2548    :???
-STR_2549    :???
-STR_2550    :???
-STR_2551    :???
 STR_2552    :Escape
-STR_2553    :???
-STR_2554    :???
-STR_2555    :???
-STR_2556    :???
 STR_2557    :Mellemrumstast
 STR_2558    :PgUp
 STR_2559    :PgDn
@@ -1912,54 +1887,7 @@ STR_2569    :Snapshot
 STR_2570    :Insert
 STR_2571    :Delete
 STR_2572    :Help
-STR_2573    :0
-STR_2574    :1
-STR_2575    :2
-STR_2576    :3
-STR_2577    :4
-STR_2578    :5
-STR_2579    :6
-STR_2580    :7
-STR_2581    :8
-STR_2582    :9
-STR_2583    :???
-STR_2584    :???
-STR_2585    :???
-STR_2586    :???
-STR_2587    :???
-STR_2588    :???
-STR_2589    :???
-STR_2590    :A
-STR_2591    :B
-STR_2592    :C
-STR_2593    :D
-STR_2594    :E
-STR_2595    :F
-STR_2596    :G
-STR_2597    :H
-STR_2598    :I
-STR_2599    :J
-STR_2600    :K
-STR_2601    :L
-STR_2602    :M
-STR_2603    :N
-STR_2604    :O
-STR_2605    :P
-STR_2606    :Q
-STR_2607    :R
-STR_2608    :S
-STR_2609    :T
-STR_2610    :U
-STR_2611    :V
-STR_2612    :W
-STR_2613    :X
-STR_2614    :Y
-STR_2615    :Z
-STR_2616    :???
-STR_2617    :???
 STR_2618    :Menu
-STR_2619    :???
-STR_2620    :???
 STR_2621    :NumPad 0
 STR_2622    :NumPad 1
 STR_2623    :NumPad 2
@@ -1972,53 +1900,11 @@ STR_2629    :NumPad 8
 STR_2630    :NumPad 9
 STR_2631    :NumPad *
 STR_2632    :NumPad +
-STR_2633    :???
 STR_2634    :NumPad -
 STR_2635    :NumPad .
 STR_2636    :NumPad /
-STR_2637    :F1
-STR_2638    :F2
-STR_2639    :F3
-STR_2640    :F4
-STR_2641    :F5
-STR_2642    :F6
-STR_2643    :F7
-STR_2644    :F8
-STR_2645    :F9
-STR_2646    :F10
-STR_2647    :F11
-STR_2648    :F12
-STR_2649    :F13
-STR_2650    :F14
-STR_2651    :F15
-STR_2652    :F16
-STR_2653    :F17
-STR_2654    :F18
-STR_2655    :F19
-STR_2656    :F20
-STR_2657    :F21
-STR_2658    :F22
-STR_2659    :F23
-STR_2660    :F24
-STR_2661    :???
-STR_2662    :???
-STR_2663    :???
-STR_2664    :???
-STR_2665    :???
-STR_2666    :???
-STR_2667    :???
-STR_2668    :???
 STR_2669    :NumLock
 STR_2670    :ScrollLock
-STR_2671    :???
-STR_2672    :???
-STR_2673    :???
-STR_2674    :???
-STR_2675    :???
-STR_2676    :???
-STR_2677    :???
-STR_2678    :???
-STR_2679    :???
 STR_2680    :Al forskning udført
 STR_2681    :{MEDIUMFONT}{BLACK}Forøg dine penge med {CURRENCY}
 STR_2684    :{SMALLFONT}{BLACK}Stor gruppe af gæster ankommer
@@ -2034,9 +1920,6 @@ STR_2693    :Terræn:
 STR_2694    :Generer
 STR_2695    :Tilfældigt terræn
 STR_2696    :Placer træer
-STR_2697    :???
-STR_2698    :???
-STR_2699    :???
 STR_2700    :Auto-gem frekvens:
 STR_2701    :Hvert minut
 STR_2702    :Hvert 5. minut
@@ -2048,13 +1931,6 @@ STR_2707    :Brug system fil browser
 STR_2708    :{WINDOW_COLOUR_1}Er du sikker på at du vil overskrive {STRINGID}?
 STR_2709    :Overskriv
 STR_2710    :Skriv navnet på filen.
-STR_2711    :;
-STR_2712    :=
-STR_2713    :,
-STR_2714    :-
-STR_2715    :.
-STR_2716    :/
-STR_2717    :'
 STR_2718    :op
 STR_2719    :Ny fil
 STR_2720    :{UINT16}sek
@@ -2069,8 +1945,8 @@ STR_2728    :{UINT16}time:{UINT16}min
 STR_2729    :{UINT16}time:{UINT16}min
 STR_2730    :{UINT16}timer:{UINT16}min
 STR_2731    :{UINT16}timer:{UINT16}min
-STR_2732    :{COMMA16}fod
-STR_2733    :{COMMA16}m
+STR_2732    :{COMMA32}fod
+STR_2733    :{COMMA32}m
 STR_2734    :{COMMA16}mph
 STR_2735    :{COMMA16}km/h
 STR_2736    :{MONTH}, år {COMMA16}
@@ -2081,10 +1957,6 @@ STR_2740    :RollerCoaster Tycoon 1
 STR_2741    :RollerCoaster Tycoon 2
 STR_2742    :css50.dat ikke fundet
 STR_2743    :Kopier 'data/css17.dat' fra din RCT1 installation til 'data/css50.dat' i din RCT2 installation, eller vær sikker på at stien til RCT1, i fanen Diverse er korrekt.
-STR_2744    :[
-STR_2745    :\
-STR_2746    :]
-STR_2747    :”
 STR_2749    :Mit nye scenarie
 # New strings used in the cheats window previously these were ???
 STR_2750    :Flyt alle enheder til toppen
@@ -2110,7 +1982,7 @@ STR_2778    :»{MOVE_X}{10}{STRING}
 STR_2779    :Visning #{COMMA16}
 STR_2780    :Ekstra visning
 # End of new strings
-STR_2781    :{STRINGID}:{MOVE_X}{255}{STRINGID}
+STR_2781    :{STRINGID}:
 STR_2782    :SHIFT + 
 STR_2783    :CTRL + 
 STR_2784    :Skift tastatur genvej
@@ -2433,7 +2305,6 @@ STR_3190    :Sti udstyr
 STR_3191    :Sceneri Grupper
 STR_3192    :Park indgang
 STR_3193    :Vand
-STR_3194    :Scenarie Beskrivelse
 STR_3195    :Opfindelses liste
 STR_3196    :{WINDOW_COLOUR_2}forskningsgruppe: {BLACK}{STRINGID}
 STR_3197    :{WINDOW_COLOUR_2}Enheder der er tilgængelig i starten af spillet:
@@ -2569,8 +2440,8 @@ STR_3329    :Park indgang endnu ikke bygget
 STR_3330    :Parken skal eje noget land
 STR_3331    :Stien fra park indgang til kanten af kortet er enten ikke komplet eller for kompleks - Stien skal være et felt bred, med så få samlinger og sving som muligt
 STR_3332    :Park indgang vender forkert, eller har ikke nogen stiforbindelse til kanten af kortet
-STR_3333    :Eksporter plug-in objekter med gemte spil
-STR_3334    :{SMALLFONT}{BLACK}Vælg om ekstra plug-in objektdata kræves (add-in data der ikke følger med hovedspillet) i gemte spil eller scenarie filer, og tillader dem blive indlæst af en person, der ikke har de ekstra objektdata
+STR_3333    :Eksporter brugerdefinerede objekter med gemte spil
+STR_3334    :{SMALLFONT}{BLACK}Vælg om brugerdefinerede objektdata kræves (add-in data der ikke følger med hovedspillet) i gemte spil eller scenarie filer, og tillader dem blive indlæst af en person, der ikke har de ekstra objektdata
 STR_3335    :Banedesigner - Vælg forlystelsestyper & vogne
 STR_3336    :Banedesign Manager - Vælg forlystelsestyper
 STR_3338    :{BLACK}Specialdesignet layout
@@ -2674,19 +2545,6 @@ STR_5160    :{POP16}{MONTH} {PUSH16}{PUSH16}{STRINGID}, År {POP16}{COMMA16}
 STR_5161    :Dato Format:
 STR_5162    :Dag/Måned/År
 STR_5163    :Måned/Dag/År
-STR_5164    :Twitch Kanal navn
-STR_5165    :Navngiv gæster efter følgere på Twitch
-STR_5166    :{SMALLFONT}{BLACK}Navngiv gæster efter dem der er {NEWLINE}følgere på din Twitch konto
-STR_5167    :Overvåg gæster der er følgere på Twitch
-STR_5168    :{SMALLFONT}{BLACK}Aktiverer overvågnings information for gæster der er navngivet efter følgere på Twitch
-STR_5169    :Navngiv gæster efter chat-brugere på Twitch
-STR_5170    :{SMALLFONT}{BLACK}Giv gæster et navn fra personer der chatter på Twitch
-STR_5171    :Overvåg gæster der er i Twitch chat
-STR_5172    :{SMALLFONT}{BLACK}Aktiverer overvågnings information for gæster der er navngivet efter deltager i chatten på Twitch
-STR_5173    :Træk Twitch chat som nyheder
-STR_5174    :{SMALLFONT}{BLACK}Brug Twitch chat meddelelser efterfulgt af !nyhed for meddelelser i spillet
-STR_5175    :Angiv dit navn på din Twitch kanal
-STR_5176    :Aktiver Twitch integration
 STR_5177    :Skærmtilstand:
 STR_5178    :{SMALLFONT}{BLACK}Vis finansiel snyd
 STR_5179    :{SMALLFONT}{BLACK}Vis gæste snyd
@@ -2781,7 +2639,6 @@ STR_5267    :{SMALLFONT}{BLACK}Kultur og enheder
 STR_5268    :{SMALLFONT}{BLACK}Lyd
 STR_5269    :{SMALLFONT}{BLACK}Kontrol og udseende
 STR_5270    :{SMALLFONT}{BLACK}Diverse
-STR_5271    :{SMALLFONT}{BLACK}Twitch
 STR_5272    :{SMALLFONT}{BLACK}Lille Sceneri
 STR_5273    :{SMALLFONT}{BLACK}Stort Sceneri
 STR_5274    :{SMALLFONT}{BLACK}Gangstier
@@ -2922,7 +2779,6 @@ STR_5410    :Rediger
 STR_5411    :Genindlæs
 STR_5412    :Skip til
 STR_5413    :Hent
-STR_5414    :Hent{MOVE_X}{87}Six Flags Magic Mountain.SC6
 STR_5415    :Hent{MOVE_X}{87}{STRING}
 STR_5416    :Hent{MOVE_X}{87}Ingen gemt valgt
 STR_5417    :Lokation
@@ -3237,7 +3093,7 @@ STR_5762    :Chinese Yuan (CN¥)
 STR_5763    :Alle filer
 STR_5764    :Ugyldig forlystelses type
 STR_5765    :Kan ikke redigere ugyldige forlystelses typer
-STR_5766    :<available string id>
+STR_5766    :Ungarsk Forint (Ft)
 STR_5767    :Indkomst
 STR_5768    :Total kunder
 STR_5769    :Total profit
@@ -3323,7 +3179,6 @@ STR_5848    :{SMALLFONT}{BLACK}Create and manage custom title sequences
 STR_5849    :{SMALLFONT}{BLACK}Automatically place{NEWLINE}newly hired staff members
 STR_5850    :<not used anymore>
 STR_5851    :{SMALLFONT}{BLACK}Sets the default inspection interval{NEWLINE}on newly built forlystelser
-STR_5852    :{SMALLFONT}{BLACK}Set the name of the TwitchTV channel that will be used for Twitch integration
 STR_5853    :{SMALLFONT}{BLACK}Toggle sound effects on/off
 STR_5854    :{SMALLFONT}{BLACK}Toggle ride music on/off
 STR_5855    :{SMALLFONT}{BLACK}Set regular fullscreen, borderless fullscreen{NEWLINE}or windowed display
@@ -3507,7 +3362,7 @@ STR_6033    :Sti til RCT1 installation:
 STR_6034    :{SMALLFONT}{BLACK}{STRING}
 STR_6035    :Vælg venligst din RCT1 filmappe
 STR_6036    :{SMALLFONT}{BLACK}Ryd
-STR_6037    :Vælg venligst en gyldigt RCT1 filmappe
+STR_6037    :Den valgte folder indeholder ikke en gyldig, RollerCoaster Tycoon 1 installation.
 STR_6038    :{SMALLFONT}{BLACK}If you have RCT1 installed, set this option to its directory to load scenarios, music, etc.
 STR_6039    :{SMALLFONT}{BLACK}Quick demolish ride
 STR_6040    :Edit Scenario Options
@@ -3617,26 +3472,26 @@ STR_6143    :{WINDOW_COLOUR_2}Ride type: {BLACK}{STRINGID}
 STR_6144    :Show dirty visuals
 STR_6145    :{SMALLFONT}{BLACK}Set speed limit for boosters
 STR_6146    :Enable all drawable track pieces
-STR_6147    :{SMALLFONT}{BLACK}Enables all track pieces the ride type is capable of in the construction window, regardless of whether the vehicle supports them.
-STR_6148    :Connecting to master server...
-STR_6149    :Unable to connect to master server
-STR_6150    :Invalid response from master server (no JSON number)
+STR_6147    :{SMALLFONT}{BLACK}Aktiverer alle sporstykker, som forlystelses typen er i stand til i konstruktions vinduet, uanset om køretøjet understøtter dem.
+STR_6148    :Forbinder til master server...
+STR_6149    :Kamn ikke forbinde til master server
+STR_6150    :Ugyldigt svar fra master server (ingen JSON nummer)
 STR_6151    :Master server failed to return servers
-STR_6152    :Invalid response from master server (no JSON array)
-STR_6153    :Pay to enter park / Pay per ride
-STR_6154    :For security reasons, it is not recommended to run OpenRCT2 with elevated permissions.
-STR_6155    :Neither KDialog nor Zenity are installed. Please install one, or configure from the command line.
-STR_6156    :Name is reserved
-STR_6157    :Console
-STR_6158    :Failed to load this file...{NEWLINE}Incompatible RCTC version: {COMMA16}
-STR_6159    :Smooth Nearest Neighbour
-STR_6160    :{WINDOW_COLOUR_2}Available vehicles: {BLACK}{STRING}
-STR_6161    :Gridlines display toggle
-STR_6162    :Spinning Wild Mouse
-STR_6163    :Mouse shaped cars speed through tight corners and short drops, gently spinning around to disorientate the riders
+STR_6152    :Ugyldigt svar fra master server (ingen JSON array)
+STR_6153    :Betal ved indgang / Betal per tur
+STR_6154    :Af sikkerhedsmæssige årsager anbefales det ikke at køre OpenRCT2 med forhøjede tilladelser.
+STR_6155    :Hverken KDialog eller Zenity er installeret. Installer venligst en, eller konfigurer fra kommando linje.
+STR_6156    :Navn er reserveret
+STR_6157    :Konsol
+STR_6158    :Kan ikke hente denne fil...{NEWLINE}ikke kompatibel RCTC version: {COMMA16}
+STR_6159    :Blødgør til nærmeste nabo
+STR_6160    :{WINDOW_COLOUR_2}Tilgængelige køretøjer: {BLACK}{STRING}
+STR_6161    :Skift gitterlinjer Visning til/fra
+STR_6162    :Snurrende Vild Mus
+STR_6163    :Muse formede biler suser gennem skarpe kurver og korte fald, imens de snurrer lidt rundt for at desorientere gæsterne
 STR_6164    :{WHITE}❌
-STR_6165    :Use vertical sync
-STR_6166    :{SMALLFONT}{BLACK}Synchronises each frame displayed to the monitor's refresh rate, preventing screen tearing.
+STR_6165    :Brug vertikal synkronisering
+STR_6166    :{SMALLFONT}{BLACK}Synkroniserer hvert billede, som vises, til skærmens opdateringshastighed, hvilket forhindrer, udrivninger i grafikken.
 STR_6167    :{SMALLFONT}{BLACK}Avanceret
 STR_6168    :Titel Sekvens
 STR_6169    :Scenarie valg
@@ -3722,9 +3577,6 @@ STR_6248    :{WINDOW_COLOUR_1}Vil du renovere {STRINGID} for {CURRENCY}?
 STR_6249    :{WINDOW_COLOUR_1}Vil du renovere {STRINGID}?STR_6249    :{WINDOW_COLOUR_1}Do you want to renovere {STRINGID}?
 STR_6250    :{WINDOW_COLOUR_1}Er du sikker på at du vil destruere {STRINGID} og modtage {CURRENCY}?
 STR_6251    :Forlystelse er ikke tom endnu
-STR_6252    :Twitch API URL
-STR_6253    :{SMALLFONT}{BLACK}Angiv URL til Twitch integrations API. Påkrævet for at aktivere Twitch integration.
-STR_6254    :URL til Twitch integrations API:
 STR_6255    :URL er ikke gyldig
 STR_6256    :Renderings effekter
 STR_6257    :Uklar (halvgennemsigtig)
@@ -3747,7 +3599,7 @@ STR_6273    :Musik
 STR_6274    :Kan ikke sætte farveskema...
 STR_6275    :{WINDOW_COLOUR_2}Stations stil:
 STR_6276    :{RED}{STRINGID} har fastklemte gæster, muligvis på grund af forkert forlystelsetype eller operations tilstand.
-STR_6277    :{WINDOW_COLOUR_2}Stations index: {BLACK}{COMMA16}
+STR_6277    :{WINDOW_COLOUR_2}Stations index: {BLACK}{STRINGID}
 STR_6278    :Autogem mængde
 STR_6279    :{SMALLFONT}{BLACK}Antallet af automatisk gemte spil der skal beholdes
 STR_6280    :{SMALLFONT}{BLACK}Chat
@@ -3799,6 +3651,52 @@ STR_6325    :{SMALLFONT}{BLACK}Simulér forlystelse/attraktion
 STR_6326    :Kan ikke simulére {POP16}{POP16}{POP16}{STRINGID}...
 STR_6327    :Transparent baggrund for gigantisk Skærmbillede
 STR_6328    :{SMALLFONT}{BLACK}Med denne indstilling aktiveret, vil gigantisk skærmbillede have transparent baggrund i stedet for en standard sort baggrund.
+STR_6329    :{STRING}{STRINGID}
+STR_6330    :Henter [{STRING}] fra {STRING} ({COMMA16} / {COMMA16})
+STR_6331    :Anbring ænder
+STR_6332    :Fjern ænder
+STR_6333    :Forøg skalerings faktor
+STR_6334    :Reducer skalerings faktor
+STR_6335    :Felt Undersøger: Indsæt korrupt element
+STR_6336    :Felt Undersøger: Kopier element
+STR_6337    :Felt Undersøger: Indsæt element
+STR_6338    :Felt Undersøger: Slet element
+STR_6339    :Felt Undersøger: Flyt element op
+STR_6340    :Felt Undersøger: Flyt element ned
+STR_6341    :Felt Undersøger: Forøg X koordinat
+STR_6342    :Felt Undersøger: Reducer X koordinat
+STR_6343    :Felt Undersøger: Forøg Y koordinat
+STR_6344    :Felt Undersøger: Reducer Y koordinat
+STR_6345    :Felt Undersøger: Forøg element højde
+STR_6346    :Felt Undersøger: Reducer element højde
+STR_6347    :Sti tilføjelse kan ikke placeres på jernbaneoverskæring!
+STR_6348    :Fjern jernbaneoverskæring først!
+STR_6349    :Tilfældig titelsekvens
+STR_6350    :Spredning
+STR_6351    :Sceneri sprednings værktøj
+STR_6352    :Tæthed
+STR_6353    :{SMALLFONT}{BLACK}Lav tæthed
+STR_6354    :{SMALLFONT}{BLACK}Mellem tæthed
+STR_6355    :{SMALLFONT}{BLACK}Høj tæthed
+STR_6356    :{SMALLFONT}{BLACK}Generer ænder hvis parken indeholder vand
+STR_6357    :{SMALLFONT}{BLACK}Fjern alle ænder fra kortet
+STR_6358    :Side {UINT16}
+STR_6359    :{POP16}{POP16}Side {UINT16}
+STR_6360    :{SMALLFONT}{BLACK}{COMMA32}
+STR_6361    :Aktiver lyseffekter på forlystelser (eksperimentel)
+STR_6362    :{SMALLFONT}{BLACK}Hvis aktiv, vognene for spor-forlystelser vil lyse op om natten.
+STR_6363    :Kopierede tekst til udklipsholder
+STR_6364    :{RED}{COMMA16} person døde i forlystelsen {STRINGID}
+STR_6365    :Forlystelse tilskadekommende
+STR_6366    :Fastlåste eller blokerede køretøjer
+STR_6367    :{WINDOW_COLOUR_2}Animations billede:
+STR_6368    :Af kompatibilitetshensyn anbefales det ikke at køre OpenRCT2 med Wine. OpenRCT2 har indbygget understøttelse af macOS, Linux, FreeBSD og OpenBSD.
+STR_6369    :Tillad bygning af spor i ugyldige højder
+STR_6370    :{SMALLFONT}{BLACK}Gør det muligt at placere sporstykker i ethvert højdeniveauiveau
+STR_6371    :Den angivne sti, indeholder en RollerCoaster Tycoon 1 installation, men filen “csg1i.dat” mangler. Det er nødvendigt at kopiere denne fil fra RollerCoaster Tycoon 1 CD'en, til “Data” folderen under RollerCoaster Tycoon 1 installationen på din harddisk.
+STR_6372    :Den angivne sti, indeholder en RollerCoaster Tycoon 1 installation, men denne version er ikke korrekt. OpenRCT2 har brug for, Loopy Landscapes eller RCT Deluxe installationen for at kunne bruge RollerCoaster Tycoon 1 aktiver.
+STR_6373    :Slå rydningskontrol til/fra
+STR_6374    :R
 
 #############
 # Scenarios #

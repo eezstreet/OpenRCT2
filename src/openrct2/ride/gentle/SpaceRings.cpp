@@ -40,7 +40,7 @@ static void paint_space_rings_structure(paint_session* session, Ride* ride, uint
     if (ride->num_stations == 0 || vehicleIndex < ride->num_vehicles)
     {
         rct_ride_entry* rideEntry = get_ride_entry(ride->subtype);
-        rct_vehicle* vehicle = nullptr;
+        Vehicle* vehicle = nullptr;
 
         int32_t frameNum = direction;
 
@@ -51,7 +51,7 @@ static void paint_space_rings_structure(paint_session* session, Ride* ride, uint
             session->InteractionType = VIEWPORT_INTERACTION_ITEM_SPRITE;
             vehicle = GET_VEHICLE(ride->vehicles[vehicleIndex]);
             session->CurrentlyDrawnItem = vehicle;
-            frameNum += (int8_t)vehicle->vehicle_sprite_type * 4;
+            frameNum += static_cast<int8_t>(vehicle->vehicle_sprite_type) * 4;
         }
 
         uint32_t imageColourFlags = session->TrackColours[SCHEME_MISC];
@@ -72,7 +72,7 @@ static void paint_space_rings_structure(paint_session* session, Ride* ride, uint
         if (vehicle != nullptr && vehicle->num_peeps > 0)
         {
             Peep* rider = GET_PEEP(vehicle->peep[0]);
-            imageColourFlags = SPRITE_ID_PALETTE_COLOUR_2(rider->tshirt_colour, rider->trousers_colour);
+            imageColourFlags = SPRITE_ID_PALETTE_COLOUR_2(rider->TshirtColour, rider->TrousersColour);
             imageId = ((baseImageId & 0x7FFFF) + 352 + frameNum) | imageColourFlags;
             sub_98199C(session, imageId, 0, 0, 20, 20, 23, height, -10, -10, height);
         }
@@ -87,11 +87,14 @@ static void paint_space_rings(
     paint_session* session, ride_id_t rideIndex, uint8_t trackSequence, uint8_t direction, int32_t height,
     const TileElement* tileElement)
 {
+    auto ride = get_ride(rideIndex);
+    if (ride == nullptr)
+        return;
+
     trackSequence = track_map_3x3[direction][trackSequence];
 
     int32_t edges = edges_3x3[trackSequence];
-    Ride* ride = get_ride(rideIndex);
-    LocationXY16 position = session->MapPosition;
+    CoordsXY position = session->MapPosition;
 
     uint32_t imageId;
 

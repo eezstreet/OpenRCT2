@@ -19,6 +19,7 @@
 #include "Object.h"
 #include "ObjectList.h"
 #include "ObjectRepository.h"
+#include "RideObject.h"
 #include "SceneryGroupObject.h"
 #include "SmallSceneryObject.h"
 #include "WallObject.h"
@@ -35,6 +36,10 @@ class ObjectManager final : public IObjectManager
 private:
     IObjectRepository& _objectRepository;
     std::vector<Object*> _loadedObjects;
+    std::array<std::vector<ObjectEntryIndex>, RIDE_TYPE_COUNT> _rideTypeToObjectMap;
+
+    // Used to return a safe empty vector back from GetAllRideEntries, can be removed when std::span is available
+    std::vector<ObjectEntryIndex> _nullRideTypeEntries;
 
 public:
     explicit ObjectManager(IObjectRepository& objectRepository)
@@ -62,7 +67,7 @@ public:
 
     Object* GetLoadedObject(int32_t objectType, size_t index) override
     {
-        if (index >= (size_t)object_entry_group_counts[objectType])
+        if (index >= static_cast<size_t>(object_entry_group_counts[objectType]))
         {
 #ifdef DEBUG
             log_warning("Object index %u exceeds maximum for type %d.", index, objectType);
@@ -85,9 +90,9 @@ public:
         return loadedObject;
     }
 
-    uint8_t GetLoadedObjectEntryIndex(const Object* object) override
+    ObjectEntryIndex GetLoadedObjectEntryIndex(const Object* object) override
     {
-        uint8_t result = UINT8_MAX;
+        ObjectEntryIndex result = OBJECT_ENTRY_INDEX_NULL;
         size_t index = GetLoadedObjectIndex(object);
         if (index != SIZE_MAX)
         {
@@ -105,14 +110,14 @@ public:
             loadedObject = ori->LoadedObject;
             if (loadedObject == nullptr)
             {
-                uint8_t objectType = object_entry_get_type(&ori->ObjectEntry);
+                uint8_t objectType = ori->ObjectEntry.GetType();
                 int32_t slot = FindSpareSlot(objectType);
                 if (slot != -1)
                 {
                     loadedObject = GetOrLoadObject(ori);
                     if (loadedObject != nullptr)
                     {
-                        if (_loadedObjects.size() <= (size_t)slot)
+                        if (_loadedObjects.size() <= static_cast<size_t>(slot))
                         {
                             _loadedObjects.resize(slot + 1);
                         }
@@ -202,7 +207,8 @@ public:
         for (size_t i = 0; i < numObjects; i++)
         {
             const ObjectRepositoryItem* item = &_objectRepository.GetObjects()[i];
-            if (item->LoadedObject != nullptr && IsObjectCustom(item) && item->LoadedObject->GetLegacyData() != nullptr)
+            if (item->LoadedObject != nullptr && IsObjectCustom(item) && item->LoadedObject->GetLegacyData() != nullptr
+                && !item->LoadedObject->IsJsonObject())
             {
                 objects.push_back(item);
             }
@@ -287,6 +293,16 @@ public:
         }
     }
 
+    const std::vector<ObjectEntryIndex>& GetAllRideEntries(uint8_t rideType) override
+    {
+        if (rideType >= RIDE_TYPE_COUNT)
+        {
+            // Return an empty vector
+            return _nullRideTypeEntries;
+        }
+        return _rideTypeToObjectMap[rideType];
+    }
+
 private:
     Object* LoadObject(const std::string& name)
     {
@@ -304,11 +320,11 @@ private:
             if (_loadedObjects.size() <= i)
             {
                 _loadedObjects.resize(i + 1);
-                return (int32_t)i;
+                return static_cast<int32_t>(i);
             }
             else if (_loadedObjects[i] == nullptr)
             {
-                return (int32_t)i;
+                return static_cast<int32_t>(i);
             }
         }
         return -1;
@@ -407,23 +423,23 @@ private:
                 switch (loadedObject->GetObjectType())
                 {
                     case OBJECT_TYPE_SMALL_SCENERY:
-                        sceneryEntry = (rct_scenery_entry*)loadedObject->GetLegacyData();
+                        sceneryEntry = static_cast<rct_scenery_entry*>(loadedObject->GetLegacyData());
                         sceneryEntry->small_scenery.scenery_tab_id = GetPrimarySceneryGroupEntryIndex(loadedObject);
                         break;
                     case OBJECT_TYPE_LARGE_SCENERY:
-                        sceneryEntry = (rct_scenery_entry*)loadedObject->GetLegacyData();
+                        sceneryEntry = static_cast<rct_scenery_entry*>(loadedObject->GetLegacyData());
                         sceneryEntry->large_scenery.scenery_tab_id = GetPrimarySceneryGroupEntryIndex(loadedObject);
                         break;
                     case OBJECT_TYPE_WALLS:
-                        sceneryEntry = (rct_scenery_entry*)loadedObject->GetLegacyData();
+                        sceneryEntry = static_cast<rct_scenery_entry*>(loadedObject->GetLegacyData());
                         sceneryEntry->wall.scenery_tab_id = GetPrimarySceneryGroupEntryIndex(loadedObject);
                         break;
                     case OBJECT_TYPE_BANNERS:
-                        sceneryEntry = (rct_scenery_entry*)loadedObject->GetLegacyData();
+                        sceneryEntry = static_cast<rct_scenery_entry*>(loadedObject->GetLegacyData());
                         sceneryEntry->banner.scenery_tab_id = GetPrimarySceneryGroupEntryIndex(loadedObject);
                         break;
                     case OBJECT_TYPE_PATH_BITS:
-                        sceneryEntry = (rct_scenery_entry*)loadedObject->GetLegacyData();
+                        sceneryEntry = static_cast<rct_scenery_entry*>(loadedObject->GetLegacyData());
                         sceneryEntry->path_bit.scenery_tab_id = GetPrimarySceneryGroupEntryIndex(loadedObject);
                         break;
                     case OBJECT_TYPE_SCENERY_GROUP:
@@ -439,13 +455,13 @@ private:
         window_close_by_class(WC_SCENERY);
     }
 
-    uint8_t GetPrimarySceneryGroupEntryIndex(Object* loadedObject)
+    ObjectEntryIndex GetPrimarySceneryGroupEntryIndex(Object* loadedObject)
     {
         auto sceneryObject = dynamic_cast<SceneryObject*>(loadedObject);
         const rct_object_entry* primarySGEntry = sceneryObject->GetPrimarySceneryGroup();
         Object* sgObject = GetLoadedObject(primarySGEntry);
 
-        uint8_t entryIndex = 255;
+        auto entryIndex = OBJECT_ENTRY_INDEX_NULL;
         if (sgObject != nullptr)
         {
             entryIndex = GetLoadedObjectEntryIndex(sgObject);
@@ -479,7 +495,7 @@ private:
             ori = _objectRepository.FindObject(&entry);
             if (ori == nullptr)
             {
-                if (object_entry_get_type(&entry) != OBJECT_TYPE_SCENARIO_TEXT)
+                if (entry.GetType() != OBJECT_TYPE_SCENARIO_TEXT)
                 {
                     invalidEntries.push_back(entry);
                     ReportMissingObject(&entry);
@@ -521,7 +537,7 @@ private:
             if (!object_entry_is_empty(entry))
             {
                 ori = _objectRepository.FindObject(entry);
-                if (ori == nullptr && object_entry_get_type(entry) != OBJECT_TYPE_SCENARIO_TEXT)
+                if (ori == nullptr && entry->GetType() != OBJECT_TYPE_SCENARIO_TEXT)
                 {
                     missingObjects.push_back(*entry);
                     ReportMissingObject(entry);
@@ -642,7 +658,33 @@ private:
 
     void ResetTypeToRideEntryIndexMap()
     {
-        reset_type_to_ride_entry_index_map(*this);
+        // Clear all ride objects
+        for (auto& v : _rideTypeToObjectMap)
+        {
+            v.clear();
+        }
+
+        // Build object lists
+        auto maxRideObjects = static_cast<size_t>(object_entry_group_counts[OBJECT_TYPE_RIDE]);
+        for (size_t i = 0; i < maxRideObjects; i++)
+        {
+            auto rideObject = static_cast<RideObject*>(GetLoadedObject(OBJECT_TYPE_RIDE, i));
+            if (rideObject != nullptr)
+            {
+                const auto entry = static_cast<rct_ride_entry*>(rideObject->GetLegacyData());
+                if (entry != nullptr)
+                {
+                    for (auto rideType : entry->ride_type)
+                    {
+                        if (rideType < _rideTypeToObjectMap.size())
+                        {
+                            auto& v = _rideTypeToObjectMap[rideType];
+                            v.push_back(static_cast<ObjectEntryIndex>(i));
+                        }
+                    }
+                }
+            }
+        }
     }
 
     static void ReportMissingObject(const rct_object_entry* entry)
@@ -666,7 +708,7 @@ private:
         {
             result += object_entry_group_counts[i];
         }
-        result += (int32_t)entryIndex;
+        result += static_cast<int32_t>(entryIndex);
         return result;
     }
 };
@@ -680,21 +722,21 @@ void* object_manager_get_loaded_object_by_index(size_t index)
 {
     auto& objectManager = OpenRCT2::GetContext()->GetObjectManager();
     Object* loadedObject = objectManager.GetLoadedObject(index);
-    return (void*)loadedObject;
+    return static_cast<void*>(loadedObject);
 }
 
 void* object_manager_get_loaded_object(const rct_object_entry* entry)
 {
     auto& objectManager = OpenRCT2::GetContext()->GetObjectManager();
     Object* loadedObject = objectManager.GetLoadedObject(entry);
-    return (void*)loadedObject;
+    return static_cast<void*>(loadedObject);
 }
 
-uint8_t object_manager_get_loaded_object_entry_index(const void* loadedObject)
+ObjectEntryIndex object_manager_get_loaded_object_entry_index(const void* loadedObject)
 {
     auto& objectManager = OpenRCT2::GetContext()->GetObjectManager();
     const Object* object = static_cast<const Object*>(loadedObject);
-    uint8_t entryIndex = objectManager.GetLoadedObjectEntryIndex(object);
+    auto entryIndex = objectManager.GetLoadedObjectEntryIndex(object);
     return entryIndex;
 }
 
@@ -702,7 +744,7 @@ void* object_manager_load_object(const rct_object_entry* entry)
 {
     auto& objectManager = OpenRCT2::GetContext()->GetObjectManager();
     Object* loadedObject = objectManager.LoadObject(entry);
-    return (void*)loadedObject;
+    return static_cast<void*>(loadedObject);
 }
 
 void object_manager_unload_objects(const rct_object_entry* entries, size_t count)

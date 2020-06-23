@@ -20,11 +20,12 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 struct json_t;
 struct GameAction;
 struct Peep;
-struct LocationXYZ16;
+struct CoordsXYZ;
 class GameActionResult;
 enum class ModifyGroupType : uint8_t;
 enum class PermissionState : uint8_t;
@@ -61,11 +62,13 @@ uint32_t network_get_player_flags(uint32_t index);
 int32_t network_get_player_ping(uint32_t index);
 int32_t network_get_player_id(uint32_t index);
 money32 network_get_player_money_spent(uint32_t index);
+std::string network_get_player_ip_address(uint32_t id);
+std::string network_get_player_public_key_hash(uint32_t id);
 void network_add_player_money_spent(uint32_t index, money32 cost);
 int32_t network_get_player_last_action(uint32_t index, int32_t time);
 void network_set_player_last_action(uint32_t index, int32_t command);
-LocationXYZ16 network_get_player_last_action_coord(uint32_t index);
-void network_set_player_last_action_coord(uint32_t index, LocationXYZ16 coord);
+CoordsXYZ network_get_player_last_action_coord(uint32_t index);
+void network_set_player_last_action_coord(uint32_t index, const CoordsXYZ& coord);
 uint32_t network_get_player_commands_ran(uint32_t index);
 int32_t network_get_player_index(uint32_t id);
 uint8_t network_get_player_group(uint32_t index);
@@ -92,7 +95,7 @@ void network_set_pickup_peep_old_x(uint8_t playerid, int32_t x);
 int32_t network_get_pickup_peep_old_x(uint8_t playerid);
 
 void network_send_map();
-void network_send_chat(const char* text);
+void network_send_chat(const char* text, const std::vector<uint8_t>& playerIds = {});
 void network_send_game_action(const GameAction* action);
 void network_enqueue_game_action(const GameAction* action);
 void network_send_password(const std::string& password);

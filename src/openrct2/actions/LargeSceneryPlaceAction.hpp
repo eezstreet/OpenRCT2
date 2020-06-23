@@ -17,6 +17,7 @@
 #include "../world/LargeScenery.h"
 #include "../world/MapAnimation.h"
 #include "../world/Scenery.h"
+#include "../world/Surface.h"
 #include "GameAction.h"
 
 class LargeSceneryPlaceActionResult final : public GameActionResult
@@ -47,7 +48,7 @@ DEFINE_GAME_ACTION(LargeSceneryPlaceAction, GAME_COMMAND_PLACE_LARGE_SCENERY, La
 {
 private:
     CoordsXYZD _loc;
-    uint8_t _sceneryType{ std::numeric_limits<uint8_t>::max() };
+    ObjectEntryIndex _sceneryType{ OBJECT_ENTRY_INDEX_NULL };
     uint8_t _primaryColour;
     uint8_t _secondaryColour;
     BannerIndex _bannerId{ BANNER_INDEX_NULL };
@@ -55,7 +56,7 @@ private:
 public:
     LargeSceneryPlaceAction() = default;
 
-    LargeSceneryPlaceAction(CoordsXYZD loc, uint8_t sceneryType, uint8_t primaryColour, uint8_t secondaryColour)
+    LargeSceneryPlaceAction(const CoordsXYZD& loc, ObjectEntryIndex sceneryType, uint8_t primaryColour, uint8_t secondaryColour)
         : _loc(loc)
         , _sceneryType(sceneryType)
         , _primaryColour(primaryColour)
@@ -88,8 +89,8 @@ public:
     {
         auto res = std::make_unique<LargeSceneryPlaceActionResult>();
         res->ErrorTitle = STR_CANT_POSITION_THIS_HERE;
-        res->ExpenditureType = RCT_EXPENDITURE_TYPE_LANDSCAPING;
-        int16_t surfaceHeight = tile_element_height(_loc.x, _loc.y);
+        res->Expenditure = ExpenditureType::Landscaping;
+        int16_t surfaceHeight = tile_element_height(_loc);
         res->Position.x = _loc.x + 16;
         res->Position.y = _loc.y + 16;
         res->Position.z = surfaceHeight;
@@ -137,7 +138,7 @@ public:
             }
 
             auto banner = GetBanner(_bannerId);
-            if (banner->type != BANNER_NULL)
+            if (!banner->IsNull())
             {
                 log_error("No free banners available");
                 return std::make_unique<LargeSceneryPlaceActionResult>(GA_ERROR::NO_FREE_ELEMENTS);
@@ -153,20 +154,17 @@ public:
         uint8_t tileNum = 0;
         for (rct_large_scenery_tile* tile = sceneryEntry->large_scenery.tiles; tile->x_offset != -1; tile++, tileNum++)
         {
-            auto tempX = tile->x_offset;
-            auto tempY = tile->y_offset;
-            rotate_map_coordinates(&tempX, &tempY, _loc.direction);
-            CoordsXY curTile = { tempX, tempY };
+            auto curTile = CoordsXY{ tile->x_offset, tile->y_offset }.Rotate(_loc.direction);
 
             curTile.x += _loc.x;
             curTile.y += _loc.y;
 
-            int32_t zLow = (tile->z_offset + maxHeight) / 8;
-            int32_t zHigh = (tile->z_clearance / 8) + zLow;
+            int32_t zLow = tile->z_offset + maxHeight;
+            int32_t zHigh = tile->z_clearance + zLow;
 
             QuarterTile quarterTile = QuarterTile{ static_cast<uint8_t>(tile->flags >> 12), 0 }.Rotate(_loc.direction);
             if (!map_can_construct_with_clear_at(
-                    curTile.x, curTile.y, zLow, zHigh, &map_place_scenery_clear_func, quarterTile, GetFlags(), &supportsCost,
+                    { curTile, zLow, zHigh }, &map_place_scenery_clear_func, quarterTile, GetFlags(), &supportsCost,
                     CREATE_CROSSING_MODE_NONE))
             {
                 return std::make_unique<LargeSceneryPlaceActionResult>(
@@ -190,12 +188,12 @@ public:
 
             res->GroundFlags = tempSceneryGroundFlags;
 
-            if (curTile.x >= gMapSizeUnits || curTile.y >= gMapSizeUnits)
+            if (!LocationValid(curTile) || curTile.x >= gMapSizeUnits || curTile.y >= gMapSizeUnits)
             {
                 return std::make_unique<LargeSceneryPlaceActionResult>(GA_ERROR::DISALLOWED, STR_OFF_EDGE_OF_MAP);
             }
 
-            if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) && !map_is_location_owned(curTile.x, curTile.y, zLow * 8)
+            if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) && !map_is_location_owned({ curTile, zLow })
                 && !gCheatsSandboxMode)
             {
                 return std::make_unique<LargeSceneryPlaceActionResult>(GA_ERROR::DISALLOWED, STR_LAND_NOT_OWNED_BY_PARK);
@@ -213,8 +211,9 @@ public:
     {
         auto res = std::make_unique<LargeSceneryPlaceActionResult>();
         res->ErrorTitle = STR_CANT_POSITION_THIS_HERE;
+        res->Expenditure = ExpenditureType::Landscaping;
 
-        int16_t surfaceHeight = tile_element_height(_loc.x, _loc.y);
+        int16_t surfaceHeight = tile_element_height(_loc);
         res->Position.x = _loc.x + 16;
         res->Position.y = _loc.y + 16;
         res->Position.z = surfaceHeight;
@@ -245,37 +244,6 @@ public:
 
         res->Position.z = maxHeight;
 
-        if (sceneryEntry->large_scenery.scrolling_mode != SCROLLING_MODE_NONE)
-        {
-            if (_bannerId == BANNER_INDEX_NULL)
-            {
-                log_error("No free banners available");
-                return MakeResult(GA_ERROR::NO_FREE_ELEMENTS, STR_TOO_MANY_BANNERS_IN_GAME);
-            }
-
-            auto banner = GetBanner(_bannerId);
-            if (banner->type != BANNER_NULL)
-            {
-                log_error("No free banners available");
-                return std::make_unique<LargeSceneryPlaceActionResult>(GA_ERROR::NO_FREE_ELEMENTS);
-            }
-
-            banner->string_idx = STR_DEFAULT_SIGN;
-            banner->colour = 2;
-            banner->text_colour = 2;
-            banner->flags = BANNER_FLAG_IS_LARGE_SCENERY;
-            banner->type = 0;
-            banner->position.x = _loc.x / 32;
-            banner->position.y = _loc.y / 32;
-
-            ride_id_t rideIndex = banner_get_closest_ride_index(_loc.x, _loc.y, maxHeight);
-            if (rideIndex != RIDE_ID_NULL)
-            {
-                banner->ride_index = rideIndex;
-                banner->flags |= BANNER_FLAG_LINKED_TO_RIDE;
-            }
-        }
-
         if (!map_check_free_elements_and_reorganise(totalNumTiles))
         {
             log_error("No free map elements available");
@@ -285,20 +253,17 @@ public:
         uint8_t tileNum = 0;
         for (rct_large_scenery_tile* tile = sceneryEntry->large_scenery.tiles; tile->x_offset != -1; tile++, tileNum++)
         {
-            auto tempX = tile->x_offset;
-            auto tempY = tile->y_offset;
-            rotate_map_coordinates(&tempX, &tempY, _loc.direction);
-            CoordsXY curTile = { tempX, tempY };
+            auto curTile = CoordsXY{ tile->x_offset, tile->y_offset }.Rotate(_loc.direction);
 
             curTile.x += _loc.x;
             curTile.y += _loc.y;
 
-            int32_t zLow = (tile->z_offset + maxHeight) / 8;
-            int32_t zHigh = (tile->z_clearance / 8) + zLow;
+            int32_t zLow = tile->z_offset + maxHeight;
+            int32_t zHigh = tile->z_clearance + zLow;
 
             QuarterTile quarterTile = QuarterTile{ static_cast<uint8_t>(tile->flags >> 12), 0 }.Rotate(_loc.direction);
             if (!map_can_construct_with_clear_at(
-                    curTile.x, curTile.y, zLow, zHigh, &map_place_scenery_clear_func, quarterTile, GetFlags(), &supportsCost,
+                    { curTile, zLow, zHigh }, &map_place_scenery_clear_func, quarterTile, GetFlags(), &supportsCost,
                     CREATE_CROSSING_MODE_NONE))
             {
                 return std::make_unique<LargeSceneryPlaceActionResult>(
@@ -309,19 +274,19 @@ public:
 
             if (!(GetFlags() & GAME_COMMAND_FLAG_GHOST))
             {
-                footpath_remove_litter(curTile.x, curTile.y, zLow * 8);
+                footpath_remove_litter({ curTile, zLow });
                 if (!gCheatsDisableClearanceChecks)
                 {
-                    wall_remove_at(curTile.x, curTile.y, zLow * 8, zHigh * 8);
+                    wall_remove_at({ curTile, zLow, zHigh });
                 }
             }
 
             TileElement* newTileElement = tile_element_insert(
-                curTile.x / 32, curTile.y / 32, zLow, quarterTile.GetBaseQuarterOccupied());
+                CoordsXYZ{ curTile.x, curTile.y, zLow }, quarterTile.GetBaseQuarterOccupied());
             Guard::Assert(newTileElement != nullptr);
-            map_animation_create(MAP_ANIMATION_TYPE_LARGE_SCENERY, curTile.x, curTile.y, zLow);
+            map_animation_create(MAP_ANIMATION_TYPE_LARGE_SCENERY, { curTile, zLow });
             newTileElement->SetType(TILE_ELEMENT_TYPE_LARGE_SCENERY);
-            newTileElement->clearance_height = zHigh;
+            newTileElement->SetClearanceZ(zHigh);
             auto newSceneryElement = newTileElement->AsLargeScenery();
 
             SetNewLargeSceneryElement(*newSceneryElement, tileNum);
@@ -330,7 +295,38 @@ public:
             {
                 res->tileElement = newTileElement;
             }
-            map_invalidate_tile_full(curTile.x, curTile.y);
+            map_invalidate_tile_full(curTile);
+        }
+
+        // Allocate banner after all tiles to ensure banner id doesn't need to be freed.
+        if (sceneryEntry->large_scenery.scrolling_mode != SCROLLING_MODE_NONE)
+        {
+            if (_bannerId == BANNER_INDEX_NULL)
+            {
+                log_error("No free banners available");
+                return MakeResult(GA_ERROR::NO_FREE_ELEMENTS, STR_TOO_MANY_BANNERS_IN_GAME);
+            }
+
+            auto banner = GetBanner(_bannerId);
+            if (!banner->IsNull())
+            {
+                log_error("No free banners available");
+                return std::make_unique<LargeSceneryPlaceActionResult>(GA_ERROR::NO_FREE_ELEMENTS);
+            }
+
+            banner->text = {};
+            banner->colour = 2;
+            banner->text_colour = 2;
+            banner->flags = BANNER_FLAG_IS_LARGE_SCENERY;
+            banner->type = 0;
+            banner->position = TileCoordsXY(_loc);
+
+            ride_id_t rideIndex = banner_get_closest_ride_index({ _loc, maxHeight });
+            if (rideIndex != RIDE_ID_NULL)
+            {
+                banner->ride_index = rideIndex;
+                banner->flags |= BANNER_FLAG_LINKED_TO_RIDE;
+            }
         }
 
         // Force ride construction to recheck area
@@ -356,39 +352,35 @@ private:
         int16_t maxHeight = -1;
         for (rct_large_scenery_tile* tile = tiles; tile->x_offset != -1; tile++)
         {
-            auto tempX = tile->x_offset;
-            auto tempY = tile->y_offset;
-            rotate_map_coordinates(&tempX, &tempY, _loc.direction);
-            CoordsXY curTile = { tempX, tempY };
+            auto curTile = CoordsXY{ tile->x_offset, tile->y_offset }.Rotate(_loc.direction);
 
             curTile.x += _loc.x;
             curTile.y += _loc.y;
 
-            if (curTile.x >= 0x1FFF || curTile.y >= 0x1FFF || curTile.x < 0 || curTile.y < 0)
+            if (!map_is_location_valid(curTile))
             {
                 continue;
             }
 
-            TileElement* tileElement = map_get_surface_element_at({ curTile.x, curTile.y });
-            if (tileElement == nullptr)
+            auto* surfaceElement = map_get_surface_element_at(curTile);
+            if (surfaceElement == nullptr)
                 continue;
 
-            SurfaceElement* surfaceElement = tileElement->AsSurface();
-            int32_t height = surfaceElement->base_height * 8;
+            int32_t baseZ = surfaceElement->GetBaseZ();
             int32_t slope = surfaceElement->GetSlope();
 
-            if (slope & 0xF)
+            if ((slope & TILE_ELEMENT_SLOPE_ALL_CORNERS_UP) != TILE_ELEMENT_SLOPE_FLAT)
             {
-                height += 16;
-                if (slope & 0x10)
+                baseZ += LAND_HEIGHT_STEP;
+                if (slope & TILE_ELEMENT_SLOPE_DOUBLE_HEIGHT)
                 {
-                    height += 16;
+                    baseZ += LAND_HEIGHT_STEP;
                 }
             }
 
-            if (height > maxHeight)
+            if (baseZ > maxHeight)
             {
-                maxHeight = height;
+                maxHeight = baseZ;
             }
         }
         return maxHeight;

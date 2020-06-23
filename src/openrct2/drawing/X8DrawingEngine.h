@@ -110,11 +110,20 @@ namespace OpenRCT2
 
         public:
             explicit X8DrawingEngine(const std::shared_ptr<Ui::IUiContext>& uiContext);
+
+#ifdef __WARN_SUGGEST_FINAL_METHODS__
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wsuggest-final-methods"
+#    pragma GCC diagnostic ignored "-Wsuggest-final-types"
+#endif
             ~X8DrawingEngine() override;
+#ifdef __WARN_SUGGEST_FINAL_METHODS__
+#    pragma GCC diagnostic pop
+#endif
 
             void Initialise() override;
             void Resize(uint32_t width, uint32_t height) override;
-            void SetPalette(const rct_palette_entry* palette) override;
+            void SetPalette(const GamePalette& palette) override;
             void SetVSync(bool vsync) override;
             void Invalidate(int32_t left, int32_t top, int32_t right, int32_t bottom) override;
             void BeginDraw() override;
@@ -164,7 +173,7 @@ namespace OpenRCT2
             void DrawSprite(uint32_t image, int32_t x, int32_t y, uint32_t tertiaryColour) override;
             void DrawSpriteRawMasked(int32_t x, int32_t y, uint32_t maskImage, uint32_t colourImage) override;
             void DrawSpriteSolid(uint32_t image, int32_t x, int32_t y, uint8_t colour) override;
-            void DrawGlyph(uint32_t image, int32_t x, int32_t y, uint8_t* palette) override;
+            void DrawGlyph(uint32_t image, int32_t x, int32_t y, const PaletteMap& paletteMap) override;
 
             void SetDPI(rct_drawpixelinfo* dpi);
         };

@@ -19,52 +19,52 @@
 #include "../TrackData.h"
 #include "../TrackPaint.h"
 
-#define SPR_SIDE_FRICTION_60_DEG_UP_DIR_0_A 21646
-#define SPR_SIDE_FRICTION_60_DEG_UP_DIR_0_B 21658
-#define SPR_SIDE_FRICTION_60_DEG_UP_DIR_1_A 21647
-#define SPR_SIDE_FRICTION_60_DEG_UP_DIR_1_B 21659
-#define SPR_SIDE_FRICTION_60_DEG_UP_DIR_2_A 21648
-#define SPR_SIDE_FRICTION_60_DEG_UP_DIR_2_B 21660
-#define SPR_SIDE_FRICTION_60_DEG_UP_DIR_3_A 21649
-#define SPR_SIDE_FRICTION_60_DEG_UP_DIR_3_B 21661
+constexpr int32_t SPR_SIDE_FRICTION_60_DEG_UP_DIR_0_B = 21658;
+constexpr int32_t SPR_SIDE_FRICTION_60_DEG_UP_DIR_1_A = 21647;
+constexpr int32_t SPR_SIDE_FRICTION_60_DEG_UP_DIR_1_B = 21659;
+constexpr int32_t SPR_SIDE_FRICTION_60_DEG_UP_DIR_2_A = 21648;
+constexpr int32_t SPR_SIDE_FRICTION_60_DEG_UP_DIR_0_A = 21646;
+constexpr int32_t SPR_SIDE_FRICTION_60_DEG_UP_DIR_2_B = 21660;
+constexpr int32_t SPR_SIDE_FRICTION_60_DEG_UP_DIR_3_A = 21649;
+constexpr int32_t SPR_SIDE_FRICTION_60_DEG_UP_DIR_3_B = 21661;
 
-#define SPR_SIDE_FRICTION_25_DEG_UP_TO_60_DEG_UP_DIR_0_A 21638
-#define SPR_SIDE_FRICTION_25_DEG_UP_TO_60_DEG_UP_DIR_0_B 21650
-#define SPR_SIDE_FRICTION_25_DEG_UP_TO_60_DEG_UP_DIR_1_A 21639
-#define SPR_SIDE_FRICTION_25_DEG_UP_TO_60_DEG_UP_DIR_1_B 21651
-#define SPR_SIDE_FRICTION_25_DEG_UP_TO_60_DEG_UP_DIR_2_A 21640
-#define SPR_SIDE_FRICTION_25_DEG_UP_TO_60_DEG_UP_DIR_2_B 21652
-#define SPR_SIDE_FRICTION_25_DEG_UP_TO_60_DEG_UP_DIR_3_A 21641
-#define SPR_SIDE_FRICTION_25_DEG_UP_TO_60_DEG_UP_DIR_3_B 21653
+constexpr int32_t SPR_SIDE_FRICTION_25_DEG_UP_TO_60_DEG_UP_DIR_0_A = 21638;
+constexpr int32_t SPR_SIDE_FRICTION_25_DEG_UP_TO_60_DEG_UP_DIR_0_B = 21650;
+constexpr int32_t SPR_SIDE_FRICTION_25_DEG_UP_TO_60_DEG_UP_DIR_1_A = 21639;
+constexpr int32_t SPR_SIDE_FRICTION_25_DEG_UP_TO_60_DEG_UP_DIR_1_B = 21651;
+constexpr int32_t SPR_SIDE_FRICTION_25_DEG_UP_TO_60_DEG_UP_DIR_2_A = 21640;
+constexpr int32_t SPR_SIDE_FRICTION_25_DEG_UP_TO_60_DEG_UP_DIR_2_B = 21652;
+constexpr int32_t SPR_SIDE_FRICTION_25_DEG_UP_TO_60_DEG_UP_DIR_3_A = 21641;
+constexpr int32_t SPR_SIDE_FRICTION_25_DEG_UP_TO_60_DEG_UP_DIR_3_B = 21653;
 
-#define SPR_SIDE_FRICTION_60_DEG_UP_TO_25_DEG_UP_DIR_0_A 21642
-#define SPR_SIDE_FRICTION_60_DEG_UP_TO_25_DEG_UP_DIR_0_B 21654
-#define SPR_SIDE_FRICTION_60_DEG_UP_TO_25_DEG_UP_DIR_1_A 21643
-#define SPR_SIDE_FRICTION_60_DEG_UP_TO_25_DEG_UP_DIR_1_B 21655
-#define SPR_SIDE_FRICTION_60_DEG_UP_TO_25_DEG_UP_DIR_2_A 21644
-#define SPR_SIDE_FRICTION_60_DEG_UP_TO_25_DEG_UP_DIR_2_B 21656
-#define SPR_SIDE_FRICTION_60_DEG_UP_TO_25_DEG_UP_DIR_3_A 21645
-#define SPR_SIDE_FRICTION_60_DEG_UP_TO_25_DEG_UP_DIR_3_B 21657
+constexpr int32_t SPR_SIDE_FRICTION_60_DEG_UP_TO_25_DEG_UP_DIR_0_A = 21642;
+constexpr int32_t SPR_SIDE_FRICTION_60_DEG_UP_TO_25_DEG_UP_DIR_0_B = 21654;
+constexpr int32_t SPR_SIDE_FRICTION_60_DEG_UP_TO_25_DEG_UP_DIR_1_A = 21643;
+constexpr int32_t SPR_SIDE_FRICTION_60_DEG_UP_TO_25_DEG_UP_DIR_1_B = 21655;
+constexpr int32_t SPR_SIDE_FRICTION_60_DEG_UP_TO_25_DEG_UP_DIR_2_A = 21644;
+constexpr int32_t SPR_SIDE_FRICTION_60_DEG_UP_TO_25_DEG_UP_DIR_2_B = 21656;
+constexpr int32_t SPR_SIDE_FRICTION_60_DEG_UP_TO_25_DEG_UP_DIR_3_A = 21645;
+constexpr int32_t SPR_SIDE_FRICTION_60_DEG_UP_TO_25_DEG_UP_DIR_3_B = 21657;
 
-#define SPR_SIDE_FRICTION_DIAG_60_DEG_UP_DIR_0_A 21882
-#define SPR_SIDE_FRICTION_DIAG_60_DEG_UP_DIR_0_B 21886
-#define SPR_SIDE_FRICTION_DIAG_60_DEG_UP_DIR_1_A 21883 // Needs no B piece
-#define SPR_SIDE_FRICTION_DIAG_60_DEG_UP_DIR_2_A 21884
-#define SPR_SIDE_FRICTION_DIAG_60_DEG_UP_DIR_2_B 21887
-#define SPR_SIDE_FRICTION_DIAG_60_DEG_UP_DIR_3_A 21885 // Needs no B piece
+constexpr int32_t SPR_SIDE_FRICTION_DIAG_60_DEG_UP_DIR_0_A = 21882;
+constexpr int32_t SPR_SIDE_FRICTION_DIAG_60_DEG_UP_DIR_0_B = 21886;
+constexpr int32_t SPR_SIDE_FRICTION_DIAG_60_DEG_UP_DIR_1_A = 21883; // Needs no B piece
+constexpr int32_t SPR_SIDE_FRICTION_DIAG_60_DEG_UP_DIR_2_A = 21884;
+constexpr int32_t SPR_SIDE_FRICTION_DIAG_60_DEG_UP_DIR_2_B = 21887;
+constexpr int32_t SPR_SIDE_FRICTION_DIAG_60_DEG_UP_DIR_3_A = 21885; // Needs no B piece
 
 // Whole block appears to lack B counterparts
-#define SPR_SIDE_FRICTION_DIAG_25_DEG_UP_TO_60_DEG_UP_DIR_0_A 21870
-#define SPR_SIDE_FRICTION_DIAG_25_DEG_UP_TO_60_DEG_UP_DIR_1_A 21871
-#define SPR_SIDE_FRICTION_DIAG_25_DEG_UP_TO_60_DEG_UP_DIR_2_A 21872
-#define SPR_SIDE_FRICTION_DIAG_25_DEG_UP_TO_60_DEG_UP_DIR_3_A 21873
+constexpr int32_t SPR_SIDE_FRICTION_DIAG_25_DEG_UP_TO_60_DEG_UP_DIR_0_A = 21870;
+constexpr int32_t SPR_SIDE_FRICTION_DIAG_25_DEG_UP_TO_60_DEG_UP_DIR_1_A = 21871;
+constexpr int32_t SPR_SIDE_FRICTION_DIAG_25_DEG_UP_TO_60_DEG_UP_DIR_2_A = 21872;
+constexpr int32_t SPR_SIDE_FRICTION_DIAG_25_DEG_UP_TO_60_DEG_UP_DIR_3_A = 21873;
 
-#define SPR_SIDE_FRICTION_DIAG_60_DEG_UP_TO_25_DEG_UP_DIR_0_A 21876
-#define SPR_SIDE_FRICTION_DIAG_60_DEG_UP_TO_25_DEG_UP_DIR_0_B 21880
-#define SPR_SIDE_FRICTION_DIAG_60_DEG_UP_TO_25_DEG_UP_DIR_1_A 21877 // Needs no B piece
-#define SPR_SIDE_FRICTION_DIAG_60_DEG_UP_TO_25_DEG_UP_DIR_2_A 21878
-#define SPR_SIDE_FRICTION_DIAG_60_DEG_UP_TO_25_DEG_UP_DIR_2_B 21881
-#define SPR_SIDE_FRICTION_DIAG_60_DEG_UP_TO_25_DEG_UP_DIR_3_A 21879 // Needs no B piece
+constexpr int32_t SPR_SIDE_FRICTION_DIAG_60_DEG_UP_TO_25_DEG_UP_DIR_0_A = 21876;
+constexpr int32_t SPR_SIDE_FRICTION_DIAG_60_DEG_UP_TO_25_DEG_UP_DIR_0_B = 21880;
+constexpr int32_t SPR_SIDE_FRICTION_DIAG_60_DEG_UP_TO_25_DEG_UP_DIR_1_A = 21877; // Needs no B piece
+constexpr int32_t SPR_SIDE_FRICTION_DIAG_60_DEG_UP_TO_25_DEG_UP_DIR_2_A = 21878;
+constexpr int32_t SPR_SIDE_FRICTION_DIAG_60_DEG_UP_TO_25_DEG_UP_DIR_2_B = 21881;
+constexpr int32_t SPR_SIDE_FRICTION_DIAG_60_DEG_UP_TO_25_DEG_UP_DIR_3_A = 21879; // Needs no B piece
 
 /** rct2: 0x0077839C */
 static void side_friction_rc_track_flat(
@@ -133,7 +133,7 @@ static void side_friction_rc_track_flat(
                 break;
         }
     }
-    paint_util_push_tunnel_rotated(session, direction, height, TUNNEL_6);
+    paint_util_push_tunnel_rotated(session, direction, height, TUNNEL_SQUARE_FLAT);
     paint_util_set_segment_support_height(session, SEGMENTS_ALL, 0xFFFF, 0);
     paint_util_set_general_support_height(session, height + 32, 0x20);
 }
@@ -154,7 +154,7 @@ static void side_friction_rc_track_station(
         session, direction, imageIds[direction] | session->TrackColours[SCHEME_TRACK], 0, 0, 32, 27, 2, height, 0, 2, height);
     wooden_a_supports_paint_setup(session, direction & 1, 0, height, session->TrackColours[SCHEME_SUPPORTS], nullptr);
     track_paint_util_draw_station_2(session, rideIndex, direction, height, tileElement, 9, 11);
-    paint_util_push_tunnel_rotated(session, direction, height, TUNNEL_6);
+    paint_util_push_tunnel_rotated(session, direction, height, TUNNEL_SQUARE_FLAT);
     paint_util_set_segment_support_height(session, SEGMENTS_ALL, 0xFFFF, 0);
     paint_util_set_general_support_height(session, height + 32, 0x20);
 }
@@ -234,11 +234,11 @@ static void side_friction_rc_track_25_deg_up(
     }
     if (direction == 0 || direction == 3)
     {
-        paint_util_push_tunnel_rotated(session, direction, height - 8, TUNNEL_7);
+        paint_util_push_tunnel_rotated(session, direction, height - 8, TUNNEL_SQUARE_7);
     }
     else
     {
-        paint_util_push_tunnel_rotated(session, direction, height + 8, TUNNEL_8);
+        paint_util_push_tunnel_rotated(session, direction, height + 8, TUNNEL_SQUARE_8);
     }
     paint_util_set_segment_support_height(session, SEGMENTS_ALL, 0xFFFF, 0);
     paint_util_set_general_support_height(session, height + 56, 0x20);
@@ -319,11 +319,11 @@ static void side_friction_rc_track_flat_to_25_deg_up(
     }
     if (direction == 0 || direction == 3)
     {
-        paint_util_push_tunnel_rotated(session, direction, height, TUNNEL_6);
+        paint_util_push_tunnel_rotated(session, direction, height, TUNNEL_SQUARE_FLAT);
     }
     else
     {
-        paint_util_push_tunnel_rotated(session, direction, height, TUNNEL_8);
+        paint_util_push_tunnel_rotated(session, direction, height, TUNNEL_SQUARE_8);
     }
     paint_util_set_segment_support_height(session, SEGMENTS_ALL, 0xFFFF, 0);
     paint_util_set_general_support_height(session, height + 48, 0x20);
@@ -404,7 +404,7 @@ static void side_friction_rc_track_25_deg_up_to_flat(
     }
     if (direction == 0 || direction == 3)
     {
-        paint_util_push_tunnel_rotated(session, direction, height - 8, TUNNEL_6);
+        paint_util_push_tunnel_rotated(session, direction, height - 8, TUNNEL_SQUARE_FLAT);
     }
     else
     {
@@ -483,7 +483,7 @@ static void side_friction_rc_track_left_quarter_turn_5(
             }
             if (direction == 0 || direction == 3)
             {
-                paint_util_push_tunnel_rotated(session, direction, height, TUNNEL_6);
+                paint_util_push_tunnel_rotated(session, direction, height, TUNNEL_SQUARE_FLAT);
             }
             paint_util_set_segment_support_height(session, SEGMENTS_ALL, 0xFFFF, 0);
             paint_util_set_general_support_height(session, height + 32, 0x20);
@@ -667,10 +667,10 @@ static void side_friction_rc_track_left_quarter_turn_5(
             switch (direction)
             {
                 case 2:
-                    paint_util_push_tunnel_right(session, height, TUNNEL_6);
+                    paint_util_push_tunnel_right(session, height, TUNNEL_SQUARE_FLAT);
                     break;
                 case 3:
-                    paint_util_push_tunnel_left(session, height, TUNNEL_6);
+                    paint_util_push_tunnel_left(session, height, TUNNEL_SQUARE_FLAT);
                     break;
             }
             paint_util_set_segment_support_height(session, SEGMENTS_ALL, 0xFFFF, 0);
@@ -733,7 +733,7 @@ static void side_friction_rc_track_s_bend_left(
             }
             if (direction == 0 || direction == 3)
             {
-                paint_util_push_tunnel_rotated(session, direction, height, TUNNEL_6);
+                paint_util_push_tunnel_rotated(session, direction, height, TUNNEL_SQUARE_FLAT);
             }
             paint_util_set_segment_support_height(session, SEGMENTS_ALL, 0xFFFF, 0);
             paint_util_set_general_support_height(session, height + 32, 0x20);
@@ -863,10 +863,10 @@ static void side_friction_rc_track_s_bend_left(
             switch (direction)
             {
                 case 1:
-                    paint_util_push_tunnel_right(session, height, TUNNEL_6);
+                    paint_util_push_tunnel_right(session, height, TUNNEL_SQUARE_FLAT);
                     break;
                 case 2:
-                    paint_util_push_tunnel_left(session, height, TUNNEL_6);
+                    paint_util_push_tunnel_left(session, height, TUNNEL_SQUARE_FLAT);
                     break;
             }
             paint_util_set_segment_support_height(session, SEGMENTS_ALL, 0xFFFF, 0);
@@ -920,7 +920,7 @@ static void side_friction_rc_track_s_bend_right(
             }
             if (direction == 0 || direction == 3)
             {
-                paint_util_push_tunnel_rotated(session, direction, height, TUNNEL_6);
+                paint_util_push_tunnel_rotated(session, direction, height, TUNNEL_SQUARE_FLAT);
             }
             paint_util_set_segment_support_height(session, SEGMENTS_ALL, 0xFFFF, 0);
             paint_util_set_general_support_height(session, height + 32, 0x20);
@@ -1050,10 +1050,10 @@ static void side_friction_rc_track_s_bend_right(
             switch (direction)
             {
                 case 1:
-                    paint_util_push_tunnel_right(session, height, TUNNEL_6);
+                    paint_util_push_tunnel_right(session, height, TUNNEL_SQUARE_FLAT);
                     break;
                 case 2:
-                    paint_util_push_tunnel_left(session, height, TUNNEL_6);
+                    paint_util_push_tunnel_left(session, height, TUNNEL_SQUARE_FLAT);
                     break;
             }
             paint_util_set_segment_support_height(session, SEGMENTS_ALL, 0xFFFF, 0);
@@ -1107,7 +1107,7 @@ static void side_friction_rc_track_left_quarter_turn_3(
             }
             if (direction == 0 || direction == 3)
             {
-                paint_util_push_tunnel_rotated(session, direction, height, TUNNEL_6);
+                paint_util_push_tunnel_rotated(session, direction, height, TUNNEL_SQUARE_FLAT);
             }
             paint_util_set_segment_support_height(session, SEGMENTS_ALL, 0xFFFF, 0);
             paint_util_set_general_support_height(session, height + 32, 0x20);
@@ -1193,10 +1193,10 @@ static void side_friction_rc_track_left_quarter_turn_3(
             switch (direction)
             {
                 case 2:
-                    paint_util_push_tunnel_right(session, height, TUNNEL_6);
+                    paint_util_push_tunnel_right(session, height, TUNNEL_SQUARE_FLAT);
                     break;
                 case 3:
-                    paint_util_push_tunnel_left(session, height, TUNNEL_6);
+                    paint_util_push_tunnel_left(session, height, TUNNEL_SQUARE_FLAT);
                     break;
             }
             paint_util_set_segment_support_height(session, SEGMENTS_ALL, 0xFFFF, 0);
@@ -1238,7 +1238,7 @@ static void side_friction_rc_track_brakes(
             wooden_a_supports_paint_setup(session, 1, 0, height, session->TrackColours[SCHEME_SUPPORTS], nullptr);
             break;
     }
-    paint_util_push_tunnel_rotated(session, direction, height, TUNNEL_6);
+    paint_util_push_tunnel_rotated(session, direction, height, TUNNEL_SQUARE_FLAT);
     paint_util_set_segment_support_height(session, SEGMENTS_ALL, 0xFFFF, 0);
     paint_util_set_general_support_height(session, height + 32, 0x20);
 }
@@ -1288,7 +1288,7 @@ static void side_friction_rc_track_left_eighth_to_diag(
             }
             if (direction == 0 || direction == 3)
             {
-                paint_util_push_tunnel_rotated(session, direction, height, TUNNEL_6);
+                paint_util_push_tunnel_rotated(session, direction, height, TUNNEL_SQUARE_FLAT);
             }
             paint_util_set_segment_support_height(session, SEGMENTS_ALL, 0xFFFF, 0);
             paint_util_set_general_support_height(session, height + 32, 0x20);
@@ -1481,7 +1481,7 @@ static void side_friction_rc_track_right_eighth_to_diag(
             }
             if (direction == 0 || direction == 3)
             {
-                paint_util_push_tunnel_rotated(session, direction, height, TUNNEL_6);
+                paint_util_push_tunnel_rotated(session, direction, height, TUNNEL_SQUARE_FLAT);
             }
             paint_util_set_segment_support_height(session, SEGMENTS_ALL, 0xFFFF, 0);
             paint_util_set_general_support_height(session, height + 32, 0x20);
@@ -2916,11 +2916,11 @@ static void side_friction_rc_track_60_deg_up(
 
     if (direction == 0 || direction == 3)
     {
-        paint_util_push_tunnel_rotated(session, direction, height - 8, TUNNEL_7);
+        paint_util_push_tunnel_rotated(session, direction, height - 8, TUNNEL_SQUARE_7);
     }
     else
     {
-        paint_util_push_tunnel_rotated(session, direction, height + 8, TUNNEL_8);
+        paint_util_push_tunnel_rotated(session, direction, height + 8, TUNNEL_SQUARE_8);
     }
     paint_util_set_segment_support_height(session, SEGMENTS_ALL, 0xFFFF, 0);
     paint_util_set_general_support_height(session, height + 104, 0x20);
@@ -2979,11 +2979,11 @@ static void side_friction_rc_track_25_deg_up_to_60_deg_up(
 
     if (direction == 0 || direction == 3)
     {
-        paint_util_push_tunnel_rotated(session, direction, height - 8, TUNNEL_7);
+        paint_util_push_tunnel_rotated(session, direction, height - 8, TUNNEL_SQUARE_7);
     }
     else
     {
-        paint_util_push_tunnel_rotated(session, direction, height + 8, TUNNEL_8);
+        paint_util_push_tunnel_rotated(session, direction, height + 8, TUNNEL_SQUARE_8);
     }
     paint_util_set_segment_support_height(session, SEGMENTS_ALL, 0xFFFF, 0);
     paint_util_set_general_support_height(session, height + 32, 0x20);
@@ -3042,11 +3042,11 @@ static void side_friction_rc_track_60_deg_up_to_25_deg_up(
 
     if (direction == 0 || direction == 3)
     {
-        paint_util_push_tunnel_rotated(session, direction, height - 8, TUNNEL_7);
+        paint_util_push_tunnel_rotated(session, direction, height - 8, TUNNEL_SQUARE_7);
     }
     else
     {
-        paint_util_push_tunnel_rotated(session, direction, height + 8, TUNNEL_8);
+        paint_util_push_tunnel_rotated(session, direction, height + 8, TUNNEL_SQUARE_8);
     }
     paint_util_set_segment_support_height(session, SEGMENTS_ALL, 0xFFFF, 0);
     paint_util_set_general_support_height(session, height + 32, 0x20);

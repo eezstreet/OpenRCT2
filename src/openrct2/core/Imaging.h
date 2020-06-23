@@ -19,15 +19,6 @@
 #include <vector>
 
 struct rct_drawpixelinfo;
-struct rct_palette;
-
-struct PaletteBGRA
-{
-    uint8_t Blue{};
-    uint8_t Green{};
-    uint8_t Red{};
-    uint8_t Alpha{};
-};
 
 enum class IMAGE_FORMAT
 {
@@ -47,7 +38,7 @@ struct Image
 
     // Data
     std::vector<uint8_t> Pixels;
-    std::unique_ptr<rct_palette> Palette;
+    std::unique_ptr<GamePalette> Palette;
     uint32_t Stride{};
 };
 

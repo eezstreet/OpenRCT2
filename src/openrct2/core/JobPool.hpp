@@ -43,7 +43,7 @@ private:
     std::condition_variable _condComplete;
     std::mutex _mutex;
 
-    typedef std::unique_lock<std::mutex> unique_lock;
+    using unique_lock = std::unique_lock<std::mutex>;
 
 public:
     JobPool(size_t maxThreads = 255)
@@ -70,16 +70,11 @@ public:
         }
     }
 
-    void AddTask(std::function<void()> workFn, std::function<void()> completionFn)
+    void AddTask(std::function<void()> workFn, std::function<void()> completionFn = nullptr)
     {
         unique_lock lock(_mutex);
         _pending.emplace_back(workFn, completionFn);
         _condPending.notify_one();
-    }
-
-    void AddTask(std::function<void()> workFn)
-    {
-        return AddTask(workFn, nullptr);
     }
 
     void Join(std::function<void()> reportFn = nullptr)

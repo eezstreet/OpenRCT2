@@ -13,7 +13,7 @@
 #include "../ride/RideTypes.h"
 
 #define AUDIO_DEVICE_NAME_SIZE 256
-#define AUDIO_MAX_RIDE_MUSIC 2
+#define AUDIO_MAX_RIDE_MUSIC 32
 #define AUDIO_MAX_VEHICLE_SOUNDS 14
 #define NUM_DEFAULT_MUSIC_TRACKS 46
 #define AUDIO_PLAY_AT_CENTRE 0x8000
@@ -21,6 +21,7 @@
 #define SOUND_ID_NULL 0xFFFF
 
 enum class SoundId : uint8_t;
+struct CoordsXYZ;
 
 struct audio_device
 {
@@ -54,20 +55,21 @@ struct rct_ride_music_params
     uint16_t frequency;
 };
 
+struct Sound
+{
+    SoundId Id;
+    int16_t Volume;
+    int16_t Pan;
+    uint16_t Frequency;
+    void* Channel;
+};
+
 struct rct_vehicle_sound
 {
     uint16_t id;
     int16_t volume;
-    SoundId sound1_id;
-    int16_t sound1_volume;
-    int16_t sound1_pan;
-    uint16_t sound1_freq;
-    SoundId sound2_id;
-    int16_t sound2_volume;
-    int16_t sound2_pan;
-    uint16_t sound2_freq;
-    void* sound1_channel;
-    void* sound2_channel;
+    Sound TrackSound;
+    Sound OtherSound;
 };
 
 struct rct_vehicle_sound_params
@@ -163,12 +165,10 @@ extern void* gRainSoundChannel;
 
 extern rct_ride_music gRideMusicList[AUDIO_MAX_RIDE_MUSIC];
 extern rct_ride_music_info gRideMusicInfoList[NUM_DEFAULT_MUSIC_TRACKS];
-extern rct_ride_music_params gRideMusicParamsList[6];
+extern rct_ride_music_params gRideMusicParamsList[AUDIO_MAX_RIDE_MUSIC];
 extern rct_ride_music_params* gRideMusicParamsListEnd;
 
 extern rct_vehicle_sound gVehicleSoundList[AUDIO_MAX_VEHICLE_SOUNDS];
-extern rct_vehicle_sound_params gVehicleSoundParamsList[AUDIO_MAX_VEHICLE_SOUNDS];
-extern rct_vehicle_sound_params* gVehicleSoundParamsListEnd;
 
 /**
  * Deregisters the audio device.
@@ -209,7 +209,7 @@ void audio_play_sound(SoundId soundId, int32_t volume, int32_t pan);
  * @param y The y coordinate of the location.
  * @param z The z coordinate of the location.
  */
-void audio_play_sound_at_location(SoundId soundId, int16_t x, int16_t y, int16_t z);
+void audio_play_sound_at_location(SoundId soundId, const CoordsXYZ& loc);
 /**
  * Populates the gAudioDevices array with the available audio devices.
  */

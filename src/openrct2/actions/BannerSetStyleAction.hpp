@@ -29,7 +29,7 @@ DEFINE_GAME_ACTION(BannerSetStyleAction, GAME_COMMAND_SET_BANNER_STYLE, GameActi
 {
 private:
     uint8_t _type = static_cast<uint8_t>(BannerSetStyleType::Count);
-    uint8_t _bannerIndex = BANNER_INDEX_NULL;
+    BannerIndex _bannerIndex = BANNER_INDEX_NULL;
     uint8_t _parameter;
 
 public:
@@ -65,10 +65,9 @@ public:
 
         auto banner = GetBanner(_bannerIndex);
 
-        res->ExpenditureType = RCT_EXPENDITURE_TYPE_LANDSCAPING;
-        res->Position.x = banner->position.x * 32 + 16;
-        res->Position.y = banner->position.y * 32 + 16;
-        res->Position.z = tile_element_height(banner->position.x, banner->position.y);
+        res->Expenditure = ExpenditureType::Landscaping;
+        auto location = banner->position.ToCoordsXY().ToTileCentre();
+        res->Position = { location, tile_element_height(location) };
 
         TileElement* tileElement = banner_get_tile_element(_bannerIndex);
 
@@ -115,10 +114,9 @@ public:
 
         auto banner = GetBanner(_bannerIndex);
 
-        res->ExpenditureType = RCT_EXPENDITURE_TYPE_LANDSCAPING;
-        res->Position.x = banner->position.x * 32 + 16;
-        res->Position.y = banner->position.y * 32 + 16;
-        res->Position.z = tile_element_height(banner->position.x, banner->position.y);
+        res->Expenditure = ExpenditureType::Landscaping;
+        auto location = banner->position.ToCoordsXY().ToTileCentre();
+        res->Position = { location, tile_element_height(location) };
 
         TileElement* tileElement = banner_get_tile_element(_bannerIndex);
 
@@ -134,35 +132,8 @@ public:
                 banner->colour = _parameter;
                 break;
             case BannerSetStyleType::TextColour:
-            {
                 banner->text_colour = _parameter;
-                int32_t colourCodepoint = FORMAT_COLOUR_CODE_START + banner->text_colour;
-
-                utf8 buffer[256];
-                format_string(buffer, 256, banner->string_idx, nullptr);
-                int32_t firstCodepoint = utf8_get_next(buffer, nullptr);
-                if (firstCodepoint >= FORMAT_COLOUR_CODE_START && firstCodepoint <= FORMAT_COLOUR_CODE_END)
-                {
-                    utf8_write_codepoint(buffer, colourCodepoint);
-                }
-                else
-                {
-                    utf8_insert_codepoint(buffer, colourCodepoint);
-                }
-
-                rct_string_id stringId = user_string_allocate(USER_STRING_DUPLICATION_PERMITTED, buffer);
-                if (stringId != 0)
-                {
-                    rct_string_id prevStringId = banner->string_idx;
-                    banner->string_idx = stringId;
-                    user_string_free(prevStringId);
-                }
-                else
-                {
-                    return MakeResult(GA_ERROR::INVALID_PARAMETERS, STR_ERR_CANT_SET_BANNER_TEXT);
-                }
                 break;
-            }
             case BannerSetStyleType::NoEntry:
             {
                 BannerElement* bannerElement = tileElement->AsBanner();

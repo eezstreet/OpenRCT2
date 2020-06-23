@@ -16,6 +16,10 @@
 #include <openrct2/localisation/Localisation.h>
 #include <openrct2/sprites.h>
 
+static constexpr const rct_string_id WINDOW_TITLE = STR_NOTIFICATION_SETTINGS;
+static constexpr const int32_t WH = 300;
+static constexpr const int32_t WW = 400;
+
 // clang-format off
 enum {
     NOTIFICATION_CATEGORY_PARK,
@@ -36,10 +40,11 @@ static constexpr const notification_def NewsItemOptionDefinitions[] = {
     { NOTIFICATION_CATEGORY_PARK,   STR_NOTIFICATION_PARK_RATING_WARNINGS,              offsetof(NotificationConfiguration, park_rating_warnings)               },
     { NOTIFICATION_CATEGORY_RIDE,   STR_NOTIFICATION_RIDE_BROKEN_DOWN,                  offsetof(NotificationConfiguration, ride_broken_down)                   },
     { NOTIFICATION_CATEGORY_RIDE,   STR_NOTIFICATION_RIDE_CRASHED,                      offsetof(NotificationConfiguration, ride_crashed)                       },
+    { NOTIFICATION_CATEGORY_RIDE,   STR_NOTIFICATION_RIDE_CASUALTIES,                   offsetof(NotificationConfiguration, ride_casualties)                    },
     { NOTIFICATION_CATEGORY_RIDE,   STR_NOTIFICATION_RIDE_WARNINGS,                     offsetof(NotificationConfiguration, ride_warnings)                      },
     { NOTIFICATION_CATEGORY_RIDE,   STR_NOTIFICATION_RIDE_RESEARCHED,                   offsetof(NotificationConfiguration, ride_researched)                    },
+    { NOTIFICATION_CATEGORY_RIDE,   STR_NOTIFICATION_RIDE_VEHICLE_STALLED,              offsetof(NotificationConfiguration, ride_stalled_vehicles)              },
     { NOTIFICATION_CATEGORY_GUEST,  STR_NOTIFICATION_GUEST_WARNINGS,                    offsetof(NotificationConfiguration, guest_warnings)                     },
-    { NOTIFICATION_CATEGORY_GUEST,  STR_NOTIFICATION_GUEST_LOST,                        offsetof(NotificationConfiguration, guest_lost)                         },
     { NOTIFICATION_CATEGORY_GUEST,  STR_NOTIFICATION_GUEST_LEFT_PARK,                   offsetof(NotificationConfiguration, guest_left_park)                    },
     { NOTIFICATION_CATEGORY_GUEST,  STR_NOTIFICATION_GUEST_QUEUING_FOR_RIDE,            offsetof(NotificationConfiguration, guest_queuing_for_ride)             },
     { NOTIFICATION_CATEGORY_GUEST,  STR_NOTIFICATION_GUEST_ON_RIDE,                     offsetof(NotificationConfiguration, guest_on_ride)                      },
@@ -61,9 +66,7 @@ enum WINDOW_NEWS_WIDGET_IDX {
 };
 
 static rct_widget window_news_options_widgets[] = {
-    { WWT_FRAME,            0,  0,          399,    0,      299,    0xFFFFFFFF,                     STR_NONE },             // panel / background
-    { WWT_CAPTION,          0,  1,          398,    1,      14,     STR_NOTIFICATION_SETTINGS,      STR_WINDOW_TITLE_TIP }, // title bar
-    { WWT_CLOSEBOX,         0,  387,        397,    2,      13,     STR_CLOSE_X,                    STR_CLOSE_WINDOW_TIP }, // close x button
+    WINDOW_SHIM(WINDOW_TITLE, WW, WH),
     { WWT_RESIZE,           1,  0,          399,    43,     299,    0xFFFFFFFF,                     STR_NONE },             // tab content panel
     { WWT_TAB,              1,  3,          33,     17,     43,     IMAGE_TYPE_REMAP | SPR_TAB,           STR_NONE },             // tab 1
     { WWT_TAB,              1,  34,         64,     17,     43,     IMAGE_TYPE_REMAP | SPR_TAB,           STR_NONE },             // tab 2
@@ -244,11 +247,11 @@ static void window_news_options_invalidate(rct_window* w)
 
     if (w->height != y)
     {
-        window_invalidate(w);
+        w->Invalidate();
         w->height = y;
         w->widgets[WIDX_BACKGROUND].bottom = y - 1;
         w->widgets[WIDX_TAB_CONTENT_PANEL].bottom = y - 1;
-        window_invalidate(w);
+        w->Invalidate();
     }
 }
 
@@ -264,7 +267,7 @@ static void window_news_options_set_page(rct_window* w, int32_t page)
     {
         w->page = page;
         w->frame_no = 0;
-        window_invalidate(w);
+        w->Invalidate();
     }
 }
 
@@ -287,7 +290,8 @@ static void window_news_options_draw_tab_image(rct_window* w, rct_drawpixelinfo*
             }
         }
 
-        gfx_draw_sprite(dpi, spriteIndex, w->x + w->widgets[widgetIndex].left, w->y + w->widgets[widgetIndex].top, 0);
+        gfx_draw_sprite(
+            dpi, spriteIndex, w->windowPos.x + w->widgets[widgetIndex].left, w->windowPos.y + w->widgets[widgetIndex].top, 0);
     }
 }
 
@@ -300,6 +304,6 @@ static void window_news_options_draw_tab_images(rct_window* w, rct_drawpixelinfo
 
 static bool* get_notification_value_ptr(const notification_def* ndef)
 {
-    bool* configValue = (bool*)((size_t)&gConfigNotifications + ndef->config_offset);
+    bool* configValue = reinterpret_cast<bool*>(reinterpret_cast<size_t>(&gConfigNotifications) + ndef->config_offset);
     return configValue;
 }

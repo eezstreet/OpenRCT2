@@ -25,7 +25,7 @@ public:
     StaffSetPatrolAreaAction()
     {
     }
-    StaffSetPatrolAreaAction(uint16_t spriteId, CoordsXY loc)
+    StaffSetPatrolAreaAction(uint16_t spriteId, const CoordsXY& loc)
         : _spriteId(spriteId)
         , _loc(loc)
     {
@@ -50,8 +50,13 @@ public:
             return MakeResult(GA_ERROR::INVALID_PARAMETERS, STR_NONE);
         }
 
+        if (!LocationValid(_loc))
+        {
+            return MakeResult(GA_ERROR::INVALID_PARAMETERS, STR_NONE);
+        }
+
         auto peep = GET_PEEP(_spriteId);
-        if (peep == nullptr || peep->sprite_identifier != SPRITE_IDENTIFIER_PEEP || peep->type != PEEP_TYPE_STAFF)
+        if (peep == nullptr || peep->sprite_identifier != SPRITE_IDENTIFIER_PEEP || peep->AssignedPeepType != PEEP_TYPE_STAFF)
         {
             log_error("Invalid spriteId. spriteId = %u", _spriteId);
             return MakeResult(GA_ERROR::INVALID_PARAMETERS, STR_NONE);
@@ -63,15 +68,15 @@ public:
     GameActionResult::Ptr Execute() const override
     {
         auto peep = GET_PEEP(_spriteId);
-        if (peep == nullptr || peep->sprite_identifier != SPRITE_IDENTIFIER_PEEP || peep->type != PEEP_TYPE_STAFF)
+        if (peep == nullptr || peep->sprite_identifier != SPRITE_IDENTIFIER_PEEP || peep->AssignedPeepType != PEEP_TYPE_STAFF)
         {
             log_error("Invalid spriteId. spriteId = %u", _spriteId);
             return MakeResult(GA_ERROR::INVALID_PARAMETERS, STR_NONE);
         }
 
-        int32_t patrolOffset = peep->staff_id * STAFF_PATROL_AREA_SIZE;
+        int32_t patrolOffset = peep->StaffId * STAFF_PATROL_AREA_SIZE;
 
-        staff_toggle_patrol_area(peep->staff_id, _loc.x, _loc.y);
+        staff_toggle_patrol_area(peep->StaffId, _loc.x, _loc.y);
 
         bool isPatrolling = false;
         for (int32_t i = 0; i < 128; i++)
@@ -83,17 +88,17 @@ public:
             }
         }
 
-        gStaffModes[peep->staff_id] &= ~(1 << 1);
+        gStaffModes[peep->StaffId] &= ~(1 << 1);
         if (isPatrolling)
         {
-            gStaffModes[peep->staff_id] |= (1 << 1);
+            gStaffModes[peep->StaffId] |= (1 << 1);
         }
 
-        for (int32_t y = 0; y < 4 * 32; y += 32)
+        for (int32_t y = 0; y < 4 * COORDS_XY_STEP; y += COORDS_XY_STEP)
         {
-            for (int32_t x = 0; x < 4 * 32; x += 32)
+            for (int32_t x = 0; x < 4 * COORDS_XY_STEP; x += COORDS_XY_STEP)
             {
-                map_invalidate_tile_full((_loc.x & 0x1F80) + x, (_loc.y & 0x1F80) + y);
+                map_invalidate_tile_full({ (_loc.x & 0x1F80) + x, (_loc.y & 0x1F80) + y });
             }
         }
         staff_update_greyed_patrol_areas();

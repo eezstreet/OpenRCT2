@@ -106,13 +106,15 @@ void TextComposition::HandleMessage(const SDL_Event* e)
 
             uint16_t modifier = e->key.keysym.mod;
             SDL_Keycode key = e->key.keysym.sym;
+            SDL_Scancode scancode = e->key.keysym.scancode;
             if (key == SDLK_KP_ENTER)
             {
                 // Map Keypad enter to regular enter.
                 key = SDLK_RETURN;
+                scancode = SDL_SCANCODE_RETURN;
             }
 
-            GetContext()->GetUiContext()->SetKeysPressed(key, e->key.keysym.scancode);
+            GetContext()->GetUiContext()->SetKeysPressed(key, scancode);
 
             // Text input
             if (_session.Buffer == nullptr)
@@ -172,6 +174,13 @@ void TextComposition::HandleMessage(const SDL_Event* e)
                 case SDLK_RIGHT:
                     CursorRight();
                     console.RefreshCaret();
+                    break;
+                case SDLK_c:
+                    if ((modifier & KEYBOARD_PRIMARY_MODIFIER) && _session.Length)
+                    {
+                        SDL_SetClipboardText(_session.Buffer);
+                        context_show_error(STR_COPY_INPUT_TO_CLIPBOARD, STR_NONE);
+                    }
                     break;
                 case SDLK_v:
                     if ((modifier & KEYBOARD_PRIMARY_MODIFIER) && SDL_HasClipboardText())

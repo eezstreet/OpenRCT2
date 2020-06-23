@@ -27,8 +27,8 @@ using namespace OpenRCT2;
 
 // Globals for paint clipping
 uint8_t gClipHeight = 128; // Default to middle value
-LocationXY8 gClipSelectionA = { 0, 0 };
-LocationXY8 gClipSelectionB = { MAXIMUM_MAP_SIZE_TECHNICAL - 1, MAXIMUM_MAP_SIZE_TECHNICAL - 1 };
+CoordsXY gClipSelectionA = { 0, 0 };
+CoordsXY gClipSelectionB = { MAXIMUM_TILE_START_XY, MAXIMUM_TILE_START_XY };
 
 static constexpr const uint8_t BoundBoxDebugColours[] = {
     0,   // NONE
@@ -71,7 +71,7 @@ static void paint_session_add_ps_to_quadrant(paint_session* session, paint_struc
  * Extracted from 0x0098196c, 0x0098197c, 0x0098198c, 0x0098199c
  */
 static paint_struct* sub_9819_c(
-    paint_session* session, uint32_t image_id, LocationXYZ16 offset, LocationXYZ16 boundBoxSize, LocationXYZ16 boundBoxOffset)
+    paint_session* session, uint32_t image_id, const CoordsXYZ& offset, CoordsXYZ boundBoxSize, CoordsXYZ boundBoxOffset)
 {
     if (session->NextFreePaintStruct >= session->EndOfPaintStructArray)
         return nullptr;
@@ -85,17 +85,18 @@ static paint_struct* sub_9819_c(
     ps->image_id = image_id;
 
     uint8_t swappedRotation = (session->CurrentRotation * 3) % 4; // swaps 1 and 3
-    rotate_map_coordinates(&offset.x, &offset.y, swappedRotation);
-    offset.x += session->SpritePosition.x;
-    offset.y += session->SpritePosition.y;
+    auto swappedRotCoord = CoordsXYZ{ offset.Rotate(swappedRotation), offset.z };
 
-    LocationXY16 map = coordinate_3d_to_2d(&offset, session->CurrentRotation);
+    swappedRotCoord.x += session->SpritePosition.x;
+    swappedRotCoord.y += session->SpritePosition.y;
 
-    ps->x = map.x;
-    ps->y = map.y;
+    auto screenCoords = translate_3d_to_2d_with_z(session->CurrentRotation, swappedRotCoord);
 
-    int32_t left = map.x + g1->x_offset;
-    int32_t bottom = map.y + g1->y_offset;
+    ps->x = screenCoords.x;
+    ps->y = screenCoords.y;
+
+    int32_t left = screenCoords.x + g1->x_offset;
+    int32_t bottom = screenCoords.y + g1->y_offset;
 
     int32_t right = left + g1->width;
     int32_t top = bottom + g1->height;
@@ -117,22 +118,22 @@ static paint_struct* sub_9819_c(
         case 0:
             boundBoxSize.x--;
             boundBoxSize.y--;
-            rotate_map_coordinates(&boundBoxOffset.x, &boundBoxOffset.y, 0);
-            rotate_map_coordinates(&boundBoxSize.x, &boundBoxSize.y, 0);
+            boundBoxOffset = { boundBoxOffset.Rotate(0), boundBoxOffset.z };
+            boundBoxSize = { boundBoxSize.Rotate(0), boundBoxSize.z };
             break;
         case 1:
             boundBoxSize.x--;
-            rotate_map_coordinates(&boundBoxOffset.x, &boundBoxOffset.y, 3);
-            rotate_map_coordinates(&boundBoxSize.x, &boundBoxSize.y, 3);
+            boundBoxOffset = { boundBoxOffset.Rotate(3), boundBoxOffset.z };
+            boundBoxSize = { boundBoxSize.Rotate(3), boundBoxSize.z };
             break;
         case 2:
-            rotate_map_coordinates(&boundBoxSize.x, &boundBoxSize.y, 2);
-            rotate_map_coordinates(&boundBoxOffset.x, &boundBoxOffset.y, 2);
+            boundBoxSize = { boundBoxSize.Rotate(2), boundBoxSize.z };
+            boundBoxOffset = { boundBoxOffset.Rotate(2), boundBoxOffset.z };
             break;
         case 3:
             boundBoxSize.y--;
-            rotate_map_coordinates(&boundBoxSize.x, &boundBoxSize.y, 1);
-            rotate_map_coordinates(&boundBoxOffset.x, &boundBoxOffset.y, 1);
+            boundBoxSize = { boundBoxSize.Rotate(1), boundBoxSize.z };
+            boundBoxOffset = { boundBoxOffset.Rotate(1), boundBoxOffset.z };
             break;
     }
 
@@ -149,7 +150,7 @@ static paint_struct* sub_9819_c(
     ps->var_29 = 0;
     ps->map_x = session->MapPosition.x;
     ps->map_y = session->MapPosition.y;
-    ps->tileElement = (TileElement*)session->CurrentlyDrawnItem;
+    ps->tileElement = reinterpret_cast<TileElement*>(const_cast<void*>(session->CurrentlyDrawnItem));
 
     return ps;
 }
@@ -161,7 +162,7 @@ static paint_struct* sub_9819_c(
 void paint_session_generate(paint_session* session)
 {
     rct_drawpixelinfo* dpi = &session->DPI;
-    LocationXY16 mapTile = { (int16_t)(dpi->x & 0xFFE0), (int16_t)((dpi->y - 16) & 0xFFE0) };
+    LocationXY16 mapTile = { static_cast<int16_t>(dpi->x & 0xFFE0), static_cast<int16_t>((dpi->y - 16) & 0xFFE0) };
 
     int16_t half_x = mapTile.x >> 1;
     uint16_t num_vertical_quadrants = (dpi->height + 2128) >> 5;
@@ -398,7 +399,7 @@ static paint_struct* paint_arrange_structs_helper_rotation(paint_struct* ps_next
     }
 }
 
-paint_struct* paint_arrange_structs_helper(paint_struct* ps_next, uint16_t quadrantIndex, uint8_t flag, uint8_t rotation)
+static paint_struct* paint_arrange_structs_helper(paint_struct* ps_next, uint16_t quadrantIndex, uint8_t flag, uint8_t rotation)
 {
     switch (rotation)
     {
@@ -541,61 +542,61 @@ static void paint_ps_image_with_bounding_boxes(rct_drawpixelinfo* dpi, paint_str
     const uint8_t colour = BoundBoxDebugColours[ps->sprite_type];
     const uint8_t rotation = get_current_rotation();
 
-    const LocationXYZ16 frontTop = {
-        (int16_t)ps->bounds.x_end,
-        (int16_t)ps->bounds.y_end,
-        (int16_t)ps->bounds.z_end,
+    const CoordsXYZ frontTop = {
+        ps->bounds.x_end,
+        ps->bounds.y_end,
+        ps->bounds.z_end,
     };
-    const LocationXY16 screenCoordFrontTop = coordinate_3d_to_2d(&frontTop, rotation);
+    const auto screenCoordFrontTop = translate_3d_to_2d_with_z(rotation, frontTop);
 
-    const LocationXYZ16 frontBottom = {
-        (int16_t)ps->bounds.x_end,
-        (int16_t)ps->bounds.y_end,
-        (int16_t)ps->bounds.z,
+    const CoordsXYZ frontBottom = {
+        ps->bounds.x_end,
+        ps->bounds.y_end,
+        ps->bounds.z,
     };
-    const LocationXY16 screenCoordFrontBottom = coordinate_3d_to_2d(&frontBottom, rotation);
+    const auto screenCoordFrontBottom = translate_3d_to_2d_with_z(rotation, frontBottom);
 
-    const LocationXYZ16 leftTop = {
-        (int16_t)ps->bounds.x,
-        (int16_t)ps->bounds.y_end,
-        (int16_t)ps->bounds.z_end,
+    const CoordsXYZ leftTop = {
+        ps->bounds.x,
+        ps->bounds.y_end,
+        ps->bounds.z_end,
     };
-    const LocationXY16 screenCoordLeftTop = coordinate_3d_to_2d(&leftTop, rotation);
+    const auto screenCoordLeftTop = translate_3d_to_2d_with_z(rotation, leftTop);
 
-    const LocationXYZ16 leftBottom = {
-        (int16_t)ps->bounds.x,
-        (int16_t)ps->bounds.y_end,
-        (int16_t)ps->bounds.z,
+    const CoordsXYZ leftBottom = {
+        ps->bounds.x,
+        ps->bounds.y_end,
+        ps->bounds.z,
     };
-    const LocationXY16 screenCoordLeftBottom = coordinate_3d_to_2d(&leftBottom, rotation);
+    const auto screenCoordLeftBottom = translate_3d_to_2d_with_z(rotation, leftBottom);
 
-    const LocationXYZ16 rightTop = {
-        (int16_t)ps->bounds.x_end,
-        (int16_t)ps->bounds.y,
-        (int16_t)ps->bounds.z_end,
+    const CoordsXYZ rightTop = {
+        ps->bounds.x_end,
+        ps->bounds.y,
+        ps->bounds.z_end,
     };
-    const LocationXY16 screenCoordRightTop = coordinate_3d_to_2d(&rightTop, rotation);
+    const auto screenCoordRightTop = translate_3d_to_2d_with_z(rotation, rightTop);
 
-    const LocationXYZ16 rightBottom = {
-        (int16_t)ps->bounds.x_end,
-        (int16_t)ps->bounds.y,
-        (int16_t)ps->bounds.z,
+    const CoordsXYZ rightBottom = {
+        ps->bounds.x_end,
+        ps->bounds.y,
+        ps->bounds.z,
     };
-    const LocationXY16 screenCoordRightBottom = coordinate_3d_to_2d(&rightBottom, rotation);
+    const auto screenCoordRightBottom = translate_3d_to_2d_with_z(rotation, rightBottom);
 
-    const LocationXYZ16 backTop = {
-        (int16_t)ps->bounds.x,
-        (int16_t)ps->bounds.y,
-        (int16_t)ps->bounds.z_end,
+    const CoordsXYZ backTop = {
+        ps->bounds.x,
+        ps->bounds.y,
+        ps->bounds.z_end,
     };
-    const LocationXY16 screenCoordBackTop = coordinate_3d_to_2d(&backTop, rotation);
+    const auto screenCoordBackTop = translate_3d_to_2d_with_z(rotation, backTop);
 
-    const LocationXYZ16 backBottom = {
-        (int16_t)ps->bounds.x,
-        (int16_t)ps->bounds.y,
-        (int16_t)ps->bounds.z,
+    const CoordsXYZ backBottom = {
+        ps->bounds.x,
+        ps->bounds.y,
+        ps->bounds.z,
     };
-    const LocationXY16 screenCoordBackBottom = coordinate_3d_to_2d(&backBottom, rotation);
+    const auto screenCoordBackBottom = translate_3d_to_2d_with_z(rotation, backBottom);
 
     // bottom square
     gfx_draw_line(
@@ -687,16 +688,6 @@ static uint32_t paint_ps_colourify_image(uint32_t imageId, uint8_t spriteType, u
     return imageId;
 }
 
-static void draw_pixel_info_crop_by_zoom(rct_drawpixelinfo* dpi)
-{
-    int32_t zoom = dpi->zoom_level;
-    dpi->zoom_level = 0;
-    dpi->x >>= zoom;
-    dpi->y >>= zoom;
-    dpi->width >>= zoom;
-    dpi->height >>= zoom;
-}
-
 paint_session* paint_session_alloc(rct_drawpixelinfo* dpi, uint32_t viewFlags)
 {
     return GetContext()->GetPainter()->CreateSession(dpi, viewFlags);
@@ -723,8 +714,8 @@ paint_struct* sub_98196C(
     paint_session* session, uint32_t image_id, int8_t x_offset, int8_t y_offset, int16_t bound_box_length_x,
     int16_t bound_box_length_y, int8_t bound_box_length_z, int16_t z_offset)
 {
-    assert((uint16_t)bound_box_length_x == (int16_t)bound_box_length_x);
-    assert((uint16_t)bound_box_length_y == (int16_t)bound_box_length_y);
+    assert(static_cast<uint16_t>(bound_box_length_x) == static_cast<int16_t>(bound_box_length_x));
+    assert(static_cast<uint16_t>(bound_box_length_y) == static_cast<int16_t>(bound_box_length_y));
 
     session->LastRootPS = nullptr;
     session->UnkF1AD2C = nullptr;
@@ -743,13 +734,13 @@ paint_struct* sub_98196C(
     paint_struct* ps = &session->NextFreePaintStruct->basic;
     ps->image_id = image_id;
 
-    LocationXYZ16 coord_3d = {
+    CoordsXYZ coord_3d = {
         x_offset, // ax
         y_offset, // cx
         z_offset,
     };
 
-    LocationXYZ16 boundBox = {
+    CoordsXYZ boundBox = {
         bound_box_length_x, // di
         bound_box_length_y, // si
         bound_box_length_z,
@@ -758,30 +749,30 @@ paint_struct* sub_98196C(
     switch (session->CurrentRotation)
     {
         case 0:
-            rotate_map_coordinates(&coord_3d.x, &coord_3d.y, TILE_ELEMENT_DIRECTION_WEST);
+            coord_3d = CoordsXYZ{ coord_3d.Rotate(TILE_ELEMENT_DIRECTION_WEST), coord_3d.z };
 
             boundBox.x--;
             boundBox.y--;
-            rotate_map_coordinates(&boundBox.x, &boundBox.y, TILE_ELEMENT_DIRECTION_WEST);
+            boundBox = { boundBox.Rotate(TILE_ELEMENT_DIRECTION_WEST), boundBox.z };
             break;
 
         case 1:
-            rotate_map_coordinates(&coord_3d.x, &coord_3d.y, TILE_ELEMENT_DIRECTION_SOUTH);
+            coord_3d = CoordsXYZ{ coord_3d.Rotate(TILE_ELEMENT_DIRECTION_SOUTH), coord_3d.z };
 
             boundBox.x--;
-            rotate_map_coordinates(&boundBox.x, &boundBox.y, TILE_ELEMENT_DIRECTION_SOUTH);
+            boundBox = { boundBox.Rotate(TILE_ELEMENT_DIRECTION_SOUTH), boundBox.z };
             break;
 
         case 2:
-            rotate_map_coordinates(&coord_3d.x, &coord_3d.y, TILE_ELEMENT_DIRECTION_EAST);
-            rotate_map_coordinates(&boundBox.x, &boundBox.y, TILE_ELEMENT_DIRECTION_EAST);
+            coord_3d = CoordsXYZ{ coord_3d.Rotate(TILE_ELEMENT_DIRECTION_EAST), coord_3d.z };
+            boundBox = { boundBox.Rotate(TILE_ELEMENT_DIRECTION_EAST), boundBox.z };
             break;
 
         case 3:
-            rotate_map_coordinates(&coord_3d.x, &coord_3d.y, TILE_ELEMENT_DIRECTION_NORTH);
+            coord_3d = CoordsXYZ{ coord_3d.Rotate(TILE_ELEMENT_DIRECTION_NORTH), coord_3d.z };
 
             boundBox.y--;
-            rotate_map_coordinates(&boundBox.x, &boundBox.y, TILE_ELEMENT_DIRECTION_NORTH);
+            boundBox = { boundBox.Rotate(TILE_ELEMENT_DIRECTION_NORTH), boundBox.z };
             break;
     }
 
@@ -795,7 +786,7 @@ paint_struct* sub_98196C(
     ps->bounds.z = coord_3d.z;
     ps->bounds.z_end = (boundBox.z + coord_3d.z);
 
-    LocationXY16 map = coordinate_3d_to_2d(&coord_3d, session->CurrentRotation);
+    auto map = translate_3d_to_2d_with_z(session->CurrentRotation, coord_3d);
 
     ps->x = map.x;
     ps->y = map.y;
@@ -826,7 +817,7 @@ paint_struct* sub_98196C(
     ps->var_29 = 0;
     ps->map_x = session->MapPosition.x;
     ps->map_y = session->MapPosition.y;
-    ps->tileElement = (TileElement*)session->CurrentlyDrawnItem;
+    ps->tileElement = reinterpret_cast<TileElement*>(const_cast<void*>(session->CurrentlyDrawnItem));
 
     session->LastRootPS = ps;
 
@@ -877,9 +868,9 @@ paint_struct* sub_98197C(
     session->LastRootPS = nullptr;
     session->UnkF1AD2C = nullptr;
 
-    LocationXYZ16 offset = { x_offset, y_offset, z_offset };
-    LocationXYZ16 boundBoxSize = { bound_box_length_x, bound_box_length_y, bound_box_length_z };
-    LocationXYZ16 boundBoxOffset = { bound_box_offset_x, bound_box_offset_y, bound_box_offset_z };
+    CoordsXYZ offset = { x_offset, y_offset, z_offset };
+    CoordsXYZ boundBoxSize = { bound_box_length_x, bound_box_length_y, bound_box_length_z };
+    CoordsXYZ boundBoxOffset = { bound_box_offset_x, bound_box_offset_y, bound_box_offset_z };
     paint_struct* ps = sub_9819_c(session, image_id, offset, boundBoxSize, boundBoxOffset);
 
     if (ps == nullptr)
@@ -889,9 +880,8 @@ paint_struct* sub_98197C(
 
     session->LastRootPS = ps;
 
-    LocationXY16 attach = { (int16_t)ps->bounds.x, (int16_t)ps->bounds.y };
-
-    rotate_map_coordinates(&attach.x, &attach.y, session->CurrentRotation);
+    auto attach = CoordsXY{ static_cast<int16_t>(ps->bounds.x), static_cast<int16_t>(ps->bounds.y) }.Rotate(
+        session->CurrentRotation);
     switch (session->CurrentRotation)
     {
         case 0:
@@ -933,15 +923,15 @@ paint_struct* sub_98198C(
     int16_t bound_box_length_y, int8_t bound_box_length_z, int16_t z_offset, int16_t bound_box_offset_x,
     int16_t bound_box_offset_y, int16_t bound_box_offset_z)
 {
-    assert((uint16_t)bound_box_length_x == bound_box_length_x);
-    assert((uint16_t)bound_box_length_y == bound_box_length_y);
+    assert(static_cast<uint16_t>(bound_box_length_x) == static_cast<int16_t>(bound_box_length_x));
+    assert(static_cast<uint16_t>(bound_box_length_y) == static_cast<int16_t>(bound_box_length_y));
 
     session->LastRootPS = nullptr;
     session->UnkF1AD2C = nullptr;
 
-    LocationXYZ16 offset = { x_offset, y_offset, z_offset };
-    LocationXYZ16 boundBoxSize = { bound_box_length_x, bound_box_length_y, bound_box_length_z };
-    LocationXYZ16 boundBoxOffset = { bound_box_offset_x, bound_box_offset_y, bound_box_offset_z };
+    CoordsXYZ offset = { x_offset, y_offset, z_offset };
+    CoordsXYZ boundBoxSize = { bound_box_length_x, bound_box_length_y, bound_box_length_z };
+    CoordsXYZ boundBoxOffset = { bound_box_offset_x, bound_box_offset_y, bound_box_offset_z };
     paint_struct* ps = sub_9819_c(session, image_id, offset, boundBoxSize, boundBoxOffset);
 
     if (ps == nullptr)
@@ -975,8 +965,8 @@ paint_struct* sub_98199C(
     int16_t bound_box_length_y, int8_t bound_box_length_z, int16_t z_offset, int16_t bound_box_offset_x,
     int16_t bound_box_offset_y, int16_t bound_box_offset_z)
 {
-    assert((uint16_t)bound_box_length_x == (int16_t)bound_box_length_x);
-    assert((uint16_t)bound_box_length_y == (int16_t)bound_box_length_y);
+    assert(static_cast<uint16_t>(bound_box_length_x) == static_cast<int16_t>(bound_box_length_x));
+    assert(static_cast<uint16_t>(bound_box_length_y) == static_cast<int16_t>(bound_box_length_y));
 
     if (session->LastRootPS == nullptr)
     {
@@ -985,9 +975,9 @@ paint_struct* sub_98199C(
             bound_box_offset_x, bound_box_offset_y, bound_box_offset_z);
     }
 
-    LocationXYZ16 offset = { x_offset, y_offset, z_offset };
-    LocationXYZ16 boundBox = { bound_box_length_x, bound_box_length_y, bound_box_length_z };
-    LocationXYZ16 boundBoxOffset = { bound_box_offset_x, bound_box_offset_y, bound_box_offset_z };
+    CoordsXYZ offset = { x_offset, y_offset, z_offset };
+    CoordsXYZ boundBox = { bound_box_length_x, bound_box_length_y, bound_box_length_z };
+    CoordsXYZ boundBoxOffset = { bound_box_offset_x, bound_box_offset_y, bound_box_offset_z };
     paint_struct* ps = sub_9819_c(session, image_id, offset, boundBox, boundBoxOffset);
 
     if (ps == nullptr)
@@ -1105,14 +1095,14 @@ void paint_floating_money_effect(
     ps->args[1] = y;
     ps->args[2] = 0;
     ps->args[3] = 0;
-    ps->y_offsets = (uint8_t*)y_offsets;
+    ps->y_offsets = reinterpret_cast<uint8_t*>(y_offsets);
 
-    const LocationXYZ16 position = {
+    const CoordsXYZ position = {
         session->SpritePosition.x,
         session->SpritePosition.y,
         z,
     };
-    const LocationXY16 coord = coordinate_3d_to_2d(&position, rotation);
+    const auto coord = translate_3d_to_2d_with_z(rotation, position);
 
     ps->x = coord.x + offset_x;
     ps->y = coord.y;
@@ -1130,29 +1120,39 @@ void paint_floating_money_effect(
     session->LastPSString = ps;
 }
 
+static rct_drawpixelinfo draw_pixel_info_crop_by_zoom(const rct_drawpixelinfo& dpi)
+{
+    auto result = dpi;
+    result.x = dpi.x * dpi.zoom_level;
+    result.y = dpi.y * dpi.zoom_level;
+    result.width = dpi.width / dpi.zoom_level;
+    result.height = dpi.height / dpi.zoom_level;
+    result.zoom_level = 0;
+    return result;
+}
+
 /**
  *
  *  rct2: 0x006860C3
  */
 void paint_draw_money_structs(rct_drawpixelinfo* dpi, paint_string_struct* ps)
 {
-    rct_drawpixelinfo dpi2 = *dpi;
-    draw_pixel_info_crop_by_zoom(&dpi2);
-
+    auto dpi2 = draw_pixel_info_crop_by_zoom(*dpi);
     do
     {
-        utf8 buffer[256];
-        format_string(buffer, 256, ps->string_id, &ps->args);
+        char buffer[256]{};
+        format_string(buffer, sizeof(buffer), ps->string_id, &ps->args);
         gCurrentFontSpriteBase = FONT_SPRITE_BASE_MEDIUM;
 
         // Use sprite font unless the currency contains characters unsupported by the sprite font
-        bool forceSpriteFont = false;
-        const currency_descriptor& currencyDesc = CurrencyDescriptors[gConfigGeneral.currency_format];
+        auto forceSpriteFont = false;
+        const auto& currencyDesc = CurrencyDescriptors[gConfigGeneral.currency_format];
         if (LocalisationService_UseTrueTypeFont() && font_supports_string_sprite(currencyDesc.symbol_unicode))
         {
             forceSpriteFont = true;
         }
 
-        gfx_draw_string_with_y_offsets(&dpi2, buffer, COLOUR_BLACK, ps->x, ps->y, (int8_t*)ps->y_offsets, forceSpriteFont);
+        gfx_draw_string_with_y_offsets(
+            &dpi2, buffer, COLOUR_BLACK, ps->x, ps->y, reinterpret_cast<int8_t*>(ps->y_offsets), forceSpriteFont);
     } while ((ps = ps->next) != nullptr);
 }

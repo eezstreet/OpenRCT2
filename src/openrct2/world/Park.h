@@ -13,8 +13,8 @@
 #include "../ride/Ride.h"
 #include "Map.h"
 
-#define DECRYPT_MONEY(money) ((money32)rol32((money) ^ 0xF4EC9621, 13))
-#define ENCRYPT_MONEY(money) ((money32)(ror32((money), 13) ^ 0xF4EC9621))
+#define DECRYPT_MONEY(money) (static_cast<money32>(rol32((money) ^ 0xF4EC9621, 13)))
+#define ENCRYPT_MONEY(money) (static_cast<money32>(ror32((money), 13) ^ 0xF4EC9621))
 
 #define MAX_ENTRANCE_FEE MONEY(200, 00)
 
@@ -108,7 +108,7 @@ extern int8_t gAdvertisementGenerationAlgorithm;
 extern uint8_t gParkRatingHistory[32];
 extern uint8_t gGuestsInParkHistory[32];
 extern int32_t _guestGenerationProbability;
-extern int32_t _suggestedGuestMaximum;
+extern uint32_t _suggestedGuestMaximum;
 
 void set_forced_park_rating(int32_t rating);
 int32_t get_forced_park_rating();
@@ -116,13 +116,13 @@ int32_t get_forced_park_rating();
 int32_t park_is_open();
 int32_t park_calculate_size();
 
-void update_park_fences(CoordsXY coords);
-void update_park_fences_around_tile(CoordsXY coords);
+void update_park_fences(const CoordsXY& coords);
+void update_park_fences_around_tile(const CoordsXY& coords);
 
 uint8_t calculate_guest_initial_happiness(uint8_t percentage);
 
 void park_set_open(bool open);
-int32_t park_entrance_get_index(int32_t x, int32_t y, int32_t z);
+int32_t park_entrance_get_index(const CoordsXYZ& entrancePos);
 void park_set_entrance_fee(money32 value);
 money16 park_get_entrance_fee();
 

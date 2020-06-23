@@ -25,7 +25,7 @@ public:
     WaterSetHeightAction()
     {
     }
-    WaterSetHeightAction(CoordsXY coords, uint8_t height)
+    WaterSetHeightAction(const CoordsXY& coords, uint8_t height)
         : _coords(coords)
         , _height(height)
     {
@@ -46,10 +46,8 @@ public:
     GameActionResult::Ptr Query() const override
     {
         auto res = MakeResult();
-        res->ExpenditureType = RCT_EXPENDITURE_TYPE_LANDSCAPING;
-        res->Position.x = _coords.x + 16;
-        res->Position.y = _coords.y + 16;
-        res->Position.z = _height * 8;
+        res->Expenditure = ExpenditureType::Landscaping;
+        res->Position = { _coords, _height * COORDS_Z_STEP };
 
         if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) && !gCheatsSandboxMode
             && gParkFlags & PARK_FLAGS_FORBID_LANDSCAPE_CHANGES)
@@ -63,6 +61,11 @@ public:
             return MakeResult(GA_ERROR::INVALID_PARAMETERS, STR_NONE, errorMsg);
         }
 
+        if (!LocationValid(_coords))
+        {
+            return MakeResult(GA_ERROR::NOT_OWNED, STR_NONE, STR_LAND_NOT_OWNED_BY_PARK);
+        }
+
         if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) && !gCheatsSandboxMode)
         {
             if (!map_is_location_in_park(_coords))
@@ -71,18 +74,18 @@ public:
             }
         }
 
-        SurfaceElement* surfaceElement = map_get_surface_element_at(_coords)->AsSurface();
+        SurfaceElement* surfaceElement = map_get_surface_element_at(_coords);
         if (surfaceElement == nullptr)
         {
             log_error("Could not find surface element at: x %u, y %u", _coords.x, _coords.y);
             return MakeResult(GA_ERROR::UNKNOWN, STR_NONE);
         }
 
-        int32_t zHigh = surfaceElement->base_height;
-        int32_t zLow = _height;
+        int32_t zHigh = surfaceElement->GetBaseZ();
+        int32_t zLow = _height * COORDS_Z_STEP;
         if (surfaceElement->GetWaterHeight() > 0)
         {
-            zHigh = surfaceElement->GetWaterHeight() * 2;
+            zHigh = surfaceElement->GetWaterHeight();
         }
         if (zLow > zHigh)
         {
@@ -91,9 +94,10 @@ public:
             zLow = temp;
         }
 
-        if (!map_can_construct_at(_coords.x, _coords.y, zLow, zHigh, { 0b1111, 0b1111 }))
+        if (auto res2 = MapCanConstructAt({ _coords, zLow, zHigh }, { 0b1111, 0b1111 }); res2->Error != GA_ERROR::OK)
         {
-            return MakeResult(GA_ERROR::NO_CLEARANCE, STR_NONE, gGameCommandErrorText, gCommonFormatArgs);
+            return MakeResult(
+                GA_ERROR::NO_CLEARANCE, STR_NONE, res2->ErrorMessage.GetStringId(), res2->ErrorMessageArgs.data());
         }
         if (surfaceElement->HasTrackThatNeedsWater())
         {
@@ -108,17 +112,15 @@ public:
     GameActionResult::Ptr Execute() const override
     {
         auto res = MakeResult();
-        res->ExpenditureType = RCT_EXPENDITURE_TYPE_LANDSCAPING;
-        res->Position.x = _coords.x + 16;
-        res->Position.y = _coords.y + 16;
-        res->Position.z = _height * 8;
+        res->Expenditure = ExpenditureType::Landscaping;
+        res->Position = { _coords, _height * COORDS_Z_STEP };
 
-        int32_t surfaceHeight = tile_element_height(_coords.x, _coords.y);
-        footpath_remove_litter(_coords.x, _coords.y, surfaceHeight);
+        int32_t surfaceHeight = tile_element_height(_coords);
+        footpath_remove_litter({ _coords, surfaceHeight });
         if (!gCheatsDisableClearanceChecks)
-            wall_remove_at_z(_coords.x, _coords.y, surfaceHeight);
+            wall_remove_at_z({ _coords, surfaceHeight });
 
-        SurfaceElement* surfaceElement = map_get_surface_element_at(_coords)->AsSurface();
+        SurfaceElement* surfaceElement = map_get_surface_element_at(_coords);
         if (surfaceElement == nullptr)
         {
             log_error("Could not find surface element at: x %u, y %u", _coords.x, _coords.y);
@@ -127,13 +129,13 @@ public:
 
         if (_height > surfaceElement->base_height)
         {
-            surfaceElement->SetWaterHeight(_height / 2);
+            surfaceElement->SetWaterHeight(_height * COORDS_Z_STEP);
         }
         else
         {
             surfaceElement->SetWaterHeight(0);
         }
-        map_invalidate_tile_full(_coords.x, _coords.y);
+        map_invalidate_tile_full(_coords);
 
         res->Cost = 250;
 

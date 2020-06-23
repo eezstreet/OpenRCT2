@@ -1129,8 +1129,8 @@ STR_1749    :{POP16}{POP16}{POP16}{POP16}{POP16}{POP16}{POP16}{POP16}{POP16}{DUR
 STR_1751    :Нельзя изменить время на поездку…
 STR_1752    :{SMALLFONT}{BLACK}Показать список отдельных гостей в парке
 STR_1753    :{SMALLFONT}{BLACK}Показать суммированный список гостей
-STR_1754    :{BLACK}{COMMA16} гостей
-STR_1755    :{BLACK}{COMMA16} гость
+STR_1754    :{BLACK}{COMMA32} гостей
+STR_1755    :{BLACK}{COMMA32} гость
 STR_1756    :{WINDOW_COLOUR_2}Цена за вход:
 STR_1757    :{WINDOW_COLOUR_2}Надёжность: {MOVE_X}{255}{BLACK}{COMMA16}%
 STR_1758    :{SMALLFONT}{BLACK}Режим стройки
@@ -1188,7 +1188,7 @@ STR_1813    :Разные объекты
 STR_1814    :Действия
 STR_1815    :Мысли
 STR_1816    :{SMALLFONT}{BLACK}Выберите тип информации для отображения
-STR_1817    :({COMMA16})
+STR_1817    :({COMMA32})
 STR_1818    :{WINDOW_COLOUR_2}Все гости
 STR_1819    :{WINDOW_COLOUR_2}Гости (в общем)
 STR_1820    :{WINDOW_COLOUR_2}Гости {STRINGID}
@@ -1217,9 +1217,9 @@ STR_1842    :Любимый у: {COMMA16} гос.
 STR_1843    :Любимый у: {COMMA16} гос.
 STR_1844    :{SMALLFONT}{BLACK}Выберите тип информации для показа
 STR_1845    :{MONTHYEAR}
-STR_1846    :{COMMA16} гостей
-STR_1847    :{INLINE_SPRITE}{11}{20}{00}{00}{COMMA16} гостей
-STR_1848    :{INLINE_SPRITE}{10}{20}{00}{00}{COMMA16} гостей
+STR_1846    :{COMMA32} гостей
+STR_1847    :{INLINE_SPRITE}{11}{20}{00}{00}{COMMA32} гостей
+STR_1848    :{INLINE_SPRITE}{10}{20}{00}{00}{COMMA32} гостей
 STR_1849    :{WINDOW_COLOUR_2}Играть музыку
 STR_1850    :{SMALLFONT}{BLACK}Выберите, играть ли музыку для аттракциона
 STR_1851    :{WINDOW_COLOUR_2}Стоимость: {BLACK}{CURRENCY2DP} в час
@@ -1575,7 +1575,7 @@ STR_2219    :{RED}{COMMA16} людей погибло на {STRINGID}
 STR_2220    :{WINDOW_COLOUR_2}Рейтинг парка: {BLACK}{COMMA16}
 STR_2221    :{SMALLFONT}{BLACK}Рейтинг парка: {COMMA16}
 STR_2222    :{SMALLFONT}{BLACK}{STRINGID}
-STR_2223    :{WINDOW_COLOUR_2}Гостей в парке: {BLACK}{COMMA16}
+STR_2223    :{WINDOW_COLOUR_2}Гостей в парке: {BLACK}{COMMA32}
 STR_2224    :{WINDOW_COLOUR_2}Деньги: {BLACK}{CURRENCY2DP}
 STR_2225    :{WINDOW_COLOUR_2}Деньги: {RED}{CURRENCY2DP}
 STR_2226    :{WINDOW_COLOUR_2}Стоимость парка: {BLACK}{CURRENCY}
@@ -1858,39 +1858,14 @@ STR_2521    :Показать штат
 STR_2522    :Последние сообщения
 STR_2523    :Карта
 STR_2524    :Скриншот
-### The following need to be reordered to match SDL_keycode layout.
-STR_2525    :???
-STR_2526    :???
-STR_2527    :???
-STR_2528    :???
-STR_2529    :???
-STR_2530    :???
-STR_2531    :???
-STR_2532    :???
 STR_2533    :Backspace
 STR_2534    :Tab
-STR_2535    :???
-STR_2536    :???
 STR_2537    :Clear
 STR_2538    :Return
-STR_2539    :???
-STR_2540    :???
-STR_2541    :???
-STR_2542    :???
 STR_2543    :Alt/Menu
 STR_2544    :Pause
 STR_2545    :Caps
-STR_2546    :???
-STR_2547    :???
-STR_2548    :???
-STR_2549    :???
-STR_2550    :???
-STR_2551    :???
 STR_2552    :Escape
-STR_2553    :???
-STR_2554    :???
-STR_2555    :???
-STR_2556    :???
 STR_2557    :Spacebar
 STR_2558    :PgUp
 STR_2559    :PgDn
@@ -1907,44 +1882,7 @@ STR_2569    :Snapshot
 STR_2570    :Insert
 STR_2571    :Delete
 STR_2572    :Help
-STR_2583    :???
-STR_2584    :???
-STR_2585    :???
-STR_2586    :???
-STR_2587    :???
-STR_2588    :???
-STR_2589    :???
-STR_2590    :A
-STR_2591    :B
-STR_2592    :C
-STR_2593    :D
-STR_2594    :E
-STR_2595    :F
-STR_2596    :G
-STR_2597    :H
-STR_2598    :I
-STR_2599    :J
-STR_2600    :K
-STR_2601    :L
-STR_2602    :M
-STR_2603    :N
-STR_2604    :O
-STR_2605    :P
-STR_2606    :Q
-STR_2607    :R
-STR_2608    :S
-STR_2609    :T
-STR_2610    :U
-STR_2611    :V
-STR_2612    :W
-STR_2613    :X
-STR_2614    :Y
-STR_2615    :Z
-STR_2616    :???
-STR_2617    :???
 STR_2618    :Меню
-STR_2619    :???
-STR_2620    :???
 STR_2621    :NumPad 0
 STR_2622    :NumPad 1
 STR_2623    :NumPad 2
@@ -1957,53 +1895,11 @@ STR_2629    :NumPad 8
 STR_2630    :NumPad 9
 STR_2631    :NumPad *
 STR_2632    :NumPad +
-STR_2633    :???
 STR_2634    :NumPad -
 STR_2635    :NumPad .
 STR_2636    :NumPad /
-STR_2637    :F1
-STR_2638    :F2
-STR_2639    :F3
-STR_2640    :F4
-STR_2641    :F5
-STR_2642    :F6
-STR_2643    :F7
-STR_2644    :F8
-STR_2645    :F9
-STR_2646    :F10
-STR_2647    :F11
-STR_2648    :F12
-STR_2649    :F13
-STR_2650    :F14
-STR_2651    :F15
-STR_2652    :F16
-STR_2653    :F17
-STR_2654    :F18
-STR_2655    :F19
-STR_2656    :F20
-STR_2657    :F21
-STR_2658    :F22
-STR_2659    :F23
-STR_2660    :F24
-STR_2661    :???
-STR_2662    :???
-STR_2663    :???
-STR_2664    :???
-STR_2665    :???
-STR_2666    :???
-STR_2667    :???
-STR_2668    :???
 STR_2669    :NumLock
 STR_2670    :Scroll
-STR_2671    :???
-STR_2672    :???
-STR_2673    :???
-STR_2674    :???
-STR_2675    :???
-STR_2676    :???
-STR_2677    :???
-STR_2678    :???
-STR_2679    :???
 STR_2680    :Все исследования завершены
 STR_2681    :{MEDIUMFONT}{BLACK}Увеличит сумму ваших денег на {CURRENCY}
 STR_2684    :{SMALLFONT}{BLACK}Прибудет большая группа гостей
@@ -2019,9 +1915,6 @@ STR_2693    :Местность:
 STR_2694    :Сгенерировать
 STR_2695    :Случайная поверхность
 STR_2696    :Разместить деревья
-STR_2697    :???
-STR_2698    :???
-STR_2699    :???
 STR_2700    :Частота автосохранений:
 STR_2701    :Каждую минуту
 STR_2702    :Каждые 5 минут
@@ -2033,13 +1926,6 @@ STR_2707    :Использовать системное диалоговое о
 STR_2708    :{WINDOW_COLOUR_1}Вы уверены, что хотите перезаписать {STRINGID}?
 STR_2709    :Перезаписать
 STR_2710    :Укажите имя файла.
-STR_2711    :;
-STR_2712    :=
-STR_2713    :,
-STR_2714    :-
-STR_2715    :.
-STR_2716    :/
-STR_2717    :'
 STR_2718    :Вверх
 STR_2719    :Новый файл
 # Peeked at source code, where these strings are used — it's unapplicable to Russian language. Using reductions
@@ -2055,8 +1941,8 @@ STR_2728    :{UINT16} ч. {UINT16} мин.
 STR_2729    :{UINT16} ч. {UINT16} мин.
 STR_2730    :{UINT16} ч. {UINT16} мин.
 STR_2731    :{UINT16} ч. {UINT16} мин.
-STR_2732    :{COMMA16}фут
-STR_2733    :{COMMA16}метр
+STR_2732    :{COMMA32}фут
+STR_2733    :{COMMA32}метр
 STR_2734    :{COMMA16}миль/час
 STR_2735    :{COMMA16}км/ч
 STR_2736    :{MONTH}, год {COMMA16}
@@ -2067,10 +1953,6 @@ STR_2740    :RollerCoaster Tycoon 1
 STR_2741    :RollerCoaster Tycoon 2
 STR_2742    :Файл css50.dat не найден
 STR_2743    :Скопируйте файл 'data/css17.dat' из директории RCT1 в 'data/css50.dat' директории RCT2, или убедитесь, что путь до директории RCT1 на вкладке «Разное» корректный.
-STR_2744    :[
-STR_2745    :\
-STR_2746    :]
-STR_2747    :”
 STR_2749    :Мой новый сценарий
 # New strings used in the cheats window previously these were ???
 STR_2750    :Все элементы наверх
@@ -2096,7 +1978,7 @@ STR_2778    :»{MOVE_X}{10}{STRING}
 STR_2779    :Вид #{COMMA16}
 STR_2780    :Дополнительный вид
 # End of new strings
-STR_2781    :{STRINGID}:{MOVE_X}{255}{STRINGID}
+STR_2781    :{STRINGID}:
 STR_2782    :SHIFT + 
 STR_2783    :CTRL + 
 STR_2784    :Изменить горячую клавишу
@@ -2419,7 +2301,6 @@ STR_3190    :Доп. пути
 STR_3191    :Группы пейзажа
 STR_3192    :Вход в парк
 STR_3193    :Вода
-STR_3194    :Описание сценария
 STR_3195    :Изобретения
 STR_3196    :{WINDOW_COLOUR_2} Разработка:  {BLACK}{STRINGID}
 STR_3197    :{WINDOW_COLOUR_2}Разработано до начала игры:
@@ -2658,15 +2539,6 @@ STR_5160    :{POP16}{MONTH} {PUSH16}{PUSH16}{STRINGID}, Год {POP16}{COMMA16}
 STR_5161    :Формат даты:
 STR_5162    :день/месяц/год
 STR_5163    :месяц/день/год
-STR_5164    :Имя Twitch-канала
-STR_5165    :Называть гостей по имени фолловеров
-STR_5168    :фолловеры
-STR_5169    :Называть гостей по имени пользователей в Twitch-чате
-STR_5170    :{SMALLFONT}{BLACK}Называть гостей по имени пользователей в чате Twitch
-STR_5173    :Отображать Twitch новости из чата Twitch
-STR_5174    :{SMALLFONT}{BLACK}Сообщения из чата с префиксом !news будут отображены в игре
-STR_5175    :Введите имя своего канала Twitch
-STR_5176    :Включить интеграцию с Twitch
 STR_5177    :Режим экрана:
 STR_5178    :{SMALLFONT}{BLACK}Показать финансовые читы
 STR_5179    :{SMALLFONT}{BLACK}Показать читы гостей
@@ -2723,6 +2595,7 @@ STR_6062    :{OUTLINE}{GREEN}+ {CURRENCY2DP}
 STR_6063    :{OUTLINE}{RED}- {CURRENCY2DP}
 STR_6164    :{WHITE}❌
 STR_6187    :{MEDIUMFONT}{OUTLINE}{WINDOW_COLOUR_2}{STRING}
+STR_6360    :{SMALLFONT}{BLACK}{COMMA32}
 
 # This language is unmaintained. All untranslated strings have been removed. 
 # If you intend to become the maintainer, please copy the missing strings from en-GB.txt and translate them.

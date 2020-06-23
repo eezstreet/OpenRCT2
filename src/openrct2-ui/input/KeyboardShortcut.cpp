@@ -19,6 +19,7 @@
 #include <openrct2/Input.h>
 #include <openrct2/OpenRCT2.h>
 #include <openrct2/actions/LoadOrQuitAction.hpp>
+#include <openrct2/actions/SetCheatAction.hpp>
 #include <openrct2/audio/audio.h>
 #include <openrct2/config/Config.h>
 #include <openrct2/interface/Chat.h>
@@ -34,6 +35,8 @@
 #include <openrct2/windows/Intent.h>
 #include <openrct2/world/Park.h>
 #include <openrct2/world/Scenery.h>
+
+extern bool gWindowSceneryEyedropperEnabled;
 
 uint8_t gKeyboardShortcutChangeId;
 
@@ -79,7 +82,7 @@ static void toggle_view_flag(int32_t viewportFlag)
     if (window != nullptr)
     {
         window->viewport->flags ^= viewportFlag;
-        window_invalidate(window);
+        window->Invalidate();
     }
 }
 
@@ -115,7 +118,7 @@ static void shortcut_pause_game()
         rct_window* window = window_find_by_class(WC_TOP_TOOLBAR);
         if (window != nullptr)
         {
-            window_invalidate(window);
+            window->Invalidate();
             window_event_mouse_up_call(window, WC_TOP_TOOLBAR__WIDX_PAUSE);
         }
     }
@@ -199,6 +202,15 @@ static void shortcut_rotate_construction_object()
     if (w != nullptr && !widget_is_disabled(w, WC_MAP__WIDX_ROTATE_90) && w->widgets[WC_MAP__WIDX_ROTATE_90].type != WWT_EMPTY)
     {
         window_event_mouse_up_call(w, WC_MAP__WIDX_ROTATE_90);
+        return;
+    }
+
+    // Rotate selected element in tile inspector
+    w = window_find_by_class(WC_TILE_INSPECTOR);
+    if (w != nullptr && !widget_is_disabled(w, WC_TILE_INSPECTOR__WIDX_BUTTON_ROTATE)
+        && w->widgets[WC_TILE_INSPECTOR__WIDX_BUTTON_ROTATE].type != WWT_EMPTY)
+    {
+        window_event_mouse_up_call(w, WC_TILE_INSPECTOR__WIDX_BUTTON_ROTATE);
         return;
     }
 }
@@ -353,7 +365,7 @@ static void shortcut_adjust_land()
             rct_window* window = window_find_by_class(WC_TOP_TOOLBAR);
             if (window != nullptr)
             {
-                window_invalidate(window);
+                window->Invalidate();
                 window_event_mouse_up_call(window, WC_TOP_TOOLBAR__WIDX_LAND);
             }
         }
@@ -372,7 +384,7 @@ static void shortcut_adjust_water()
             rct_window* window = window_find_by_class(WC_TOP_TOOLBAR);
             if (window != nullptr)
             {
-                window_invalidate(window);
+                window->Invalidate();
                 window_event_mouse_up_call(window, WC_TOP_TOOLBAR__WIDX_WATER);
             }
         }
@@ -391,7 +403,7 @@ static void shortcut_build_scenery()
             rct_window* window = window_find_by_class(WC_TOP_TOOLBAR);
             if (window != nullptr)
             {
-                window_invalidate(window);
+                window->Invalidate();
                 window_event_mouse_up_call(window, WC_TOP_TOOLBAR__WIDX_SCENERY);
             }
         }
@@ -410,7 +422,7 @@ static void shortcut_build_paths()
             rct_window* window = window_find_by_class(WC_TOP_TOOLBAR);
             if (window != nullptr)
             {
-                window_invalidate(window);
+                window->Invalidate();
                 window_event_mouse_up_call(window, WC_TOP_TOOLBAR__WIDX_PATH);
             }
         }
@@ -565,7 +577,7 @@ static void shortcut_clear_scenery()
             rct_window* window = window_find_by_class(WC_TOP_TOOLBAR);
             if (window != nullptr)
             {
-                window_invalidate(window);
+                window->Invalidate();
                 window_event_mouse_up_call(window, WC_TOP_TOOLBAR__WIDX_CLEAR_SCENERY);
             }
         }
@@ -780,7 +792,7 @@ static void shortcut_open_scenery_picker()
         rct_window* window_toolbar = window_find_by_class(WC_TOP_TOOLBAR);
         if (window_toolbar != nullptr)
         {
-            window_invalidate(window_toolbar);
+            window_toolbar->Invalidate();
             window_event_mouse_up_call(window_toolbar, WC_TOP_TOOLBAR__WIDX_SCENERY);
         }
     }
@@ -793,6 +805,226 @@ static void shortcut_open_scenery_picker()
         window_event_mouse_up_call(window_scenery, WC_SCENERY__WIDX_SCENERY_EYEDROPPER_BUTTON);
         return;
     }
+}
+
+static void shortcut_scale_up()
+{
+    gConfigGeneral.window_scale += 0.25f;
+    config_save_default();
+    gfx_invalidate_screen();
+    context_trigger_resize();
+    context_update_cursor_scale();
+}
+
+static void shortcut_scale_down()
+{
+    gConfigGeneral.window_scale -= 0.25f;
+    gConfigGeneral.window_scale = std::max(0.5f, gConfigGeneral.window_scale);
+    config_save_default();
+    gfx_invalidate_screen();
+    context_trigger_resize();
+    context_update_cursor_scale();
+}
+
+// Tile inspector shortcuts
+static void shortcut_insert_corrupt_element()
+{
+    rct_window* w = window_find_by_class(WC_TILE_INSPECTOR);
+    if (w != nullptr && !widget_is_disabled(w, WC_TILE_INSPECTOR__WIDX_BUTTON_CORRUPT)
+        && w->widgets[WC_TILE_INSPECTOR__WIDX_BUTTON_CORRUPT].type != WWT_EMPTY)
+    {
+        window_event_mouse_up_call(w, WC_TILE_INSPECTOR__WIDX_BUTTON_CORRUPT);
+        return;
+    }
+}
+
+static void shortcut_copy_element()
+{
+    rct_window* w = window_find_by_class(WC_TILE_INSPECTOR);
+    if (w != nullptr && !widget_is_disabled(w, WC_TILE_INSPECTOR__WIDX_BUTTON_COPY)
+        && w->widgets[WC_TILE_INSPECTOR__WIDX_BUTTON_COPY].type != WWT_EMPTY)
+    {
+        window_event_mouse_up_call(w, WC_TILE_INSPECTOR__WIDX_BUTTON_COPY);
+        return;
+    }
+}
+
+static void shortcut_paste_element()
+{
+    rct_window* w = window_find_by_class(WC_TILE_INSPECTOR);
+    if (w != nullptr && !widget_is_disabled(w, WC_TILE_INSPECTOR__WIDX_BUTTON_PASTE)
+        && w->widgets[WC_TILE_INSPECTOR__WIDX_BUTTON_PASTE].type != WWT_EMPTY)
+    {
+        window_event_mouse_up_call(w, WC_TILE_INSPECTOR__WIDX_BUTTON_PASTE);
+        return;
+    }
+}
+
+static void shortcut_remove_element()
+{
+    rct_window* w = window_find_by_class(WC_TILE_INSPECTOR);
+    if (w != nullptr && !widget_is_disabled(w, WC_TILE_INSPECTOR__WIDX_BUTTON_REMOVE)
+        && w->widgets[WC_TILE_INSPECTOR__WIDX_BUTTON_REMOVE].type != WWT_EMPTY)
+    {
+        window_event_mouse_up_call(w, WC_TILE_INSPECTOR__WIDX_BUTTON_REMOVE);
+        return;
+    }
+}
+
+static void shortcut_move_element_up()
+{
+    rct_window* w = window_find_by_class(WC_TILE_INSPECTOR);
+    if (w != nullptr && !widget_is_disabled(w, WC_TILE_INSPECTOR__WIDX_BUTTON_MOVE_UP)
+        && w->widgets[WC_TILE_INSPECTOR__WIDX_BUTTON_MOVE_UP].type != WWT_EMPTY)
+    {
+        window_event_mouse_up_call(w, WC_TILE_INSPECTOR__WIDX_BUTTON_MOVE_UP);
+        return;
+    }
+}
+
+static void shortcut_move_element_down()
+{
+    rct_window* w = window_find_by_class(WC_TILE_INSPECTOR);
+    if (w != nullptr && !widget_is_disabled(w, WC_TILE_INSPECTOR__WIDX_BUTTON_MOVE_DOWN)
+        && w->widgets[WC_TILE_INSPECTOR__WIDX_BUTTON_MOVE_DOWN].type != WWT_EMPTY)
+    {
+        window_event_mouse_up_call(w, WC_TILE_INSPECTOR__WIDX_BUTTON_MOVE_DOWN);
+        return;
+    }
+}
+
+static void shortcut_increase_x_coord()
+{
+    rct_window* w = window_find_by_class(WC_TILE_INSPECTOR);
+    if (w != nullptr && !widget_is_disabled(w, WC_TILE_INSPECTOR__WIDX_SPINNER_X_INCREASE)
+        && w->widgets[WC_TILE_INSPECTOR__WIDX_SPINNER_X_INCREASE].type != WWT_EMPTY)
+    {
+        window_event_mouse_down_call(w, WC_TILE_INSPECTOR__WIDX_SPINNER_X_INCREASE);
+        return;
+    }
+}
+
+static void shortcut_decrease_x_coord()
+{
+    rct_window* w = window_find_by_class(WC_TILE_INSPECTOR);
+    if (w != nullptr && !widget_is_disabled(w, WC_TILE_INSPECTOR__WIDX_SPINNER_X_DECREASE)
+        && w->widgets[WC_TILE_INSPECTOR__WIDX_SPINNER_X_DECREASE].type != WWT_EMPTY)
+    {
+        window_event_mouse_down_call(w, WC_TILE_INSPECTOR__WIDX_SPINNER_X_DECREASE);
+        return;
+    }
+}
+
+static void shortcut_increase_y_coord()
+{
+    rct_window* w = window_find_by_class(WC_TILE_INSPECTOR);
+    if (w != nullptr && !widget_is_disabled(w, WC_TILE_INSPECTOR__WIDX_SPINNER_Y_INCREASE)
+        && w->widgets[WC_TILE_INSPECTOR__WIDX_SPINNER_Y_INCREASE].type != WWT_EMPTY)
+    {
+        window_event_mouse_down_call(w, WC_TILE_INSPECTOR__WIDX_SPINNER_Y_INCREASE);
+        return;
+    }
+}
+
+static void shortcut_decrease_y_coord()
+{
+    rct_window* w = window_find_by_class(WC_TILE_INSPECTOR);
+    if (w != nullptr && !widget_is_disabled(w, WC_TILE_INSPECTOR__WIDX_SPINNER_Y_DECREASE)
+        && w->widgets[WC_TILE_INSPECTOR__WIDX_SPINNER_Y_DECREASE].type != WWT_EMPTY)
+    {
+        window_event_mouse_down_call(w, WC_TILE_INSPECTOR__WIDX_SPINNER_Y_DECREASE);
+        return;
+    }
+}
+
+static void shortcut_increase_element_height()
+{
+    rct_window* w = window_find_by_class(WC_TILE_INSPECTOR);
+    if (w != nullptr)
+    {
+        int action = -1;
+        switch (w->page)
+        {
+            case WC_TILE_INSPECTOR__TILE_INSPECTOR_PAGE_SURFACE:
+                action = WC_TILE_INSPECTOR__WIDX_SURFACE_SPINNER_HEIGHT_INCREASE;
+                break;
+            case WC_TILE_INSPECTOR__TILE_INSPECTOR_PAGE_PATH:
+                action = WC_TILE_INSPECTOR__WIDX_PATH_SPINNER_HEIGHT_INCREASE;
+                break;
+            case WC_TILE_INSPECTOR__TILE_INSPECTOR_PAGE_TRACK:
+                action = WC_TILE_INSPECTOR__WIDX_TRACK_SPINNER_HEIGHT_INCREASE;
+                break;
+            case WC_TILE_INSPECTOR__TILE_INSPECTOR_PAGE_SCENERY:
+                action = WC_TILE_INSPECTOR__WIDX_SCENERY_SPINNER_HEIGHT_INCREASE;
+                break;
+            case WC_TILE_INSPECTOR__TILE_INSPECTOR_PAGE_ENTRANCE:
+                action = WC_TILE_INSPECTOR__WIDX_ENTRANCE_SPINNER_HEIGHT_INCREASE;
+                break;
+            case WC_TILE_INSPECTOR__TILE_INSPECTOR_PAGE_WALL:
+                action = WC_TILE_INSPECTOR__WIDX_WALL_SPINNER_HEIGHT_INCREASE;
+                break;
+            case WC_TILE_INSPECTOR__TILE_INSPECTOR_PAGE_LARGE_SCENERY:
+                action = WC_TILE_INSPECTOR__WIDX_LARGE_SCENERY_SPINNER_HEIGHT_INCREASE;
+                break;
+            case WC_TILE_INSPECTOR__TILE_INSPECTOR_PAGE_BANNER:
+                action = WC_TILE_INSPECTOR__WIDX_BANNER_SPINNER_HEIGHT_INCREASE;
+                break;
+            case WC_TILE_INSPECTOR__TILE_INSPECTOR_PAGE_CORRUPT:
+                action = WC_TILE_INSPECTOR__WIDX_CORRUPT_SPINNER_HEIGHT_INCREASE;
+                break;
+        }
+        if (action != -1 && !widget_is_disabled(w, action) && w->widgets[action].type != WWT_EMPTY)
+            window_event_mouse_down_call(w, action);
+        return;
+    }
+}
+
+static void shortcut_decrease_element_height()
+{
+    rct_window* w = window_find_by_class(WC_TILE_INSPECTOR);
+    if (w != nullptr)
+    {
+        int action = -1;
+        switch (w->page)
+        {
+            case WC_TILE_INSPECTOR__TILE_INSPECTOR_PAGE_SURFACE:
+                action = WC_TILE_INSPECTOR__WIDX_SURFACE_SPINNER_HEIGHT_DECREASE;
+                break;
+            case WC_TILE_INSPECTOR__TILE_INSPECTOR_PAGE_PATH:
+                action = WC_TILE_INSPECTOR__WIDX_PATH_SPINNER_HEIGHT_DECREASE;
+                break;
+            case WC_TILE_INSPECTOR__TILE_INSPECTOR_PAGE_TRACK:
+                action = WC_TILE_INSPECTOR__WIDX_TRACK_SPINNER_HEIGHT_DECREASE;
+                break;
+            case WC_TILE_INSPECTOR__TILE_INSPECTOR_PAGE_SCENERY:
+                action = WC_TILE_INSPECTOR__WIDX_SCENERY_SPINNER_HEIGHT_DECREASE;
+                break;
+            case WC_TILE_INSPECTOR__TILE_INSPECTOR_PAGE_ENTRANCE:
+                action = WC_TILE_INSPECTOR__WIDX_ENTRANCE_SPINNER_HEIGHT_DECREASE;
+                break;
+            case WC_TILE_INSPECTOR__TILE_INSPECTOR_PAGE_WALL:
+                action = WC_TILE_INSPECTOR__WIDX_WALL_SPINNER_HEIGHT_DECREASE;
+                break;
+            case WC_TILE_INSPECTOR__TILE_INSPECTOR_PAGE_LARGE_SCENERY:
+                action = WC_TILE_INSPECTOR__WIDX_LARGE_SCENERY_SPINNER_HEIGHT_DECREASE;
+                break;
+            case WC_TILE_INSPECTOR__TILE_INSPECTOR_PAGE_BANNER:
+                action = WC_TILE_INSPECTOR__WIDX_BANNER_SPINNER_HEIGHT_DECREASE;
+                break;
+            case WC_TILE_INSPECTOR__TILE_INSPECTOR_PAGE_CORRUPT:
+                action = WC_TILE_INSPECTOR__WIDX_CORRUPT_SPINNER_HEIGHT_DECREASE;
+                break;
+        }
+        if (action != -1 && !widget_is_disabled(w, action) && w->widgets[action].type != WWT_EMPTY)
+            window_event_mouse_down_call(w, action);
+        return;
+    }
+}
+
+static void shortcut_toggle_clearance_checks()
+{
+    auto setCheatAction = SetCheatAction(CheatType::DisableClearanceChecks, gCheatsDisableClearanceChecks ? 0 : 1);
+    GameActions::Execute(&setCheatAction);
 }
 
 namespace
@@ -870,6 +1102,21 @@ namespace
         shortcut_open_tile_inspector,
         shortcut_advance_to_next_tick,
         shortcut_open_scenery_picker,
+        shortcut_scale_up,
+        shortcut_scale_down,
+        shortcut_insert_corrupt_element,
+        shortcut_copy_element,
+        shortcut_paste_element,
+        shortcut_remove_element,
+        shortcut_move_element_up,
+        shortcut_move_element_down,
+        shortcut_increase_x_coord,
+        shortcut_decrease_x_coord,
+        shortcut_increase_y_coord,
+        shortcut_decrease_y_coord,
+        shortcut_increase_element_height,
+        shortcut_decrease_element_height,
+        shortcut_toggle_clearance_checks,
     };
 } // anonymous namespace
 

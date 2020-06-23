@@ -62,7 +62,7 @@ static rct_window_event_list window_error_events = {
 };
 // clang-format on
 
-static char _window_error_text[512];
+static std::string _window_error_text;
 static uint16_t _window_error_num_lines;
 
 /**
@@ -74,30 +74,38 @@ static uint16_t _window_error_num_lines;
  */
 rct_window* window_error_open(rct_string_id title, rct_string_id message)
 {
-    utf8* dst;
-    int32_t numLines, fontHeight, x, y, width, height, maxY;
+    auto titlez = format_string(title, gCommonFormatArgs);
+    auto messagez = format_string(message, gCommonFormatArgs);
+    return window_error_open(titlez, messagez);
+}
+
+rct_window* window_error_open(const std::string_view& title, const std::string_view& message)
+{
+    int32_t numLines, fontHeight, width, height, maxY;
     rct_window* w;
 
     window_close_by_class(WC_ERROR);
-    dst = _window_error_text;
+    auto& buffer = _window_error_text;
+    buffer.clear();
 
     // Format the title
-    dst = utf8_write_codepoint(dst, FORMAT_BLACK);
-    if (title != STR_NONE)
     {
-        format_string(dst, 512 - (dst - _window_error_text), title, gCommonFormatArgs);
-        dst = get_string_end(dst);
+        char temp[8]{};
+        utf8_write_codepoint(temp, FORMAT_BLACK);
+        buffer.append(temp);
     }
+    buffer.append(title);
 
     // Format the message
-    if (message != STR_NONE)
+    if (!message.empty())
     {
-        dst = utf8_write_codepoint(dst, FORMAT_NEWLINE);
-        format_string(dst, 512 - (dst - _window_error_text), message, gCommonFormatArgs);
-        dst = get_string_end(dst);
+        char temp[8]{};
+        utf8_write_codepoint(temp, FORMAT_NEWLINE);
+        buffer.append(temp);
+        buffer.append(message);
     }
 
-    log_verbose("show error, %s", _window_error_text + 1);
+    log_verbose("show error, %s", buffer.c_str() + 1);
 
     // Don't do unnecessary work in headless. Also saves checking if cursor state is null.
     if (gOpenRCT2Headless)
@@ -106,15 +114,15 @@ rct_window* window_error_open(rct_string_id title, rct_string_id message)
     }
 
     // Check if there is any text to display
-    if (dst == _window_error_text + 1)
+    if (buffer.size() <= 1)
         return nullptr;
 
     gCurrentFontSpriteBase = FONT_SPRITE_BASE_MEDIUM;
-    width = gfx_get_string_width_new_lined(_window_error_text);
-    width = std::min(196, width);
+    width = gfx_get_string_width_new_lined(buffer.data());
+    width = std::clamp(width, 64, 196);
 
     gCurrentFontSpriteBase = FONT_SPRITE_BASE_MEDIUM;
-    gfx_wrap_string(_window_error_text, width + 1, &numLines, &fontHeight);
+    gfx_wrap_string(buffer.data(), width + 1, &numLines, &fontHeight);
 
     _window_error_num_lines = numLines;
     width = width + 3;
@@ -126,24 +134,22 @@ rct_window* window_error_open(rct_string_id title, rct_string_id message)
     int32_t screenWidth = context_get_width();
     int32_t screenHeight = context_get_height();
     const CursorState* state = context_get_cursor_state();
-    x = state->x - (width / 2);
-    x = std::clamp(x, 0, screenWidth);
-
-    y = state->y + 26;
-    y = std::max(22, y);
+    ScreenCoordsXY windowPosition = state->position - ScreenCoordsXY(width / 2, -26);
+    windowPosition.x = std::clamp(windowPosition.x, 0, screenWidth);
+    windowPosition.y = std::max(22, windowPosition.y);
     maxY = screenHeight - height;
-    if (y > maxY)
+    if (windowPosition.y > maxY)
     {
-        y = y - height - 40;
-        y = std::min(y, maxY);
+        windowPosition.y = std::min(windowPosition.y - height - 40, maxY);
     }
 
-    w = window_create(x, y, width, height, &window_error_events, WC_ERROR, WF_STICK_TO_FRONT | WF_TRANSPARENT | WF_RESIZABLE);
+    w = window_create(
+        windowPosition, width, height, &window_error_events, WC_ERROR, WF_STICK_TO_FRONT | WF_TRANSPARENT | WF_RESIZABLE);
     w->widgets = window_error_widgets;
     w->error.var_480 = 0;
     if (!gDisableErrorWindowSound)
     {
-        audio_play_sound(SoundId::Error, 0, w->x + (w->width / 2));
+        audio_play_sound(SoundId::Error, 0, w->windowPos.x + (w->width / 2));
     }
 
     return w;
@@ -168,10 +174,10 @@ static void window_error_paint(rct_window* w, rct_drawpixelinfo* dpi)
 {
     int32_t t, l, r, b;
 
-    l = w->x;
-    t = w->y;
-    r = w->x + w->width - 1;
-    b = w->y + w->height - 1;
+    l = w->windowPos.x;
+    t = w->windowPos.y;
+    r = w->windowPos.x + w->width - 1;
+    b = w->windowPos.y + w->height - 1;
 
     gfx_filter_rect(dpi, l + 1, t + 1, r - 1, b - 1, PALETTE_45);
     gfx_filter_rect(dpi, l, t, r, b, PALETTE_GLASS_SATURATED_RED);
@@ -186,7 +192,7 @@ static void window_error_paint(rct_window* w, rct_drawpixelinfo* dpi)
     gfx_filter_rect(dpi, l + 1, b - 1, l + 1, b - 1, PALETTE_DARKEN_3);
     gfx_filter_rect(dpi, r - 1, b - 1, r - 1, b - 1, PALETTE_DARKEN_3);
 
-    l = w->x + (w->width + 1) / 2 - 1;
-    t = w->y + 1;
-    draw_string_centred_raw(dpi, l, t, _window_error_num_lines, _window_error_text);
+    l = w->windowPos.x + (w->width + 1) / 2 - 1;
+    t = w->windowPos.y + 1;
+    draw_string_centred_raw(dpi, l, t, _window_error_num_lines, _window_error_text.data());
 }

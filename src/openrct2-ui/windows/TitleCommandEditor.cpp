@@ -69,16 +69,16 @@ enum WINDOW_WATER_WIDGET_IDX {
     WIDX_CANCEL
 };
 
-#define WW 200
-#define WH 120
-#define BY 32
-#define BY2 70
-#define WS 16
-#define WHA ((WW-WS*2)/2)
+static constexpr const int32_t WW = 200;
+static constexpr const int32_t WH = 120;
+constexpr int32_t BY = 32;
+constexpr int32_t BY2 = 70;
+constexpr int32_t WS = 16;
+static constexpr const int32_t WHA = (WW-WS*2)/2;
 
 static bool _window_title_command_editor_insert;
 static int32_t _window_title_command_editor_index;
-#define BUF_SIZE 50
+constexpr size_t BUF_SIZE = 50;
 static char textbox1Buffer[BUF_SIZE];
 static char textbox2Buffer[BUF_SIZE];
 static TitleCommand command = { TITLE_SCRIPT_LOAD, { 0 } };
@@ -115,14 +115,14 @@ static void window_title_command_editor_mouseup(rct_window * w, rct_widgetindex 
 static void window_title_command_editor_mousedown(rct_window * w, rct_widgetindex widgetIndex, rct_widget * widget);
 static void window_title_command_editor_dropdown(rct_window * w, rct_widgetindex widgetIndex, int32_t dropdownIndex);
 static void window_title_command_editor_update(rct_window * w);
-static void window_title_command_editor_tool_down(rct_window * w, rct_widgetindex widgetIndex, int32_t x, int32_t y);
+static void window_title_command_editor_tool_down(rct_window * w, rct_widgetindex widgetIndex, const ScreenCoordsXY& screenCoords);
 static void window_title_command_editor_invalidate(rct_window * w);
 static void window_title_command_editor_paint(rct_window * w, rct_drawpixelinfo * dpi);
 static void window_title_command_editor_textinput(rct_window * w, rct_widgetindex widgetIndex, char * text);
 static void scenario_select_callback(const utf8 * path);
 static int32_t get_command_info_index(int32_t index);
 static TITLE_COMMAND_ORDER get_command_info(int32_t index);
-static LocationXY16 get_location();
+static TileCoordsXY get_location();
 static uint8_t get_zoom();
 
 static rct_window_event_list window_title_command_editor_events = {
@@ -169,7 +169,7 @@ static void scenario_select_callback(const utf8* path)
 
 static int32_t get_command_info_index(int32_t index)
 {
-    for (int32_t i = 0; i < (int32_t)NUM_COMMANDS; i++)
+    for (int32_t i = 0; i < static_cast<int32_t>(NUM_COMMANDS); i++)
     {
         if (_window_title_command_editor_orders[i].command == index)
             return i;
@@ -179,7 +179,7 @@ static int32_t get_command_info_index(int32_t index)
 
 static TITLE_COMMAND_ORDER get_command_info(int32_t index)
 {
-    for (int32_t i = 0; i < (int32_t)NUM_COMMANDS; i++)
+    for (int32_t i = 0; i < static_cast<int32_t>(NUM_COMMANDS); i++)
     {
         if (_window_title_command_editor_orders[i].command == index)
             return _window_title_command_editor_orders[i];
@@ -187,26 +187,25 @@ static TITLE_COMMAND_ORDER get_command_info(int32_t index)
     return _window_title_command_editor_orders[0];
 }
 
-static LocationXY16 get_location()
+static TileCoordsXY get_location()
 {
-    LocationXY16 mapCoord = {};
+    TileCoordsXY tileCoord = {};
     rct_window* w = window_get_main();
     if (w != nullptr)
     {
         int32_t interactionType;
         TileElement* tileElement;
-
+        CoordsXY mapCoord;
         get_map_coordinates_from_pos_window(
-            w, w->viewport->view_width / 2, w->viewport->view_height / 2, VIEWPORT_INTERACTION_MASK_TERRAIN, &mapCoord.x,
-            &mapCoord.y, &interactionType, &tileElement, nullptr);
+            w, { w->viewport->view_width / 2, w->viewport->view_height / 2 }, VIEWPORT_INTERACTION_MASK_TERRAIN, mapCoord,
+            &interactionType, &tileElement, nullptr);
         mapCoord.x -= 16;
-        mapCoord.x /= 32;
         mapCoord.y -= 16;
-        mapCoord.y /= 32;
-        mapCoord.x++;
-        mapCoord.y++;
+        tileCoord = TileCoordsXY{ mapCoord };
+        tileCoord.x++;
+        tileCoord.y++;
     }
-    return mapCoord;
+    return tileCoord;
 }
 
 static uint8_t get_zoom()
@@ -215,7 +214,7 @@ static uint8_t get_zoom()
     rct_window* w = window_get_main();
     if (w != nullptr)
     {
-        zoom = w->viewport->zoom;
+        zoom = static_cast<int8_t>(w->viewport->zoom);
     }
     return zoom;
 }
@@ -250,8 +249,8 @@ void window_title_command_editor_open(TitleSequence* sequence, int32_t index, bo
 
     rct_widget* const viewportWidget = &window_title_command_editor_widgets[WIDX_VIEWPORT];
     viewport_create(
-        window, window->x + viewportWidget->left + 1, window->y + viewportWidget->top + 1,
-        viewportWidget->right - viewportWidget->left - 1, viewportWidget->bottom - viewportWidget->top - 1, 0, 0, 0, 0, 0,
+        window, window->windowPos + ScreenCoordsXY{ viewportWidget->left + 1, viewportWidget->top + 1 },
+        viewportWidget->right - viewportWidget->left - 1, viewportWidget->bottom - viewportWidget->top - 1, 0, { 0, 0, 0 }, 0,
         SPRITE_INDEX_NULL);
 
     _window_title_command_editor_index = index;
@@ -281,7 +280,7 @@ void window_title_command_editor_open(TitleSequence* sequence, int32_t index, bo
         case TITLE_SCRIPT_FOLLOW:
             if (command.SpriteIndex != SPRITE_INDEX_NULL)
             {
-                window_follow_sprite(window, (size_t)command.SpriteIndex);
+                window_follow_sprite(window, static_cast<size_t>(command.SpriteIndex));
             }
             break;
     }
@@ -324,9 +323,9 @@ static void window_title_command_editor_mouseup(rct_window* w, rct_widgetindex w
         case WIDX_GET:
             if (command.Type == TITLE_SCRIPT_LOCATION)
             {
-                LocationXY16 mapCoord = get_location();
-                command.X = (uint8_t)mapCoord.x;
-                command.Y = (uint8_t)mapCoord.y;
+                auto tileCoord = get_location();
+                command.X = static_cast<uint8_t>(tileCoord.x);
+                command.Y = static_cast<uint8_t>(tileCoord.y);
                 snprintf(textbox1Buffer, BUF_SIZE, "%d", command.X);
                 snprintf(textbox2Buffer, BUF_SIZE, "%d", command.Y);
             }
@@ -336,7 +335,7 @@ static void window_title_command_editor_mouseup(rct_window* w, rct_widgetindex w
                 command.Zoom = zoom;
                 snprintf(textbox1Buffer, BUF_SIZE, "%d", command.Zoom);
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_SELECT_SCENARIO:
             window_scenarioselect_open(scenario_select_callback, true);
@@ -395,8 +394,8 @@ static void window_title_command_editor_mousedown(rct_window* w, rct_widgetindex
             }
 
             window_dropdown_show_text_custom_width(
-                w->x + widget->left, w->y + widget->top, widget->bottom - widget->top + 1, w->colours[1], 0,
-                DROPDOWN_FLAG_STAY_OPEN, numItems, widget->right - widget->left - 3);
+                { w->windowPos.x + widget->left, w->windowPos.y + widget->top }, widget->bottom - widget->top + 1,
+                w->colours[1], 0, DROPDOWN_FLAG_STAY_OPEN, numItems, widget->right - widget->left - 3);
 
             dropdown_set_checked(get_command_info_index(command.Type), true);
             break;
@@ -412,23 +411,23 @@ static void window_title_command_editor_mousedown(rct_window* w, rct_widgetindex
                 }
 
                 window_dropdown_show_text_custom_width(
-                    w->x + widget->left, w->y + widget->top, widget->bottom - widget->top + 1, w->colours[1], 0,
-                    DROPDOWN_FLAG_STAY_OPEN, numItems, widget->right - widget->left - 3);
+                    { w->windowPos.x + widget->left, w->windowPos.y + widget->top }, widget->bottom - widget->top + 1,
+                    w->colours[1], 0, DROPDOWN_FLAG_STAY_OPEN, numItems, widget->right - widget->left - 3);
 
                 dropdown_set_checked(command.Speed - 1, true);
             }
             else if (command.Type == TITLE_SCRIPT_LOAD)
             {
-                int32_t numItems = (int32_t)_sequence->NumSaves;
+                int32_t numItems = static_cast<int32_t>(_sequence->NumSaves);
                 for (int32_t i = 0; i < numItems; i++)
                 {
                     gDropdownItemsFormat[i] = STR_OPTIONS_DROPDOWN_ITEM;
-                    gDropdownItemsArgs[i] = (uintptr_t)_sequence->Saves[i];
+                    gDropdownItemsArgs[i] = reinterpret_cast<uintptr_t>(_sequence->Saves[i]);
                 }
 
                 window_dropdown_show_text_custom_width(
-                    w->x + widget->left, w->y + widget->top, widget->bottom - widget->top + 1, w->colours[1], 0,
-                    DROPDOWN_FLAG_STAY_OPEN, numItems, widget->right - widget->left - 3);
+                    { w->windowPos.x + widget->left, w->windowPos.y + widget->top }, widget->bottom - widget->top + 1,
+                    w->colours[1], 0, DROPDOWN_FLAG_STAY_OPEN, numItems, widget->right - widget->left - 3);
 
                 dropdown_set_checked(command.SaveIndex, true);
             }
@@ -463,9 +462,9 @@ static void window_title_command_editor_dropdown(rct_window* w, rct_widgetindex 
             {
                 case TITLE_SCRIPT_LOCATION:
                 {
-                    LocationXY16 mapCoord = get_location();
-                    command.X = (uint8_t)mapCoord.x;
-                    command.Y = (uint8_t)mapCoord.y;
+                    auto tileCoord = get_location();
+                    command.X = static_cast<uint8_t>(tileCoord.x);
+                    command.Y = static_cast<uint8_t>(tileCoord.y);
                     snprintf(textbox1Buffer, BUF_SIZE, "%d", command.X);
                     snprintf(textbox2Buffer, BUF_SIZE, "%d", command.Y);
                     break;
@@ -501,7 +500,7 @@ static void window_title_command_editor_dropdown(rct_window* w, rct_widgetindex 
                 case TITLE_SCRIPT_LOADSC:
                     command.Scenario[0] = '\0';
             }
-            window_invalidate(w);
+            w->Invalidate();
             break;
         case WIDX_INPUT_DROPDOWN:
             switch (command.Type)
@@ -509,15 +508,15 @@ static void window_title_command_editor_dropdown(rct_window* w, rct_widgetindex 
                 case TITLE_SCRIPT_SPEED:
                     if (dropdownIndex != command.Speed - 1)
                     {
-                        command.Speed = (uint8_t)(dropdownIndex + 1);
-                        window_invalidate(w);
+                        command.Speed = static_cast<uint8_t>(dropdownIndex + 1);
+                        w->Invalidate();
                     }
                     break;
                 case TITLE_SCRIPT_LOAD:
                     if (dropdownIndex != command.SaveIndex)
                     {
-                        command.SaveIndex = (uint8_t)dropdownIndex;
-                        window_invalidate(w);
+                        command.SaveIndex = static_cast<uint8_t>(dropdownIndex);
+                        w->Invalidate();
                     }
                     break;
             }
@@ -547,7 +546,7 @@ static void window_title_command_editor_textinput(rct_window* w, rct_widgetindex
                             value = 100;
                         if (value > 65000)
                             value = 65000;
-                        command.Milliseconds = (uint16_t)value;
+                        command.Milliseconds = static_cast<uint16_t>(value);
                         snprintf(textbox1Buffer, BUF_SIZE, "%d", command.Milliseconds);
                     }
                     else
@@ -557,11 +556,11 @@ static void window_title_command_editor_textinput(rct_window* w, rct_widgetindex
                             value = 3;
                         if (value < 1 && command.Type == TITLE_SCRIPT_ROTATE)
                             value = 1;
-                        command.Rotations = (uint8_t)value;
+                        command.Rotations = static_cast<uint8_t>(value);
                         snprintf(textbox1Buffer, BUF_SIZE, "%d", command.Rotations);
                     }
                 }
-                window_invalidate(w);
+                w->Invalidate();
             }
             else
             {
@@ -573,10 +572,10 @@ static void window_title_command_editor_textinput(rct_window* w, rct_widgetindex
             {
                 if (*end == '\0')
                 {
-                    command.X = (uint8_t)value;
+                    command.X = static_cast<uint8_t>(value);
                 }
                 snprintf(textbox1Buffer, BUF_SIZE, "%d", command.X);
-                window_invalidate(w);
+                w->Invalidate();
             }
             else
             {
@@ -588,10 +587,10 @@ static void window_title_command_editor_textinput(rct_window* w, rct_widgetindex
             {
                 if (*end == '\0')
                 {
-                    command.Y = (uint8_t)value;
+                    command.Y = static_cast<uint8_t>(value);
                 }
                 snprintf(textbox2Buffer, BUF_SIZE, "%d", command.Y);
-                window_invalidate(w);
+                w->Invalidate();
             }
             else
             {
@@ -610,33 +609,47 @@ static void window_title_command_editor_update(rct_window* w)
     }
 }
 
-static void window_title_command_editor_tool_down(rct_window* w, rct_widgetindex widgetIndex, int32_t x, int32_t y)
+static void window_title_command_editor_tool_down(
+    rct_window* w, rct_widgetindex widgetIndex, const ScreenCoordsXY& screenCoords)
 {
     viewport_interaction_info info;
-    viewport_interaction_get_item_left(x, y, &info);
+    viewport_interaction_get_item_left(screenCoords, &info);
 
     if (info.type == VIEWPORT_INTERACTION_ITEM_SPRITE)
     {
         uint16_t spriteIndex = info.sprite->generic.sprite_index;
         uint16_t spriteIdentifier = info.sprite->generic.sprite_identifier;
         bool validSprite = false;
-        if (spriteIdentifier == SPRITE_IDENTIFIER_PEEP)
+        if (info.sprite->generic.Is<Peep>())
         {
             validSprite = true;
-            Peep* peep = GET_PEEP(spriteIndex);
-            format_string(command.SpriteName, USER_STRING_MAX_LENGTH, peep->name_string_idx, &peep->id);
+            auto peep = GET_PEEP(spriteIndex);
+            if (peep != nullptr)
+            {
+                uint8_t formatArgs[32]{};
+                Formatter ft(formatArgs);
+                peep->FormatNameTo(ft);
+                format_string(command.SpriteName, USER_STRING_MAX_LENGTH, STR_STRINGID, &peep->Id);
+            }
         }
         else if (spriteIdentifier == SPRITE_IDENTIFIER_VEHICLE)
         {
             validSprite = true;
-            rct_vehicle* vehicle = GET_VEHICLE(spriteIndex);
-            Ride* ride = get_ride(vehicle->ride);
-            set_format_arg(16, uint32_t, ride->name_arguments);
-            format_string(command.SpriteName, USER_STRING_MAX_LENGTH, ride->name, &ride->name_arguments);
+            auto vehicle = GET_VEHICLE(spriteIndex);
+            if (vehicle != nullptr)
+            {
+                auto ride = vehicle->GetRide();
+                if (ride != nullptr)
+                {
+                    uint8_t formatArgs[32]{};
+                    ride->FormatNameTo(formatArgs);
+                    format_string(command.SpriteName, USER_STRING_MAX_LENGTH, STR_STRINGID, formatArgs);
+                }
+            }
         }
         else if (spriteIdentifier == SPRITE_IDENTIFIER_LITTER)
         {
-            rct_litter* litter = &(get_sprite(spriteIndex)->litter);
+            Litter* litter = GetEntity<Litter>(spriteIndex);
             if (litter->type < std::size(litterNames))
             {
                 validSprite = true;
@@ -645,12 +658,12 @@ static void window_title_command_editor_tool_down(rct_window* w, rct_widgetindex
         }
         else if (spriteIdentifier == SPRITE_IDENTIFIER_MISC)
         {
-            if (info.sprite->IsBalloon())
+            if (info.sprite->generic.Is<Balloon>())
             {
                 validSprite = true;
                 format_string(command.SpriteName, USER_STRING_MAX_LENGTH, STR_SHOP_ITEM_SINGULAR_BALLOON, nullptr);
             }
-            else if (info.sprite->IsDuck())
+            else if (info.sprite->generic.Is<Duck>())
             {
                 validSprite = true;
                 format_string(command.SpriteName, USER_STRING_MAX_LENGTH, STR_DUCK, nullptr);
@@ -659,9 +672,9 @@ static void window_title_command_editor_tool_down(rct_window* w, rct_widgetindex
         if (validSprite)
         {
             command.SpriteIndex = spriteIndex;
-            window_follow_sprite(w, (size_t)command.SpriteIndex);
+            window_follow_sprite(w, static_cast<size_t>(command.SpriteIndex));
             tool_cancel();
-            window_invalidate(w);
+            w->Invalidate();
         }
     }
 }
@@ -735,21 +748,24 @@ static void window_title_command_editor_paint(rct_window* w, rct_drawpixelinfo* 
     TITLE_COMMAND_ORDER command_info = get_command_info(command.Type);
 
     // "Command:" label
-    gfx_draw_string_left(dpi, STR_TITLE_COMMAND_EDITOR_COMMAND_LABEL, nullptr, w->colours[1], w->x + WS, w->y + BY - 14);
+    gfx_draw_string_left(
+        dpi, STR_TITLE_COMMAND_EDITOR_COMMAND_LABEL, nullptr, w->colours[1], w->windowPos + ScreenCoordsXY{ WS, BY - 14 });
 
     // Command dropdown name
     gfx_draw_string_left_clipped(
-        dpi, command_info.nameStringId, nullptr, w->colours[1], w->x + w->widgets[WIDX_COMMAND].left + 1,
-        w->y + w->widgets[WIDX_COMMAND].top, w->widgets[WIDX_COMMAND_DROPDOWN].left - w->widgets[WIDX_COMMAND].left - 4);
+        dpi, command_info.nameStringId, nullptr, w->colours[1],
+        { w->windowPos.x + w->widgets[WIDX_COMMAND].left + 1, w->windowPos.y + w->widgets[WIDX_COMMAND].top },
+        w->widgets[WIDX_COMMAND_DROPDOWN].left - w->widgets[WIDX_COMMAND].left - 4);
 
     // Label (e.g. "Location:")
-    gfx_draw_string_left(dpi, command_info.descStringId, nullptr, w->colours[1], w->x + WS, w->y + BY2 - 14);
+    gfx_draw_string_left(dpi, command_info.descStringId, nullptr, w->colours[1], w->windowPos + ScreenCoordsXY{ WS, BY2 - 14 });
 
     if (command.Type == TITLE_SCRIPT_SPEED)
     {
         gfx_draw_string_left_clipped(
-            dpi, SpeedNames[command.Speed - 1], nullptr, w->colours[1], w->x + w->widgets[WIDX_INPUT].left + 1,
-            w->y + w->widgets[WIDX_INPUT].top, w->widgets[WIDX_INPUT_DROPDOWN].left - w->widgets[WIDX_INPUT].left - 4);
+            dpi, SpeedNames[command.Speed - 1], nullptr, w->colours[1],
+            { w->windowPos.x + w->widgets[WIDX_INPUT].left + 1, w->windowPos.y + w->widgets[WIDX_INPUT].top },
+            w->widgets[WIDX_INPUT_DROPDOWN].left - w->widgets[WIDX_INPUT].left - 4);
     }
     if (command.Type == TITLE_SCRIPT_FOLLOW)
     {
@@ -758,7 +774,7 @@ static void window_title_command_editor_paint(rct_window* w, rct_drawpixelinfo* 
         if (command.SpriteIndex != SPRITE_INDEX_NULL)
         {
             window_draw_viewport(dpi, w);
-            set_format_arg(0, uintptr_t, (uintptr_t)command.SpriteName);
+            Formatter::Common().Add<uintptr_t>(reinterpret_cast<uintptr_t>(command.SpriteName));
         }
         else
         {
@@ -767,26 +783,29 @@ static void window_title_command_editor_paint(rct_window* w, rct_drawpixelinfo* 
         }
 
         gfx_set_dirty_blocks(
-            w->x + w->widgets[WIDX_VIEWPORT].left, w->y + w->widgets[WIDX_VIEWPORT].top, w->x + w->widgets[WIDX_VIEWPORT].right,
-            w->y + w->widgets[WIDX_VIEWPORT].bottom);
+            w->windowPos.x + w->widgets[WIDX_VIEWPORT].left, w->windowPos.y + w->widgets[WIDX_VIEWPORT].top,
+            w->windowPos.x + w->widgets[WIDX_VIEWPORT].right, w->windowPos.y + w->widgets[WIDX_VIEWPORT].bottom);
         gfx_draw_string_left_clipped(
-            dpi, spriteString, gCommonFormatArgs, colour, w->x + w->widgets[WIDX_VIEWPORT].left + 2,
-            w->y + w->widgets[WIDX_VIEWPORT].top + 1, w->widgets[WIDX_VIEWPORT].right - w->widgets[WIDX_VIEWPORT].left - 2);
+            dpi, spriteString, gCommonFormatArgs, colour,
+            { w->windowPos.x + w->widgets[WIDX_VIEWPORT].left + 2, w->windowPos.y + w->widgets[WIDX_VIEWPORT].top + 1 },
+            w->widgets[WIDX_VIEWPORT].right - w->widgets[WIDX_VIEWPORT].left - 2);
     }
     else if (command.Type == TITLE_SCRIPT_LOAD)
     {
         if (command.SaveIndex == SAVE_INDEX_INVALID)
         {
             gfx_draw_string_left_clipped(
-                dpi, STR_TITLE_COMMAND_EDITOR_NO_SAVE_SELECTED, nullptr, w->colours[1], w->x + w->widgets[WIDX_INPUT].left + 1,
-                w->y + w->widgets[WIDX_INPUT].top, w->widgets[WIDX_INPUT_DROPDOWN].left - w->widgets[WIDX_INPUT].left - 4);
+                dpi, STR_TITLE_COMMAND_EDITOR_NO_SAVE_SELECTED, nullptr, w->colours[1],
+                { w->windowPos.x + w->widgets[WIDX_INPUT].left + 1, w->windowPos.y + w->widgets[WIDX_INPUT].top },
+                w->widgets[WIDX_INPUT_DROPDOWN].left - w->widgets[WIDX_INPUT].left - 4);
         }
         else
         {
-            set_format_arg(0, uintptr_t, (uintptr_t)_sequence->Saves[command.SaveIndex]);
+            Formatter::Common().Add<uintptr_t>(reinterpret_cast<uintptr_t>(_sequence->Saves[command.SaveIndex]));
             gfx_draw_string_left_clipped(
-                dpi, STR_STRING, gCommonFormatArgs, w->colours[1], w->x + w->widgets[WIDX_INPUT].left + 1,
-                w->y + w->widgets[WIDX_INPUT].top, w->widgets[WIDX_INPUT_DROPDOWN].left - w->widgets[WIDX_INPUT].left - 4);
+                dpi, STR_STRING, gCommonFormatArgs, w->colours[1],
+                { w->windowPos.x + w->widgets[WIDX_INPUT].left + 1, w->windowPos.y + w->widgets[WIDX_INPUT].top },
+                w->widgets[WIDX_INPUT_DROPDOWN].left - w->widgets[WIDX_INPUT].left - 4);
         }
     }
     else if (command.Type == TITLE_SCRIPT_LOADSC)
@@ -795,7 +814,7 @@ static void window_title_command_editor_paint(rct_window* w, rct_drawpixelinfo* 
         {
             gfx_draw_string_left_clipped(
                 dpi, STR_TITLE_COMMAND_EDITOR_NO_SCENARIO_SELECTED, nullptr, w->colours[1],
-                w->x + w->widgets[WIDX_INPUT].left + 1, w->y + w->widgets[WIDX_INPUT].top,
+                { w->windowPos.x + w->widgets[WIDX_INPUT].left + 1, w->windowPos.y + w->widgets[WIDX_INPUT].top },
                 w->widgets[WIDX_INPUT_DROPDOWN].left - w->widgets[WIDX_INPUT].left - 4);
         }
         else
@@ -811,10 +830,11 @@ static void window_title_command_editor_paint(rct_window* w, rct_drawpixelinfo* 
             {
                 nameString = STR_TITLE_COMMAND_EDITOR_MISSING_SCENARIO;
             }
-            set_format_arg(0, uintptr_t, name);
+            Formatter::Common().Add<const char*>(name);
             gfx_draw_string_left_clipped(
-                dpi, nameString, gCommonFormatArgs, w->colours[1], w->x + w->widgets[WIDX_INPUT].left + 1,
-                w->y + w->widgets[WIDX_INPUT].top, w->widgets[WIDX_INPUT_DROPDOWN].left - w->widgets[WIDX_INPUT].left - 4);
+                dpi, nameString, gCommonFormatArgs, w->colours[1],
+                { w->windowPos.x + w->widgets[WIDX_INPUT].left + 1, w->windowPos.y + w->widgets[WIDX_INPUT].top },
+                w->widgets[WIDX_INPUT_DROPDOWN].left - w->widgets[WIDX_INPUT].left - 4);
         }
     }
 }

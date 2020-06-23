@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2019 OpenRCT2 developers
+ * Copyright (c) 2014-2020 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -23,8 +23,8 @@ void BannerObject::ReadLegacy(IReadObjectContext* context, IStream* stream)
     _legacyType.banner.scrolling_mode = stream->ReadValue<uint8_t>();
     _legacyType.banner.flags = stream->ReadValue<uint8_t>();
     _legacyType.banner.price = stream->ReadValue<int16_t>();
-    _legacyType.banner.scenery_tab_id = stream->ReadValue<uint8_t>();
-    stream->Seek(1, STREAM_SEEK_CURRENT);
+    _legacyType.banner.scenery_tab_id = OBJECT_ENTRY_INDEX_NULL;
+    stream->Seek(2, STREAM_SEEK_CURRENT);
 
     GetStringTable().Read(context, stream, OBJ_STRING_ID_NAME);
 
@@ -41,7 +41,7 @@ void BannerObject::ReadLegacy(IReadObjectContext* context, IStream* stream)
 
     // Add banners to 'Signs and items for footpaths' group, rather than lumping them in the Miscellaneous tab.
     // Since this is already done the other way round for original items, avoid adding those to prevent duplicates.
-    auto identifier = GetIdentifier();
+    auto identifier = GetLegacyIdentifier();
 
     auto& objectRepository = context->GetObjectRepository();
     auto item = objectRepository.FindObject(identifier);

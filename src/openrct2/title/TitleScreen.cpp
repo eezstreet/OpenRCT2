@@ -27,6 +27,7 @@
 #include "../scenario/Scenario.h"
 #include "../scenario/ScenarioRepository.h"
 #include "../ui/UiContext.h"
+#include "../util/Util.h"
 #include "TitleSequence.h"
 #include "TitleSequenceManager.h"
 #include "TitleSequencePlayer.h"
@@ -225,6 +226,62 @@ void TitleScreen::TitleInitialise()
     {
         _sequencePlayer = GetContext()->GetUiContext()->GetTitleSequencePlayer();
     }
+    if (gConfigInterface.random_title_sequence)
+    {
+        bool RCT1Installed = false, RCT1AAInstalled = false, RCT1LLInstalled = false;
+        int RCT1Count = 0;
+        size_t scenarioCount = scenario_repository_get_count();
+
+        for (size_t s = 0; s < scenarioCount; s++)
+        {
+            if (scenario_repository_get_by_index(s)->source_game == SCENARIO_SOURCE_RCT1)
+            {
+                RCT1Count++;
+            }
+            if (scenario_repository_get_by_index(s)->source_game == SCENARIO_SOURCE_RCT1_AA)
+            {
+                RCT1AAInstalled = true;
+            }
+            if (scenario_repository_get_by_index(s)->source_game == SCENARIO_SOURCE_RCT1_LL)
+            {
+                RCT1LLInstalled = true;
+            }
+        }
+
+        // Mega Park can show up in the scenario list even if RCT1 has been uninstalled, so it must be greater than 1
+        if (RCT1Count > 1)
+        {
+            RCT1Installed = true;
+        }
+
+        int32_t random = 0;
+        bool safeSequence = false;
+        std::string RCT1String = format_string(STR_TITLE_SEQUENCE_RCT1, gCommonFormatArgs);
+        std::string RCT1AAString = format_string(STR_TITLE_SEQUENCE_RCT1_AA, gCommonFormatArgs);
+        std::string RCT1LLString = format_string(STR_TITLE_SEQUENCE_RCT1_AA_LL, gCommonFormatArgs);
+
+        // Ensure the random sequence chosen isn't from RCT1 or expansion if the player doesn't have it installed
+        while (!safeSequence)
+        {
+            size_t total = TitleSequenceManager::GetCount();
+            random = util_rand() % static_cast<int32_t>(total);
+            const utf8* scName = title_sequence_manager_get_name(random);
+            safeSequence = true;
+            if (scName == RCT1String)
+            {
+                safeSequence = RCT1Installed;
+            }
+            if (scName == RCT1AAString)
+            {
+                safeSequence = RCT1AAInstalled;
+            }
+            if (scName == RCT1LLString)
+            {
+                safeSequence = RCT1LLInstalled;
+            }
+        }
+        ChangePresetSequence(random);
+    }
     size_t seqId = title_get_config_sequence();
     if (seqId == SIZE_MAX)
     {
@@ -234,7 +291,7 @@ void TitleScreen::TitleInitialise()
             seqId = 0;
         }
     }
-    ChangePresetSequence((int32_t)seqId);
+    ChangePresetSequence(static_cast<int32_t>(seqId));
 }
 
 bool TitleScreen::TryLoadSequence(bool loadPreview)
@@ -373,6 +430,7 @@ bool title_is_previewing_sequence()
 void DrawOpenRCT2(rct_drawpixelinfo* dpi, int32_t x, int32_t y)
 {
     utf8 buffer[256];
+    ScreenCoordsXY screenCoords(x, y);
 
     // Write format codes
     utf8* ch = buffer;
@@ -382,13 +440,13 @@ void DrawOpenRCT2(rct_drawpixelinfo* dpi, int32_t x, int32_t y)
 
     // Write name and version information
     openrct2_write_full_version_info(ch, sizeof(buffer) - (ch - buffer));
-    gfx_draw_string(dpi, buffer, COLOUR_BLACK, x + 5, y + 5 - 13);
+    gfx_draw_string(dpi, buffer, COLOUR_BLACK, screenCoords + ScreenCoordsXY(5, 5 - 13));
 
     // Invalidate screen area
-    int16_t width = (int16_t)gfx_get_string_width(buffer);
+    int16_t width = static_cast<int16_t>(gfx_get_string_width(buffer));
     gfx_set_dirty_blocks(x, y, x + width, y + 30); // 30 is an arbitrary height to catch both strings
 
     // Write platform information
     snprintf(ch, 256 - (ch - buffer), "%s (%s)", OPENRCT2_PLATFORM, OPENRCT2_ARCHITECTURE);
-    gfx_draw_string(dpi, buffer, COLOUR_BLACK, x + 5, y + 5);
+    gfx_draw_string(dpi, buffer, COLOUR_BLACK, screenCoords + ScreenCoordsXY(5, 5));
 }

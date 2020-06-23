@@ -15,8 +15,71 @@
 #include "../core/Guard.hpp"
 #include "../object/Object.h"
 #include "../platform/platform.h"
+#include "../sprites.h"
 #include "../util/Util.h"
+#include "../world/Location.hpp"
 #include "../world/Water.h"
+
+#include <cstring>
+
+const PaletteMap& PaletteMap::GetDefault()
+{
+    static bool initialised = false;
+    static uint8_t data[256];
+    static PaletteMap defaultMap(data);
+    if (!initialised)
+    {
+        for (size_t i = 0; i < sizeof(data); i++)
+        {
+            data[i] = static_cast<uint8_t>(i);
+        }
+    }
+    return defaultMap;
+}
+
+uint8_t& PaletteMap::operator[](size_t index)
+{
+    assert(index < _dataLength);
+
+    // Provide safety in release builds
+    if (index >= _dataLength)
+    {
+        static uint8_t dummy;
+        return dummy;
+    }
+
+    return _data[index];
+}
+
+uint8_t PaletteMap::operator[](size_t index) const
+{
+    assert(index < _dataLength);
+
+    // Provide safety in release builds
+    if (index >= _dataLength)
+    {
+        return 0;
+    }
+
+    return _data[index];
+}
+
+uint8_t PaletteMap::Blend(uint8_t src, uint8_t dst) const
+{
+    // src = 0 would be transparent so there is no blend palette for that, hence (src - 1)
+    assert(src != 0 && (src - 1) < _numMaps);
+    assert(dst < _mapLength);
+    auto idx = ((src - 1) * 256) + dst;
+    return (*this)[idx];
+}
+
+void PaletteMap::Copy(size_t dstIndex, const PaletteMap& src, size_t srcIndex, size_t length)
+{
+    auto maxLength = std::min(_mapLength - srcIndex, _mapLength - dstIndex);
+    assert(length <= maxLength);
+    auto copyLength = std::min(length, maxLength);
+    std::memcpy(&_data[dstIndex], &src._data[srcIndex], copyLength);
+}
 
 // HACK These were originally passed back through registers
 thread_local int32_t gLastDrawStringX;
@@ -267,7 +330,7 @@ const FILTER_PALETTE_ID GlassPaletteIds[COLOUR_COUNT] = {
 };
 
 // Previously 0x97FCBC use it to get the correct palette from g1_elements
-const uint16_t palette_to_g1_offset[PALETTE_TO_G1_OFFSET_COUNT] = {
+static const uint16_t palette_to_g1_offset[PALETTE_TO_G1_OFFSET_COUNT] = {
     SPR_PALETTE_BLACK,
     SPR_PALETTE_GREY,
     SPR_PALETTE_WHITE,
@@ -465,6 +528,32 @@ const translucent_window_palette TranslucentWindowPalettes[COLOUR_COUNT] = {
 };
 // clang-format on
 
+ImageCatalogue ImageId::GetCatalogue() const
+{
+    auto index = GetIndex();
+    if (index == SPR_TEMP)
+    {
+        return ImageCatalogue::TEMPORARY;
+    }
+    else if (index < SPR_RCTC_G1_END)
+    {
+        return ImageCatalogue::G1;
+    }
+    else if (index < SPR_G2_END)
+    {
+        return ImageCatalogue::G2;
+    }
+    else if (index < SPR_CSG_END)
+    {
+        return ImageCatalogue::CSG;
+    }
+    else if (index < SPR_IMAGE_LIST_END)
+    {
+        return ImageCatalogue::OBJECT;
+    }
+    return ImageCatalogue::UNKNOWN;
+}
+
 void (*mask_fn)(
     int32_t width, int32_t height, const uint8_t* RESTRICT maskSrc, const uint8_t* RESTRICT colourSrc, uint8_t* RESTRICT dst,
     int32_t maskWrap, int32_t colourWrap, int32_t dstWrap)
@@ -538,13 +627,13 @@ void load_palette()
         return;
     }
 
-    auto water_type = (rct_water_type*)object_entry_get_chunk(OBJECT_TYPE_WATER, 0);
+    auto water_type = static_cast<rct_water_type*>(object_entry_get_chunk(OBJECT_TYPE_WATER, 0));
 
     uint32_t palette = 0x5FC;
 
     if (water_type != nullptr)
     {
-        openrct2_assert(water_type->image_id != (uint32_t)-1, "Failed to load water palette");
+        openrct2_assert(water_type->image_id != 0xFFFFFFFF, "Failed to load water palette");
         palette = water_type->image_id;
     }
 
@@ -658,4 +747,27 @@ void gfx_draw_pickedup_peep(rct_drawpixelinfo* dpi)
     {
         gfx_draw_sprite(dpi, gPickupPeepImage, gPickupPeepX, gPickupPeepY, 0);
     }
+}
+
+std::optional<uint32_t> GetPaletteG1Index(colour_t paletteId)
+{
+    if (paletteId < std::size(palette_to_g1_offset))
+    {
+        return palette_to_g1_offset[paletteId];
+    }
+    return std::nullopt;
+}
+
+std::optional<PaletteMap> GetPaletteMapForColour(colour_t paletteId)
+{
+    auto g1Index = GetPaletteG1Index(paletteId);
+    if (g1Index)
+    {
+        auto g1 = gfx_get_g1_element(*g1Index);
+        if (g1 != nullptr)
+        {
+            return PaletteMap(g1->offset, g1->height, g1->width);
+        }
+    }
+    return std::nullopt;
 }

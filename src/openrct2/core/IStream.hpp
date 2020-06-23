@@ -24,6 +24,12 @@ enum
     STREAM_SEEK_END
 };
 
+#ifdef __WARN_SUGGEST_FINAL_METHODS__
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wsuggest-final-methods"
+#    pragma GCC diagnostic ignored "-Wsuggest-final-types"
+#endif
+
 /**
  * Represents a stream that can be read or written to. Implemented by types such as FileStream, NetworkStream or MemoryStream.
  */
@@ -49,16 +55,86 @@ interface IStream
 
     virtual uint64_t TryRead(void* buffer, uint64_t length) abstract;
 
+    virtual const void* GetData() const abstract;
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Fast path methods, class can override them to use specialised copies.
+    ///////////////////////////////////////////////////////////////////////////
+    virtual void Read1(void* buffer)
+    {
+        Read(buffer, 1);
+    }
+    virtual void Read2(void* buffer)
+    {
+        Read(buffer, 2);
+    }
+    virtual void Read4(void* buffer)
+    {
+        Read(buffer, 4);
+    }
+    virtual void Read8(void* buffer)
+    {
+        Read(buffer, 8);
+    }
+    virtual void Read16(void* buffer)
+    {
+        Read(buffer, 16);
+    }
+
+    virtual void Write1(const void* buffer)
+    {
+        Write(buffer, 1);
+    }
+    virtual void Write2(const void* buffer)
+    {
+        Write(buffer, 2);
+    }
+    virtual void Write4(const void* buffer)
+    {
+        Write(buffer, 4);
+    }
+    virtual void Write8(const void* buffer)
+    {
+        Write(buffer, 8);
+    }
+    virtual void Write16(const void* buffer)
+    {
+        Write(buffer, 16);
+    }
+
     ///////////////////////////////////////////////////////////////////////////
     // Helper methods
     ///////////////////////////////////////////////////////////////////////////
-
     /**
      * Reads the size of the given type from the stream directly into the given address.
      */
     template<typename T> void Read(T * value)
     {
-        Read(value, sizeof(T));
+        // Selects the best path at compile time
+        if constexpr (sizeof(T) == 1)
+        {
+            Read1(value);
+        }
+        else if constexpr (sizeof(T) == 2)
+        {
+            Read2(value);
+        }
+        else if constexpr (sizeof(T) == 4)
+        {
+            Read4(value);
+        }
+        else if constexpr (sizeof(T) == 8)
+        {
+            Read8(value);
+        }
+        else if constexpr (sizeof(T) == 16)
+        {
+            Read16(value);
+        }
+        else
+        {
+            Read(value, sizeof(T));
+        }
     }
 
     /**
@@ -66,7 +142,31 @@ interface IStream
      */
     template<typename T> void Write(const T* value)
     {
-        Write(value, sizeof(T));
+        // Selects the best path at compile time
+        if constexpr (sizeof(T) == 1)
+        {
+            Write1(value);
+        }
+        else if constexpr (sizeof(T) == 2)
+        {
+            Write2(value);
+        }
+        else if constexpr (sizeof(T) == 4)
+        {
+            Write4(value);
+        }
+        else if constexpr (sizeof(T) == 8)
+        {
+            Write8(value);
+        }
+        else if constexpr (sizeof(T) == 16)
+        {
+            Write16(value);
+        }
+        else
+        {
+            Write(value, sizeof(T));
+        }
     }
 
     /**
@@ -105,6 +205,10 @@ interface IStream
     void WriteString(const std::string& string);
 };
 
+#ifdef __WARN_SUGGEST_FINAL_METHODS__
+#    pragma GCC diagnostic pop
+#endif
+
 class IOException : public std::runtime_error
 {
 public:
@@ -122,7 +226,10 @@ private:
     public:
         explicit vector_streambuf(const std::vector<T>& vec)
         {
-            this->setg((char*)vec.data(), (char*)vec.data(), (char*)(vec.data() + vec.size()));
+            this->setg(
+                reinterpret_cast<char*>(const_cast<unsigned char*>(vec.data())),
+                reinterpret_cast<char*>(const_cast<unsigned char*>(vec.data())),
+                reinterpret_cast<char*>(const_cast<unsigned char*>(vec.data() + vec.size())));
         }
     };
 

@@ -25,6 +25,7 @@
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
+#include <stdexcept>
 
 using namespace Numerics;
 
@@ -50,11 +51,29 @@ const constexpr auto ror32 = ror<uint32_t>;
 const constexpr auto rol64 = rol<uint64_t>;
 const constexpr auto ror64 = ror<uint64_t>;
 
-// Rounds an integer down to the given power of 2. y must be a power of 2.
-#define floor2(x, y) ((x) & (~((y)-1)))
+namespace
+{
+    [[maybe_unused]] constexpr bool is_power_of_2(int v)
+    {
+        return v && ((v & (v - 1)) == 0);
+    }
 
-// Rounds an integer up to the given power of 2. y must be a power of 2.
-#define ceil2(x, y) (((x) + (y)-1) & (~((y)-1)))
+    // Rounds an integer down to the given power of 2. y must be a power of 2.
+    [[maybe_unused]] constexpr int floor2(const int x, const int y)
+    {
+        if (!is_power_of_2(y))
+            throw std::logic_error("floor2 should only operate on power of 2");
+        return x & ~(y - 1);
+    }
+
+    // Rounds an integer up to the given power of 2. y must be a power of 2.
+    [[maybe_unused]] constexpr int ceil2(const int x, const int y)
+    {
+        if (!is_power_of_2(y))
+            throw std::logic_error("ceil2 should only operate on power of 2");
+        return (x + y - 1) & ~(y - 1);
+    }
+} // namespace
 
 // Gets the name of a symbol as a C string
 #define nameof(symbol) #symbol
@@ -69,8 +88,8 @@ const constexpr auto ror64 = ror<uint64_t>;
 
 #    if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 #        define RCT2_ENDIANESS __ORDER_LITTLE_ENDIAN__
-#        define LOBYTE(w) ((uint8_t)(w))
-#        define HIBYTE(w) ((uint8_t)(((uint16_t)(w) >> 8) & 0xFF))
+#        define LOBYTE(w) (static_cast<uint8_t>(w))
+#        define HIBYTE(w) (static_cast<uint8_t>((static_cast<uint16_t>(w) >> 8) & 0xFF))
 #    endif // __BYTE_ORDER__
 
 #    ifndef RCT2_ENDIANESS
@@ -93,7 +112,7 @@ char* strndup(const char* src, size_t size);
 // Time (represented as number of 100-nanosecond intervals since 0001-01-01T00:00:00Z)
 using datetime64 = uint64_t;
 
-#define DATETIME64_MIN ((datetime64)0)
+constexpr const datetime64 DATETIME64_MIN = 0;
 
 // Represent fixed point numbers. dp = decimal point
 using fixed8_1dp = uint8_t;
@@ -120,10 +139,8 @@ using money64 = fixed64_1dp;
 #define MONEY(whole, fraction) ((whole)*10 + ((fraction) / 10))
 
 #define MONEY_FREE MONEY(0, 00)
-#define MONEY16_UNDEFINED (money16)(uint16_t) 0xFFFF
-#define MONEY32_UNDEFINED ((money32)0x80000000)
-
-using BannerIndex = uint8_t;
+#define MONEY16_UNDEFINED static_cast<money16>(static_cast<uint16_t>(0xFFFF))
+#define MONEY32_UNDEFINED (static_cast<money32>(0x80000000))
 
 using EMPTY_ARGS_VOID_POINTER = void();
 using rct_string_id = uint16_t;

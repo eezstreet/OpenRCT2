@@ -21,7 +21,6 @@
 #    include <openrct2/drawing/Drawing.h>
 #    include <openrct2/interface/Colour.h>
 #    include <openrct2/localisation/Localisation.h>
-#    include <openrct2/network/Http.h>
 #    include <openrct2/network/ServerList.h>
 #    include <openrct2/network/network.h>
 #    include <openrct2/platform/platform.h>
@@ -76,8 +75,8 @@ static void window_server_list_resize(rct_window *w);
 static void window_server_list_dropdown(rct_window *w, rct_widgetindex widgetIndex, int32_t dropdownIndex);
 static void window_server_list_update(rct_window *w);
 static void window_server_list_scroll_getsize(rct_window *w, int32_t scrollIndex, int32_t *width, int32_t *height);
-static void window_server_list_scroll_mousedown(rct_window *w, int32_t scrollIndex, int32_t x, int32_t y);
-static void window_server_list_scroll_mouseover(rct_window *w, int32_t scrollIndex, int32_t x, int32_t y);
+static void window_server_list_scroll_mousedown(rct_window *w, int32_t scrollIndex, const ScreenCoordsXY& screenCoords);
+static void window_server_list_scroll_mouseover(rct_window *w, int32_t scrollIndex, const ScreenCoordsXY& screenCoords);
 static void window_server_list_textinput(rct_window *w, rct_widgetindex widgetIndex, char *text);
 static void window_server_list_invalidate(rct_window *w);
 static void window_server_list_paint(rct_window *w, rct_drawpixelinfo *dpi);
@@ -162,7 +161,7 @@ rct_window* window_server_list_open()
     safe_strcpy(_playerName, gConfigNetwork.player_name.c_str(), sizeof(_playerName));
 
     _serverList.ReadAndAddFavourites();
-    window->no_list_items = (uint16_t)_serverList.GetCount();
+    window->no_list_items = static_cast<uint16_t>(_serverList.GetCount());
 
     server_list_fetch_servers_begin();
 
@@ -188,16 +187,17 @@ static void window_server_list_mouseup(rct_window* w, rct_widgetindex widgetInde
         case WIDX_LIST:
         {
             int32_t serverIndex = w->selected_list_item;
-            if (serverIndex >= 0 && serverIndex < (int32_t)_serverList.GetCount())
+            if (serverIndex >= 0 && serverIndex < static_cast<int32_t>(_serverList.GetCount()))
             {
                 const auto& server = _serverList.GetServer(serverIndex);
                 if (server.IsVersionValid())
                 {
-                    join_server(server.address);
+                    join_server(server.Address);
                 }
                 else
                 {
-                    set_format_arg(0, void*, server.version.c_str());
+                    auto ft = Formatter::Common();
+                    ft.Add<void*>(server.Version.c_str());
                     context_show_error(STR_UNABLE_TO_CONNECT_TO_SERVER, STR_MULTIPLAYER_INCORRECT_SOFTWARE_VERSION);
                 }
             }
@@ -223,7 +223,7 @@ static void window_server_list_resize(rct_window* w)
 static void window_server_list_dropdown(rct_window* w, rct_widgetindex widgetIndex, int32_t dropdownIndex)
 {
     auto serverIndex = w->selected_list_item;
-    if (serverIndex >= 0 && serverIndex < (int32_t)_serverList.GetCount())
+    if (serverIndex >= 0 && serverIndex < static_cast<int32_t>(_serverList.GetCount()))
     {
         auto& server = _serverList.GetServer(serverIndex);
         switch (dropdownIndex)
@@ -231,17 +231,18 @@ static void window_server_list_dropdown(rct_window* w, rct_widgetindex widgetInd
             case DDIDX_JOIN:
                 if (server.IsVersionValid())
                 {
-                    join_server(server.address);
+                    join_server(server.Address);
                 }
                 else
                 {
-                    set_format_arg(0, void*, server.version.c_str());
+                    auto ft = Formatter::Common();
+                    ft.Add<void*>(server.Version.c_str());
                     context_show_error(STR_UNABLE_TO_CONNECT_TO_SERVER, STR_MULTIPLAYER_INCORRECT_SOFTWARE_VERSION);
                 }
                 break;
             case DDIDX_FAVOURITE:
             {
-                server.favourite = !server.favourite;
+                server.Favourite = !server.Favourite;
                 _serverList.WriteFavourites();
             }
             break;
@@ -265,19 +266,17 @@ static void window_server_list_scroll_getsize(rct_window* w, int32_t scrollIndex
     *height = w->no_list_items * ITEM_HEIGHT;
 }
 
-static void window_server_list_scroll_mousedown(rct_window* w, int32_t scrollIndex, int32_t x, int32_t y)
+static void window_server_list_scroll_mousedown(rct_window* w, int32_t scrollIndex, const ScreenCoordsXY& screenCoords)
 {
     int32_t serverIndex = w->selected_list_item;
-    if (serverIndex >= 0 && serverIndex < (int32_t)_serverList.GetCount())
+    if (serverIndex >= 0 && serverIndex < static_cast<int32_t>(_serverList.GetCount()))
     {
         const auto& server = _serverList.GetServer(serverIndex);
 
         auto listWidget = &w->widgets[WIDX_LIST];
-        int32_t ddx = w->x + listWidget->left + x + 2 - w->scrolls[0].h_left;
-        int32_t ddy = w->y + listWidget->top + y + 2 - w->scrolls[0].v_top;
 
         gDropdownItemsFormat[0] = STR_JOIN_GAME;
-        if (server.favourite)
+        if (server.Favourite)
         {
             gDropdownItemsFormat[1] = STR_REMOVE_FROM_FAVOURITES;
         }
@@ -285,14 +284,16 @@ static void window_server_list_scroll_mousedown(rct_window* w, int32_t scrollInd
         {
             gDropdownItemsFormat[1] = STR_ADD_TO_FAVOURITES;
         }
-        window_dropdown_show_text(ddx, ddy, 0, COLOUR_GREY, 0, 2);
+        auto dropdownPos = ScreenCoordsXY{ w->windowPos.x + listWidget->left + screenCoords.x + 2 - w->scrolls[0].h_left,
+                                           w->windowPos.y + listWidget->top + screenCoords.y + 2 - w->scrolls[0].v_top };
+        window_dropdown_show_text(dropdownPos, 0, COLOUR_GREY, 0, 2);
     }
 }
 
-static void window_server_list_scroll_mouseover(rct_window* w, int32_t scrollIndex, int32_t x, int32_t y)
+static void window_server_list_scroll_mouseover(rct_window* w, int32_t scrollIndex, const ScreenCoordsXY& screenCoords)
 {
     // Item
-    int32_t index = y / ITEM_HEIGHT;
+    int32_t index = screenCoords.y / ITEM_HEIGHT;
     if (index < 0 || index >= w->no_list_items)
     {
         index = -1;
@@ -308,7 +309,7 @@ static void window_server_list_scroll_mouseover(rct_window* w, int32_t scrollInd
             int32_t bx, by;
 
             server_list_get_item_button(i, 0, sy, width, &bx, &by);
-            if (x >= bx && y >= by && x < bx + 24 && y < by + 24)
+            if (screenCoords.x >= bx && screenCoords.y >= by && screenCoords.x < bx + 24 && screenCoords.y < by + 24)
             {
                 hoverButtonIndex = i;
                 break;
@@ -318,7 +319,7 @@ static void window_server_list_scroll_mouseover(rct_window* w, int32_t scrollInd
 
     int32_t width = w->widgets[WIDX_LIST].right - w->widgets[WIDX_LIST].left;
     int32_t right = width - 3 - 14 - 10;
-    if (x < right)
+    if (screenCoords.x < right)
     {
         w->widgets[WIDX_LIST].tooltip = STR_NONE;
         window_tooltip_close();
@@ -329,7 +330,7 @@ static void window_server_list_scroll_mouseover(rct_window* w, int32_t scrollInd
         w->selected_list_item = index;
         _hoverButtonIndex = hoverButtonIndex;
         window_tooltip_close();
-        window_invalidate(w);
+        w->Invalidate();
     }
 }
 
@@ -362,12 +363,12 @@ static void window_server_list_textinput(rct_window* w, rct_widgetindex widgetIn
         case WIDX_ADD_SERVER:
         {
             ServerListEntry entry;
-            entry.address = text;
-            entry.name = text;
-            entry.favourite = true;
+            entry.Address = text;
+            entry.Name = text;
+            entry.Favourite = true;
             _serverList.Add(entry);
             _serverList.WriteFavourites();
-            window_invalidate(w);
+            w->Invalidate();
             break;
         }
     }
@@ -375,7 +376,8 @@ static void window_server_list_textinput(rct_window* w, rct_widgetindex widgetIn
 
 static void window_server_list_invalidate(rct_window* w)
 {
-    set_format_arg(0, char*, _version.c_str());
+    auto ft = Formatter::Common();
+    ft.Add<char*>(_version.c_str());
     window_server_list_widgets[WIDX_BACKGROUND].right = w->width - 1;
     window_server_list_widgets[WIDX_BACKGROUND].bottom = w->height - 1;
     window_server_list_widgets[WIDX_TITLE].right = w->width - 2;
@@ -399,22 +401,27 @@ static void window_server_list_invalidate(rct_window* w)
     window_server_list_widgets[WIDX_START_SERVER].top = buttonTop;
     window_server_list_widgets[WIDX_START_SERVER].bottom = buttonBottom;
 
-    w->no_list_items = (uint16_t)_serverList.GetCount();
+    w->no_list_items = static_cast<uint16_t>(_serverList.GetCount());
 }
 
 static void window_server_list_paint(rct_window* w, rct_drawpixelinfo* dpi)
 {
     window_draw_widgets(w, dpi);
 
-    gfx_draw_string_left(dpi, STR_PLAYER_NAME, nullptr, COLOUR_WHITE, w->x + 6, w->y + w->widgets[WIDX_PLAYER_NAME_INPUT].top);
+    gfx_draw_string_left(
+        dpi, STR_PLAYER_NAME, nullptr, COLOUR_WHITE,
+        w->windowPos + ScreenCoordsXY{ 6, w->widgets[WIDX_PLAYER_NAME_INPUT].top });
 
     // Draw version number
     std::string version = network_get_version();
     const char* versionCStr = version.c_str();
     gfx_draw_string_left(
-        dpi, STR_NETWORK_VERSION, (void*)&versionCStr, COLOUR_WHITE, w->x + 324, w->y + w->widgets[WIDX_START_SERVER].top + 1);
+        dpi, STR_NETWORK_VERSION, static_cast<void*>(&versionCStr), COLOUR_WHITE,
+        w->windowPos + ScreenCoordsXY{ 324, w->widgets[WIDX_START_SERVER].top + 1 });
 
-    gfx_draw_string_left(dpi, _statusText, (void*)&_numPlayersOnline, COLOUR_WHITE, w->x + 8, w->y + w->height - 15);
+    gfx_draw_string_left(
+        dpi, _statusText, static_cast<void*>(&_numPlayersOnline), COLOUR_WHITE,
+        w->windowPos + ScreenCoordsXY{ 8, w->height - 15 });
 }
 
 static void window_server_list_scrollpaint(rct_window* w, rct_drawpixelinfo* dpi, int32_t scrollIndex)
@@ -424,11 +431,12 @@ static void window_server_list_scrollpaint(rct_window* w, rct_drawpixelinfo* dpi
 
     int32_t width = w->widgets[WIDX_LIST].right - w->widgets[WIDX_LIST].left;
 
-    int32_t y = 0;
+    ScreenCoordsXY screenCoords;
+    screenCoords.y = 0;
     w->widgets[WIDX_LIST].tooltip = STR_NONE;
     for (int32_t i = 0; i < w->no_list_items; i++)
     {
-        if (y >= dpi->y + dpi->height)
+        if (screenCoords.y >= dpi->y + dpi->height)
             continue;
         // if (y + ITEM_HEIGHT < dpi->y) continue;
 
@@ -438,29 +446,31 @@ static void window_server_list_scrollpaint(rct_window* w, rct_drawpixelinfo* dpi
         // Draw hover highlight
         if (highlighted)
         {
-            gfx_filter_rect(dpi, 0, y, width, y + ITEM_HEIGHT, PALETTE_DARKEN_1);
-            _version = serverDetails.version;
+            gfx_filter_rect(dpi, 0, screenCoords.y, width, screenCoords.y + ITEM_HEIGHT, PALETTE_DARKEN_1);
+            _version = serverDetails.Version;
             w->widgets[WIDX_LIST].tooltip = STR_NETWORK_VERSION_TIP;
         }
 
         int32_t colour = w->colours[1];
-        if (serverDetails.favourite)
+        if (serverDetails.Favourite)
         {
             colour = COLOUR_YELLOW;
         }
-        else if (serverDetails.local)
+        else if (serverDetails.Local)
         {
             colour = COLOUR_MOSS_GREEN;
         }
 
+        screenCoords.x = 3;
+
         // Draw server information
-        if (highlighted && !serverDetails.description.empty())
+        if (highlighted && !serverDetails.Description.empty())
         {
-            gfx_draw_string(dpi, serverDetails.description.c_str(), colour, 3, y + 3);
+            gfx_draw_string(dpi, serverDetails.Description.c_str(), colour, screenCoords + ScreenCoordsXY{ 0, 3 });
         }
         else
         {
-            gfx_draw_string(dpi, serverDetails.name.c_str(), colour, 3, y + 3);
+            gfx_draw_string(dpi, serverDetails.Name.c_str(), colour, screenCoords + ScreenCoordsXY{ 0, 3 });
         }
 
         int32_t right = width - 3 - 14;
@@ -468,7 +478,7 @@ static void window_server_list_scrollpaint(rct_window* w, rct_drawpixelinfo* dpi
         // Draw compatibility icon
         right -= 10;
         int32_t compatibilitySpriteId;
-        if (serverDetails.version.empty())
+        if (serverDetails.Version.empty())
         {
             // Server not online...
             compatibilitySpriteId = SPR_G2_RCT1_CLOSE_BUTTON_0;
@@ -476,31 +486,32 @@ static void window_server_list_scrollpaint(rct_window* w, rct_drawpixelinfo* dpi
         else
         {
             // Server online... check version
-            bool correctVersion = serverDetails.version == network_get_version();
+            bool correctVersion = serverDetails.Version == network_get_version();
             compatibilitySpriteId = correctVersion ? SPR_G2_RCT1_OPEN_BUTTON_2 : SPR_G2_RCT1_CLOSE_BUTTON_2;
         }
-        gfx_draw_sprite(dpi, compatibilitySpriteId, right, y + 1, 0);
+        gfx_draw_sprite(dpi, compatibilitySpriteId, right, screenCoords.y + 1, 0);
         right -= 4;
 
         // Draw lock icon
         right -= 8;
-        if (serverDetails.requiresPassword)
+        if (serverDetails.RequiresPassword)
         {
-            gfx_draw_sprite(dpi, SPR_G2_LOCKED, right, y + 4, 0);
+            gfx_draw_sprite(dpi, SPR_G2_LOCKED, right, screenCoords.y + 4, 0);
         }
         right -= 6;
 
         // Draw number of players
         char players[32];
         players[0] = 0;
-        if (serverDetails.maxplayers > 0)
+        if (serverDetails.MaxPlayers > 0)
         {
-            snprintf(players, 32, "%d/%d", serverDetails.players, serverDetails.maxplayers);
+            snprintf(players, 32, "%d/%d", serverDetails.Players, serverDetails.MaxPlayers);
         }
         int32_t numPlayersStringWidth = gfx_get_string_width(players);
-        gfx_draw_string(dpi, players, w->colours[1], right - numPlayersStringWidth, y + 3);
+        screenCoords.x = right - numPlayersStringWidth;
+        gfx_draw_string(dpi, players, w->colours[1], screenCoords + ScreenCoordsXY{ 0, 3 });
 
-        y += ITEM_HEIGHT;
+        screenCoords.y += ITEM_HEIGHT;
     }
 }
 
@@ -521,8 +532,12 @@ static void join_server(std::string address)
     {
         if (endBracketIndex != std::string::npos || dotIndex != std::string::npos)
         {
-            std::sscanf(&address[colonIndex + 1], "%d", &port);
-            address = address.substr(0, colonIndex);
+            auto ret = std::sscanf(&address[colonIndex + 1], "%d", &port);
+            assert(ret);
+            if (ret > 0)
+            {
+                address = address.substr(0, colonIndex);
+            }
         }
     }
 
@@ -611,7 +626,7 @@ static void server_list_fetch_servers_check(rct_window* w)
                 log_warning("Unable to connect to master server: %s", e.what());
             }
             _fetchFuture = {};
-            window_invalidate(w);
+            w->Invalidate();
         }
     }
 }

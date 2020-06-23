@@ -9,6 +9,8 @@
 
 #include "TestTrack.hpp"
 
+#include "../../src/openrct2/ride/RideData.h"
+#include "Data.h"
 #include "FunctionCall.hpp"
 #include "GeneralSupportHeightCall.hpp"
 #include "PaintIntercept.hpp"
@@ -101,14 +103,7 @@ public:
         uint8_t rideType, uint8_t trackType, int variant, TileElement* tileElement, TileElement* surfaceElement, Ride* ride,
         rct_ride_entry* rideEntry) override
     {
-        if (variant == 0)
-        {
-            tileElement->type &= ~TRACK_ELEMENT_TYPE_FLAG_CHAIN_LIFT;
-        }
-        else
-        {
-            tileElement->type |= TRACK_ELEMENT_TYPE_FLAG_CHAIN_LIFT;
-        }
+        tileElement->AsTrack()->SetHasChain(variant != 0);
     }
 };
 
@@ -156,8 +151,7 @@ class EntranceStyleFilter : public ITestTrackFilter
 public:
     bool AppliesTo(uint8_t rideType, uint8_t trackType) override
     {
-        if (trackType == TRACK_ELEM_BEGIN_STATION || trackType == TRACK_ELEM_MIDDLE_STATION
-            || trackType == TRACK_ELEM_END_STATION)
+        if (track_type_is_station(trackType))
         {
             return true;
         }
@@ -199,7 +193,7 @@ static void CallOriginal(
 static void CallNew(
     uint8_t rideType, uint8_t trackType, uint8_t direction, uint8_t trackSequence, uint16_t height, TileElement* tileElement)
 {
-    TRACK_PAINT_FUNCTION_GETTER newPaintFunctionGetter = RideTypeTrackPaintFunctions[rideType];
+    TRACK_PAINT_FUNCTION_GETTER newPaintFunctionGetter = RideTypeDescriptors[rideType].TrackPaintFunction;
     TRACK_PAINT_FUNCTION newPaintFunction = newPaintFunctionGetter(trackType, direction);
 
     newPaintFunction(&gPaintSession, 0, trackSequence, direction, height, tileElement);
@@ -228,8 +222,7 @@ uint8_t TestTrack::TestPaintTrackElement(uint8_t rideType, uint8_t trackType, st
 
     if (rideType == RIDE_TYPE_CHAIRLIFT)
     {
-        if (trackType == TRACK_ELEM_BEGIN_STATION || trackType == TRACK_ELEM_MIDDLE_STATION
-            || trackType == TRACK_ELEM_END_STATION)
+        if (track_type_is_station(trackType))
         {
             // These rides check neighbouring tiles for tracks
             return TEST_SKIPPED;
@@ -269,14 +262,14 @@ static uint8_t TestTrackElementPaintCalls(uint8_t rideType, uint8_t trackType, u
 
     TileElement tileElement = {};
     tileElement.SetType(TILE_ELEMENT_TYPE_TRACK);
-    tileElement.flags |= TILE_ELEMENT_FLAG_LAST_TILE;
+    tileElement.SetLastForTile(true);
     tileElement.AsTrack()->SetTrackType(trackType);
     tileElement.base_height = height / 16;
     g_currently_drawn_item = &tileElement;
 
     TileElement surfaceElement = {};
-    surfaceElement.type = TILE_ELEMENT_TYPE_SURFACE;
-    surfaceElement.base_height = 2;
+    surfaceElement.SetType(TILE_ELEMENT_TYPE_SURFACE);
+    surfaceElement.base_height = MINIMUM_LAND_HEIGHT;
     gSurfaceElement = &surfaceElement;
     gDidPassSurface = true;
 
@@ -432,14 +425,14 @@ static uint8_t TestTrackElementSegmentSupportHeight(
 
     TileElement tileElement = {};
     tileElement.SetType(TILE_ELEMENT_TYPE_TRACK);
-    tileElement.flags |= TILE_ELEMENT_FLAG_LAST_TILE;
+    tileElement.SetLastForTile(true);
     tileElement.AsTrack()->SetTrackType(trackType);
     tileElement.base_height = height / 16;
     g_currently_drawn_item = &tileElement;
 
     TileElement surfaceElement = {};
-    surfaceElement.type = TILE_ELEMENT_TYPE_SURFACE;
-    surfaceElement.base_height = 2;
+    surfaceElement.SetType(TILE_ELEMENT_TYPE_SURFACE);
+    surfaceElement.base_height = MINIMUM_LAND_HEIGHT;
     gSurfaceElement = &surfaceElement;
     gDidPassSurface = true;
 
@@ -519,14 +512,14 @@ static uint8_t TestTrackElementGeneralSupportHeight(
 
     TileElement tileElement = {};
     tileElement.SetType(TILE_ELEMENT_TYPE_TRACK);
-    tileElement.flags |= TILE_ELEMENT_FLAG_LAST_TILE;
+    tileElement.SetLastForTile(true);
     tileElement.AsTrack()->SetTrackType(trackType);
     tileElement.base_height = height / 16;
     g_currently_drawn_item = &tileElement;
 
     TileElement surfaceElement = {};
-    surfaceElement.type = TILE_ELEMENT_TYPE_SURFACE;
-    surfaceElement.base_height = 2;
+    surfaceElement.SetType(TILE_ELEMENT_TYPE_SURFACE);
+    surfaceElement.base_height = MINIMUM_LAND_HEIGHT;
     gSurfaceElement = &surfaceElement;
     gDidPassSurface = true;
 
@@ -620,14 +613,14 @@ static uint8_t TestTrackElementSideTunnels(uint8_t rideType, uint8_t trackType, 
 
     TileElement tileElement = {};
     tileElement.SetType(TILE_ELEMENT_TYPE_TRACK);
-    tileElement.flags |= TILE_ELEMENT_FLAG_LAST_TILE;
+    tileElement.SetLastForTile(true);
     tileElement.AsTrack()->SetTrackType(trackType);
     tileElement.base_height = height / 16;
     g_currently_drawn_item = &tileElement;
 
     TileElement surfaceElement = {};
-    surfaceElement.type = TILE_ELEMENT_TYPE_SURFACE;
-    surfaceElement.base_height = 2;
+    surfaceElement.SetType(TILE_ELEMENT_TYPE_SURFACE);
+    surfaceElement.base_height = MINIMUM_LAND_HEIGHT;
     gSurfaceElement = &surfaceElement;
     gDidPassSurface = true;
 
@@ -748,14 +741,14 @@ static uint8_t TestTrackElementVerticalTunnels(uint8_t rideType, uint8_t trackTy
 
     TileElement tileElement = {};
     tileElement.SetType(TILE_ELEMENT_TYPE_TRACK);
-    tileElement.flags |= TILE_ELEMENT_FLAG_LAST_TILE;
+    tileElement.SetLastForTile(true);
     tileElement.AsTrack()->SetTrackType(trackType);
     tileElement.base_height = height / 16;
     g_currently_drawn_item = &tileElement;
 
     TileElement surfaceElement = {};
-    surfaceElement.type = TILE_ELEMENT_TYPE_SURFACE;
-    surfaceElement.base_height = 2;
+    surfaceElement.SetType(TILE_ELEMENT_TYPE_SURFACE);
+    surfaceElement.base_height = MINIMUM_LAND_HEIGHT;
     gSurfaceElement = &surfaceElement;
     gDidPassSurface = true;
 

@@ -26,6 +26,7 @@
 #include <openrct2/localisation/Localisation.h>
 #include <openrct2/platform/Platform2.h>
 #include <openrct2/platform/platform.h>
+#include <openrct2/rct2/T6Exporter.h>
 #include <openrct2/ride/TrackDesign.h>
 #include <openrct2/scenario/Scenario.h>
 #include <openrct2/title/TitleScreen.h>
@@ -37,8 +38,9 @@
 
 #pragma region Widgets
 
-#define WW 340
-#define WH 400
+static constexpr const rct_string_id WINDOW_TITLE = STR_NONE;
+static constexpr const int32_t WW = 350;
+static constexpr const int32_t WH = 400;
 
 // clang-format off
 enum
@@ -60,14 +62,12 @@ enum
 // 0x9DE48C
 static rct_widget window_loadsave_widgets[] =
 {
-    { WWT_FRAME,        0,      0,                  WW - 1,         0,          WH - 1,     STR_NONE,                           STR_NONE },
-    { WWT_CAPTION,      0,      1,                  WW - 2,         1,          14,         STR_NONE,                           STR_WINDOW_TITLE_TIP },
-    { WWT_CLOSEBOX,     0,      WW - 13,            WW - 3,         2,          13,         STR_CLOSE_X,                        STR_CLOSE_WINDOW_TIP },     //Window close button
+    WINDOW_SHIM(WINDOW_TITLE, WW, WH),
     { WWT_RESIZE,       1,      0,                  WW - 1,         WH - 1,     WH - 1,     0xFFFFFFFF,                         STR_NONE },                 // tab content panel
-    { WWT_BUTTON,       0,      4,                  85,             36,         49,         STR_LOADSAVE_DEFAULT,               STR_LOADSAVE_DEFAULT_TIP }, // Go to default directory
-    { WWT_BUTTON,       0,      86,                 167,            36,         49,         STR_FILEBROWSER_ACTION_UP,          STR_NONE},                  // Up
-    { WWT_BUTTON,       0,      168,                251,            36,         49,         STR_FILEBROWSER_ACTION_NEW_FOLDER,  STR_NONE },                 // New
-    { WWT_BUTTON,       0,      252,                334,            36,         49,         STR_FILEBROWSER_ACTION_NEW_FILE,    STR_NONE },                 // New
+    { WWT_BUTTON,       0,      4,                  87,             36,         49,         STR_LOADSAVE_DEFAULT,               STR_LOADSAVE_DEFAULT_TIP }, // Go to default directory
+    { WWT_BUTTON,       0,      88,                 171,            36,         49,         STR_FILEBROWSER_ACTION_UP,          STR_NONE},                  // Up
+    { WWT_BUTTON,       0,      172,                258,            36,         49,         STR_FILEBROWSER_ACTION_NEW_FOLDER,  STR_NONE },                 // New
+    { WWT_BUTTON,       0,      259,                345,            36,         49,         STR_FILEBROWSER_ACTION_NEW_FILE,    STR_NONE },                 // New
     { WWT_TABLE_HEADER, 0,      4,                  (WW - 5) / 2,   55,         68,         STR_NONE,                           STR_NONE },                 // Name
     { WWT_TABLE_HEADER, 0,      (WW - 5) / 2 + 1,   WW - 5 - 1,     55,         68,         STR_NONE,                           STR_NONE },                 // Date
     { WWT_SCROLL,       0,      4,                  WW - 5,         68,         WH - 30,    SCROLL_VERTICAL,                    STR_NONE },                 // File list
@@ -83,8 +83,8 @@ static void window_loadsave_close(rct_window *w);
 static void window_loadsave_mouseup(rct_window *w, rct_widgetindex widgetIndex);
 static void window_loadsave_resize(rct_window *w);
 static void window_loadsave_scrollgetsize(rct_window *w, int32_t scrollIndex, int32_t *width, int32_t *height);
-static void window_loadsave_scrollmousedown(rct_window *w, int32_t scrollIndex, int32_t x, int32_t y);
-static void window_loadsave_scrollmouseover(rct_window *w, int32_t scrollIndex, int32_t x, int32_t y);
+static void window_loadsave_scrollmousedown(rct_window *w, int32_t scrollIndex, const ScreenCoordsXY& screenCoords);
+static void window_loadsave_scrollmouseover(rct_window *w, int32_t scrollIndex, const ScreenCoordsXY& screenCoords);
 static void window_loadsave_textinput(rct_window *w, rct_widgetindex widgetIndex, char *text);
 static void window_loadsave_compute_max_date_width();
 static void window_loadsave_invalidate(rct_window *w);
@@ -144,6 +144,7 @@ struct LoadSaveListItem
 };
 
 static loadsave_callback _loadSaveCallback;
+static TrackDesign* _trackDesign;
 
 static std::vector<LoadSaveListItem> _listItems;
 static char _directory[MAX_PATH];
@@ -250,9 +251,10 @@ static int32_t window_loadsave_get_dir(const int32_t type, char* path, size_t pa
 
 static bool browse(bool isSave, char* path, size_t pathSize);
 
-rct_window* window_loadsave_open(int32_t type, const char* defaultName, loadsave_callback callback)
+rct_window* window_loadsave_open(int32_t type, const char* defaultName, loadsave_callback callback, TrackDesign* trackDesign)
 {
     _loadSaveCallback = callback;
+    _trackDesign = trackDesign;
     _type = type;
     _defaultName[0] = '\0';
 
@@ -340,12 +342,12 @@ static void window_loadsave_resize(rct_window* w)
 {
     if (w->width < w->min_width)
     {
-        window_invalidate(w);
+        w->Invalidate();
         w->width = w->min_width;
     }
     if (w->height < w->min_height)
     {
-        window_invalidate(w);
+        w->Invalidate();
         w->height = w->min_height;
     }
 }
@@ -460,7 +462,8 @@ static void window_loadsave_mouseup(rct_window* w, rct_widgetindex widgetIndex)
 
         case WIDX_NEW_FILE:
             window_text_input_open(
-                w, WIDX_NEW_FILE, STR_NONE, STR_FILEBROWSER_FILE_NAME_PROMPT, STR_STRING, (uintptr_t)&_defaultName, 64);
+                w, WIDX_NEW_FILE, STR_NONE, STR_FILEBROWSER_FILE_NAME_PROMPT, STR_STRING,
+                reinterpret_cast<uintptr_t>(&_defaultName), 64);
             break;
 
         case WIDX_NEW_FOLDER:
@@ -493,7 +496,7 @@ static void window_loadsave_mouseup(rct_window* w, rct_widgetindex widgetIndex)
             }
             config_save_default();
             window_loadsave_sort_list();
-            window_invalidate(w);
+            w->Invalidate();
             break;
 
         case WIDX_SORT_DATE:
@@ -507,7 +510,7 @@ static void window_loadsave_mouseup(rct_window* w, rct_widgetindex widgetIndex)
             }
             config_save_default();
             window_loadsave_sort_list();
-            window_invalidate(w);
+            w->Invalidate();
             break;
 
         case WIDX_DEFAULT:
@@ -524,11 +527,11 @@ static void window_loadsave_scrollgetsize(rct_window* w, int32_t scrollIndex, in
     *height = w->no_list_items * SCROLLABLE_ROW_HEIGHT;
 }
 
-static void window_loadsave_scrollmousedown(rct_window* w, int32_t scrollIndex, int32_t x, int32_t y)
+static void window_loadsave_scrollmousedown(rct_window* w, int32_t scrollIndex, const ScreenCoordsXY& screenCoords)
 {
     int32_t selectedItem;
 
-    selectedItem = y / SCROLLABLE_ROW_HEIGHT;
+    selectedItem = screenCoords.y / SCROLLABLE_ROW_HEIGHT;
     if (selectedItem >= w->no_list_items)
         return;
 
@@ -560,17 +563,17 @@ static void window_loadsave_scrollmousedown(rct_window* w, int32_t scrollIndex, 
     }
 }
 
-static void window_loadsave_scrollmouseover(rct_window* w, int32_t scrollIndex, int32_t x, int32_t y)
+static void window_loadsave_scrollmouseover(rct_window* w, int32_t scrollIndex, const ScreenCoordsXY& screenCoords)
 {
     int32_t selectedItem;
 
-    selectedItem = y / SCROLLABLE_ROW_HEIGHT;
+    selectedItem = screenCoords.y / SCROLLABLE_ROW_HEIGHT;
     if (selectedItem >= w->no_list_items)
         return;
 
     w->selected_list_item = selectedItem;
 
-    window_invalidate(w);
+    w->Invalidate();
 }
 
 static void window_loadsave_textinput(rct_window* w, rct_widgetindex widgetIndex, char* text)
@@ -606,7 +609,7 @@ static void window_loadsave_textinput(rct_window* w, rct_widgetindex widgetIndex
             window_init_scroll_widgets(w);
 
             w->no_list_items = static_cast<uint16_t>(_listItems.size());
-            window_invalidate(w);
+            w->Invalidate();
             break;
 
         case WIDX_NEW_FILE:
@@ -632,34 +635,49 @@ static void window_loadsave_textinput(rct_window* w, rct_widgetindex widgetIndex
     }
 }
 
+constexpr uint16_t DATE_TIME_GAP = 2;
+
 static void window_loadsave_compute_max_date_width()
 {
-    // Generate a time object for a relatively wide time: 2000-10-20 00:00:00
+    // Generate a time object for a relatively wide time: 2000-02-20 00:00:00
     std::tm tm;
     tm.tm_sec = 0;
     tm.tm_min = 0;
     tm.tm_hour = 0;
     tm.tm_mday = 20;
-    tm.tm_mon = 9;
+    tm.tm_mon = 2;
     tm.tm_year = 100;
     tm.tm_wday = 5;
-    tm.tm_yday = 294;
+    tm.tm_yday = 51;
     tm.tm_isdst = -1;
 
     std::time_t long_time = mktime(&tm);
 
+    // Check how how this date is represented (e.g. 2000-02-20, or 00/02/20)
     std::string date = Platform::FormatShortDate(long_time);
-    maxDateWidth = gfx_get_string_width(date.c_str());
+    maxDateWidth = gfx_get_string_width(date.c_str()) + DATE_TIME_GAP;
 
+    // Some locales do not use leading zeros for months and days, so let's try October, too.
+    tm.tm_mon = 10;
+    tm.tm_yday = 294;
+    long_time = mktime(&tm);
+
+    // Again, check how how this date is represented (e.g. 2000-10-20, or 00/10/20)
+    date = Platform::FormatShortDate(long_time);
+    maxDateWidth = std::max(maxDateWidth, gfx_get_string_width(date.c_str()) + DATE_TIME_GAP);
+
+    // Time appears to be universally represented with two digits for minutes, so 12:00 or 00:00 should be representable.
     std::string time = Platform::FormatTime(long_time);
-    maxTimeWidth = gfx_get_string_width(time.c_str());
+    maxTimeWidth = gfx_get_string_width(time.c_str()) + DATE_TIME_GAP;
 }
 
 static void window_loadsave_invalidate(rct_window* w)
 {
     window_loadsave_widgets[WIDX_TITLE].right = w->width - 2;
+    // close button has to move if it's on the right side
     window_loadsave_widgets[WIDX_CLOSE].left = w->width - 13;
     window_loadsave_widgets[WIDX_CLOSE].right = w->width - 3;
+
     window_loadsave_widgets[WIDX_BACKGROUND].right = w->width - 1;
     window_loadsave_widgets[WIDX_BACKGROUND].bottom = w->height - 1;
     window_loadsave_widgets[WIDX_RESIZE].top = w->height - 1;
@@ -667,8 +685,8 @@ static void window_loadsave_invalidate(rct_window* w)
     window_loadsave_widgets[WIDX_RESIZE].bottom = w->height - 1;
 
     rct_widget* date_widget = &window_loadsave_widgets[WIDX_SORT_DATE];
-    date_widget->left = w->width - maxDateWidth - maxTimeWidth - 24;
     date_widget->right = w->width - 5;
+    date_widget->left = date_widget->right - (maxDateWidth + maxTimeWidth + (4 * DATE_TIME_GAP) + (SCROLLBAR_WIDTH + 1));
 
     window_loadsave_widgets[WIDX_SORT_NAME].left = 4;
     window_loadsave_widgets[WIDX_SORT_NAME].right = window_loadsave_widgets[WIDX_SORT_DATE].left - 1;
@@ -698,12 +716,10 @@ static void window_loadsave_paint(rct_window* w, rct_drawpixelinfo* dpi)
     safe_strcpy(ch, _shortenedDirectory, sizeof(buffer) - (ch - buffer));
 
     // Draw path text
-#ifdef __APPLE__
-    set_format_arg(0, uintptr_t, (uintptr_t)macos_str_decomp_to_precomp(buffer));
-#else
-    set_format_arg(0, uintptr_t, (uintptr_t)buffer);
-#endif
-    gfx_draw_string_left_clipped(dpi, STR_STRING, gCommonFormatArgs, COLOUR_BLACK, w->x + 4, w->y + 20, w->width - 8);
+    auto ft = Formatter::Common();
+    ft.Add<uintptr_t>(Platform::StrDecompToPrecomp(buffer));
+    gfx_draw_string_left_clipped(
+        dpi, STR_STRING, gCommonFormatArgs, COLOUR_BLACK, { w->windowPos.x + 4, w->windowPos.y + 20 }, w->width - 8);
 
     // Name button text
     rct_string_id id = STR_NONE;
@@ -714,7 +730,8 @@ static void window_loadsave_paint(rct_window* w, rct_drawpixelinfo* dpi)
 
     // Draw name button indicator.
     rct_widget sort_name_widget = window_loadsave_widgets[WIDX_SORT_NAME];
-    gfx_draw_string_left(dpi, STR_NAME, &id, COLOUR_GREY, w->x + sort_name_widget.left + 11, w->y + sort_name_widget.top + 1);
+    gfx_draw_string_left(
+        dpi, STR_NAME, &id, COLOUR_GREY, w->windowPos + ScreenCoordsXY{ sort_name_widget.left + 11, sort_name_widget.top + 1 });
 
     // Date button text
     if (gConfigGeneral.load_save_sort == SORT_DATE_ASCENDING)
@@ -725,13 +742,15 @@ static void window_loadsave_paint(rct_window* w, rct_drawpixelinfo* dpi)
         id = STR_NONE;
 
     rct_widget sort_date_widget = window_loadsave_widgets[WIDX_SORT_DATE];
-    gfx_draw_string_left(dpi, STR_DATE, &id, COLOUR_GREY, w->x + sort_date_widget.left + 5, w->y + sort_date_widget.top + 1);
+    gfx_draw_string_left(
+        dpi, STR_DATE, &id, COLOUR_GREY, w->windowPos + ScreenCoordsXY{ sort_date_widget.left + 5, sort_date_widget.top + 1 });
 }
 
 static void window_loadsave_scrollpaint(rct_window* w, rct_drawpixelinfo* dpi, int32_t scrollIndex)
 {
     gfx_fill_rect(dpi, dpi->x, dpi->y, dpi->x + dpi->width - 1, dpi->y + dpi->height - 1, ColourMapA[w->colours[1]].mid_light);
     const int32_t listWidth = w->widgets[WIDX_SCROLL].right - w->widgets[WIDX_SCROLL].left;
+    const int32_t dateAnchor = w->widgets[WIDX_SORT_DATE].left + maxDateWidth + DATE_TIME_GAP;
 
     for (int32_t i = 0; i < w->no_list_items; i++)
     {
@@ -753,27 +772,32 @@ static void window_loadsave_scrollpaint(rct_window* w, rct_drawpixelinfo* dpi, i
         // display a marker next to the currently loaded game file
         if (_listItems[i].loaded)
         {
-            set_format_arg(0, rct_string_id, STR_RIGHTGUILLEMET);
-            gfx_draw_string_left(dpi, stringId, gCommonFormatArgs, COLOUR_BLACK, 0, y);
+            auto ft = Formatter::Common();
+            ft.Add<rct_string_id>(STR_RIGHTGUILLEMET);
+            gfx_draw_string_left(dpi, stringId, gCommonFormatArgs, COLOUR_BLACK, { 0, y });
         }
 
         // Print filename
-        set_format_arg(0, rct_string_id, STR_STRING);
-        set_format_arg(2, char*, _listItems[i].name.c_str());
+        auto ft = Formatter::Common();
+        ft.Add<rct_string_id>(STR_STRING);
+        ft.Add<char*>(_listItems[i].name.c_str());
         int32_t max_file_width = w->widgets[WIDX_SORT_NAME].right - w->widgets[WIDX_SORT_NAME].left - 10;
-        gfx_draw_string_left_clipped(dpi, stringId, gCommonFormatArgs, COLOUR_BLACK, 10, y, max_file_width);
+        gfx_draw_string_left_clipped(dpi, stringId, gCommonFormatArgs, COLOUR_BLACK, { 10, y }, max_file_width);
 
         // Print formatted modified date, if this is a file
         if (_listItems[i].type == TYPE_FILE)
         {
-            int32_t offset = w->widgets[WIDX_SORT_DATE].left + maxDateWidth;
+            ft = Formatter::Common();
+            ft.Add<rct_string_id>(STR_STRING);
+            ft.Add<char*>(_listItems[i].date_formatted.c_str());
+            gfx_draw_string_right_clipped(
+                dpi, stringId, gCommonFormatArgs, COLOUR_BLACK, { dateAnchor - DATE_TIME_GAP, y }, maxDateWidth);
 
-            set_format_arg(0, rct_string_id, STR_STRING);
-            set_format_arg(2, char*, _listItems[i].date_formatted.c_str());
-            gfx_draw_string_right_clipped(dpi, stringId, gCommonFormatArgs, COLOUR_BLACK, offset - 2, y, maxDateWidth);
-
-            set_format_arg(2, char*, _listItems[i].time_formatted.c_str());
-            gfx_draw_string_left_clipped(dpi, stringId, gCommonFormatArgs, COLOUR_BLACK, offset + 2, y, maxTimeWidth);
+            ft = Formatter::Common();
+            ft.Add<rct_string_id>(STR_STRING);
+            ft.Add<char*>(_listItems[i].time_formatted.c_str());
+            gfx_draw_string_left_clipped(
+                dpi, stringId, gCommonFormatArgs, COLOUR_BLACK, { dateAnchor + DATE_TIME_GAP, y }, maxTimeWidth);
         }
     }
 }
@@ -939,7 +963,7 @@ static void window_loadsave_populate_list(rct_window* w, int32_t includeNewItem,
         window_loadsave_sort_list();
     }
 
-    window_invalidate(w);
+    w->Invalidate();
 }
 
 static void window_loadsave_invoke_callback(int32_t result, const utf8* path)
@@ -1081,8 +1105,13 @@ static void window_loadsave_select(rct_window* w, const char* path)
 
         case (LOADSAVETYPE_SAVE | LOADSAVETYPE_TRACK):
         {
+            save_path(&gConfigGeneral.last_save_track_directory, pathBuffer);
+
             path_set_extension(pathBuffer, "td6", sizeof(pathBuffer));
-            int32_t success = track_design_save_to_file(pathBuffer);
+
+            T6Exporter t6Export{ _trackDesign };
+
+            auto success = t6Export.SaveTrack(pathBuffer);
 
             if (success)
             {
@@ -1107,8 +1136,8 @@ static void window_loadsave_select(rct_window* w, const char* path)
 
 #pragma region Overwrite prompt
 
-#define OVERWRITE_WW 200
-#define OVERWRITE_WH 100
+constexpr int32_t OVERWRITE_WW = 200;
+constexpr int32_t OVERWRITE_WH = 100;
 
 enum
 {
@@ -1120,9 +1149,7 @@ enum
 };
 
 static rct_widget window_overwrite_prompt_widgets[] = {
-    { WWT_FRAME, 0, 0, OVERWRITE_WW - 1, 0, OVERWRITE_WH - 1, STR_NONE, STR_NONE },
-    { WWT_CAPTION, 0, 1, OVERWRITE_WW - 2, 1, 14, STR_FILEBROWSER_OVERWRITE_TITLE, STR_WINDOW_TITLE_TIP },
-    { WWT_CLOSEBOX, 0, OVERWRITE_WW - 13, OVERWRITE_WW - 3, 2, 13, STR_CLOSE_X, STR_CLOSE_WINDOW_TIP },
+    WINDOW_SHIM_WHITE(STR_FILEBROWSER_OVERWRITE_TITLE, OVERWRITE_WW, OVERWRITE_WH),
     { WWT_BUTTON, 0, 10, 94, OVERWRITE_WH - 20, OVERWRITE_WH - 9, STR_FILEBROWSER_OVERWRITE_TITLE, STR_NONE },
     { WWT_BUTTON, 0, OVERWRITE_WW - 95, OVERWRITE_WW - 11, OVERWRITE_WH - 20, OVERWRITE_WH - 9, STR_SAVE_PROMPT_CANCEL,
       STR_NONE },
@@ -1214,12 +1241,13 @@ static void window_overwrite_prompt_paint(rct_window* w, rct_drawpixelinfo* dpi)
 {
     window_draw_widgets(w, dpi);
 
-    set_format_arg(0, rct_string_id, STR_STRING);
-    set_format_arg(2, char*, _window_overwrite_prompt_name);
+    auto ft = Formatter::Common();
+    ft.Add<rct_string_id>(STR_STRING);
+    ft.Add<char*>(_window_overwrite_prompt_name);
 
-    int32_t x = w->x + w->width / 2;
-    int32_t y = w->y + (w->height / 2) - 3;
-    gfx_draw_string_centred_wrapped(dpi, gCommonFormatArgs, x, y, w->width - 4, STR_FILEBROWSER_OVERWRITE_PROMPT, COLOUR_BLACK);
+    ScreenCoordsXY stringCoords(w->windowPos.x + w->width / 2, w->windowPos.y + (w->height / 2) - 3);
+    gfx_draw_string_centred_wrapped(
+        dpi, gCommonFormatArgs, stringCoords, w->width - 4, STR_FILEBROWSER_OVERWRITE_PROMPT, COLOUR_BLACK);
 }
 
 #pragma endregion

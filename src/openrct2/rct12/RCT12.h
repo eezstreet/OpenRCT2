@@ -12,41 +12,201 @@
 // Structures shared between both RCT1 and RCT2.
 
 #include "../common.h"
+#include "../object/Object.h"
 #include "../world/Location.hpp"
 
-#define RCT12_MAX_RIDES_IN_PARK 255
-#define RCT12_MAX_AWARDS 4
-#define RCT12_MAX_NEWS_ITEMS 61
-#define RCT12_MAX_STATIONS_PER_RIDE 4
-#define RCT12_MAX_PEEP_SPAWNS 2
-#define RCT12_MAX_PARK_ENTRANCES 4
+#include <string>
+#include <string_view>
+
+constexpr const uint8_t RCT12_MAX_RIDES_IN_PARK = 255;
+constexpr const uint8_t RCT12_MAX_AWARDS = 4;
+constexpr const uint8_t RCT12_MAX_NEWS_ITEMS = 61;
+constexpr const uint8_t RCT12_MAX_STATIONS_PER_RIDE = 4;
+constexpr const uint8_t RCT12_MAX_PEEP_SPAWNS = 2;
+constexpr const uint8_t RCT12_MAX_PARK_ENTRANCES = 4;
 // The number of elements in the patrol_areas array per staff member. Every bit in the array represents a 4x4 square.
 // In RCT1, that's an 8-bit array. 8 * 128 = 1024 bits, which is also the number of 4x4 squares on a 128x128 map.
 // For RCT2, it's a 32-bit array. 32 * 128 = 4096 bits, which is also the number of 4x4 squares on a 256x256 map.
-#define RCT12_PATROL_AREA_SIZE 128
-#define RCT12_STAFF_TYPE_COUNT 4
-#define RCT12_NUM_COLOUR_SCHEMES 4
-#define RCT12_MAX_VEHICLES_PER_RIDE 32
-#define RCT12_MAX_VEHICLE_COLOURS 32
-#define RCT12_SOUND_ID_NULL 0xFF
+constexpr const uint8_t RCT12_PATROL_AREA_SIZE = 128;
+constexpr const uint8_t RCT12_STAFF_TYPE_COUNT = 4;
+constexpr const uint8_t RCT12_NUM_COLOUR_SCHEMES = 4;
+constexpr const uint8_t RCT12_MAX_VEHICLE_COLOURS = 32;
+constexpr const uint8_t RCT12_SOUND_ID_NULL = 0xFF;
 
-#define RCT12_EXPENDITURE_TABLE_MONTH_COUNT 16
-#define RCT12_EXPENDITURE_TYPE_COUNT 14
-#define RCT12_FINANCE_GRAPH_SIZE 128
+constexpr const uint8_t RCT12_EXPENDITURE_TABLE_MONTH_COUNT = 16;
+constexpr const uint8_t RCT12_EXPENDITURE_TYPE_COUNT = 14;
+constexpr const uint8_t RCT12_FINANCE_GRAPH_SIZE = 128;
 
-#define RCT12_MAX_USER_STRINGS 1024
-#define RCT12_USER_STRING_MAX_LENGTH 32
+constexpr const uint16_t RCT12_MAX_USER_STRINGS = 1024;
+constexpr const uint8_t RCT12_USER_STRING_MAX_LENGTH = 32;
 
-#define RCT12_PEEP_MAX_THOUGHTS 5
+constexpr const uint8_t RCT12_PEEP_MAX_THOUGHTS = 5;
 
-#define RCT12_RIDE_ID_NULL 255
-#define RCT12_RIDE_MEASUREMENT_MAX_ITEMS 4800
+constexpr const uint8_t RCT12_RIDE_ID_NULL = 255;
+constexpr const uint16_t RCT12_RIDE_MEASUREMENT_MAX_ITEMS = 4800;
 
 constexpr uint16_t const RCT12_MAX_INVERSIONS = 31;
 constexpr uint16_t const RCT12_MAX_GOLF_HOLES = 31;
 constexpr uint16_t const RCT12_MAX_HELICES = 31;
 
+constexpr uint8_t RCT12_BANNER_INDEX_NULL = std::numeric_limits<uint8_t>::max();
+
+constexpr const uint8_t RCT12_TILE_ELEMENT_SURFACE_EDGE_STYLE_MASK = 0xE0;   // in RCT12TileElement.properties.surface.slope
+constexpr const uint8_t RCT12_TILE_ELEMENT_SURFACE_WATER_HEIGHT_MASK = 0x1F; // in RCT12TileElement.properties.surface.terrain
+constexpr const uint8_t RCT12_TILE_ELEMENT_SURFACE_TERRAIN_MASK = 0xE0;      // in RCT12TileElement.properties.surface.terrain
+
+constexpr uint16_t const RCT12_XY8_UNDEFINED = 0xFFFF;
+
+using RCT12ObjectEntryIndex = uint8_t;
+constexpr const RCT12ObjectEntryIndex RCT12_OBJECT_ENTRY_INDEX_NULL = 255;
+
+// Everything before this point has been researched
+constexpr const uint32_t RCT12_RESEARCHED_ITEMS_SEPARATOR = 0xFFFFFFFF;
+// Everything before this point and after separator still requires research
+constexpr const uint32_t RCT12_RESEARCHED_ITEMS_END = 0xFFFFFFFE;
+// Extra end of list entry. Leftover from RCT1.
+constexpr const uint32_t RCT12_RESEARCHED_ITEMS_END_2 = 0xFFFFFFFD;
+
+constexpr const uint8_t RCT12_MAX_ELEMENT_HEIGHT = 255;
+
+enum class RCT12TrackDesignVersion : uint8_t
+{
+    TD4,
+    TD4_AA,
+    TD6,
+    unknown
+};
+
+enum
+{
+    RCT12_TILE_ELEMENT_FLAG_GHOST = (1 << 4),
+    RCT12_TILE_ELEMENT_FLAG_BROKEN = (1 << 5),
+    RCT12_TILE_ELEMENT_FLAG_BLOCK_BRAKE_CLOSED = (1 << 5),
+    RCT12_TILE_ELEMENT_FLAG_INDESTRUCTIBLE_TRACK_PIECE = (1 << 6),
+    RCT12_TILE_ELEMENT_FLAG_BLOCKED_BY_VEHICLE = (1 << 6),
+    RCT12_TILE_ELEMENT_FLAG_LARGE_SCENERY_ACCOUNTED = (1 << 6),
+    RCT12_TILE_ELEMENT_FLAG_LAST_TILE = (1 << 7)
+};
+
+enum
+{
+    RCT12_TRACK_ELEMENT_TYPE_FLAG_CHAIN_LIFT = 1 << 7,
+};
+
+enum
+{
+    RCT12_TRACK_ELEMENT_SEQUENCE_STATION_INDEX_MASK = 0b01110000,
+    RCT12_TRACK_ELEMENT_SEQUENCE_SEQUENCE_MASK = 0b00001111,
+    RCT12_TRACK_ELEMENT_SEQUENCE_TAKING_PHOTO_MASK = 0b11110000,
+};
+
+enum
+{
+    // Not anything to do with colour but uses
+    // that field in the tile element
+
+    // Used for multi-dimension coaster
+    RCT12_TRACK_ELEMENT_COLOUR_FLAG_INVERTED = (1 << 2),
+
+    // Used for giga coaster
+    RCT12_TRACK_ELEMENT_COLOUR_FLAG_CABLE_LIFT = (1 << 3),
+
+    RCT12_TRACK_ELEMENT_DOOR_A_MASK = 0b00011100,
+    RCT12_TRACK_ELEMENT_DOOR_B_MASK = 0b11100000,
+};
+
+// Masks and flags for values stored in TileElement.properties.path.type
+enum
+{
+    RCT12_FOOTPATH_PROPERTIES_SLOPE_DIRECTION_MASK = (1 << 0) | (1 << 1),
+    RCT12_FOOTPATH_PROPERTIES_FLAG_IS_SLOPED = (1 << 2),
+    RCT12_FOOTPATH_PROPERTIES_FLAG_HAS_QUEUE_BANNER = (1 << 3),
+    RCT12_FOOTPATH_PROPERTIES_TYPE_MASK = (1 << 4) | (1 << 5) | (1 << 6) | (1 << 7),
+};
+
+// Masks and flags for values stored in in RCT12TileElement.properties.path.additions
+enum
+{
+    RCT12_FOOTPATH_PROPERTIES_ADDITIONS_TYPE_MASK = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3),
+    // The most significant bit in this mask will always be zero, since rides can only have 4 stations
+    RCT12_FOOTPATH_PROPERTIES_ADDITIONS_STATION_INDEX_MASK = (1 << 4) | (1 << 5) | (1 << 6),
+    RCT12_FOOTPATH_PROPERTIES_ADDITIONS_FLAG_GHOST = (1 << 7),
+};
+
+enum
+{
+    RCT12_STATION_STYLE_PLAIN,
+    RCT12_STATION_STYLE_WOODEN,
+    RCT12_STATION_STYLE_CANVAS_TENT,
+    RCT12_STATION_STYLE_CASTLE_GREY,
+    RCT12_STATION_STYLE_CASTLE_BROWN,
+    RCT12_STATION_STYLE_JUNGLE,
+    RCT12_STATION_STYLE_LOG_CABIN,
+    RCT12_STATION_STYLE_CLASSICAL,
+    RCT12_STATION_STYLE_ABSTRACT,
+    RCT12_STATION_STYLE_SNOW,
+    RCT12_STATION_STYLE_PAGODA,
+    RCT12_STATION_STYLE_SPACE,
+
+    RCT12_STATION_STYLE_INVISIBLE, // Added by OpenRCT2
+};
+
 #pragma pack(push, 1)
+
+struct RCT12xy8
+{
+    union
+    {
+        struct
+        {
+            uint8_t x, y;
+        };
+        uint16_t xy;
+    };
+
+    bool isNull() const
+    {
+        return xy == RCT12_XY8_UNDEFINED;
+    }
+
+    void setNull()
+    {
+        xy = RCT12_XY8_UNDEFINED;
+    }
+};
+assert_struct_size(RCT12xy8, 2);
+
+/* Maze Element entry   size: 0x04 */
+struct rct_td46_maze_element
+{
+    union
+    {
+        uint32_t all;
+        struct
+        {
+            int8_t x;
+            int8_t y;
+            union
+            {
+                uint16_t maze_entry;
+                struct
+                {
+                    uint8_t direction;
+                    uint8_t type;
+                };
+            };
+        };
+    };
+};
+assert_struct_size(rct_td46_maze_element, 0x04);
+
+/* Track Element entry  size: 0x02 */
+struct rct_td46_track_element
+{
+    uint8_t type;  // 0x00
+    uint8_t flags; // 0x01
+};
+assert_struct_size(rct_td46_track_element, 0x02);
 
 struct rct12_award
 {
@@ -116,13 +276,20 @@ struct RCT12EightCarsCorruptElement15;
 struct RCT12TileElementBase
 {
     uint8_t type;             // 0
-    uint8_t flags;            // 1
+    uint8_t flags;            // 1. Upper nibble: flags. Lower nibble: occupied quadrants (one bit per quadrant).
     uint8_t base_height;      // 2
     uint8_t clearance_height; // 3
     uint8_t GetType() const;
     uint8_t GetDirection() const;
+    void SetDirection(uint8_t direction);
+
+    uint8_t GetOccupiedQuadrants() const;
+    void SetOccupiedQuadrants(uint8_t quadrants);
+
     bool IsLastForTile() const;
+    void SetLastForTile(bool on);
     bool IsGhost() const;
+    void SetGhost(bool isGhost);
 };
 /**
  * Map element structure
@@ -133,7 +300,9 @@ struct RCT12TileElement : public RCT12TileElementBase
     uint8_t pad_04[4];
     template<typename TType, RCT12TileElementType TClass> TType* as() const
     {
-        return (RCT12TileElementType)GetType() == TClass ? (TType*)this : nullptr;
+        return static_cast<RCT12TileElementType>(GetType()) == TClass
+            ? reinterpret_cast<TType*>(const_cast<RCT12TileElement*>(this))
+            : nullptr;
     }
 
     RCT12SurfaceElement* AsSurface() const
@@ -169,6 +338,7 @@ struct RCT12TileElement : public RCT12TileElementBase
         return as<RCT12BannerElement, RCT12TileElementType::Banner>();
     }
     void ClearAs(uint8_t newType);
+    uint8_t GetBannerIndex();
 };
 assert_struct_size(RCT12TileElement, 8);
 struct RCT12SurfaceElement : RCT12TileElementBase
@@ -187,6 +357,15 @@ public:
     uint32_t GetWaterHeight() const;
     uint8_t GetParkFences() const;
     bool HasTrackThatNeedsWater() const;
+
+    void SetSlope(uint8_t newSlope);
+    void SetSurfaceStyle(uint32_t newStyle);
+    void SetEdgeStyle(uint32_t newStyle);
+    void SetGrassLength(uint8_t newLength);
+    void SetOwnership(uint8_t newOwnership);
+    void SetWaterHeight(uint32_t newWaterHeight);
+    void SetParkFences(uint8_t newParkFences);
+    void SetHasTrackThatNeedsWater(bool on);
 };
 assert_struct_size(RCT12SurfaceElement, 8);
 struct RCT12PathElement : RCT12TileElementBase
@@ -202,7 +381,7 @@ private:
     };
 
 public:
-    uint8_t GetEntryIndex() const;
+    RCT12ObjectEntryIndex GetEntryIndex() const;
     uint8_t GetQueueBannerDirection() const;
     bool IsSloped() const;
     uint8_t GetSlopeDirection() const;
@@ -213,14 +392,32 @@ public:
     bool HasQueueBanner() const;
     uint8_t GetEdges() const;
     uint8_t GetCorners() const;
-    uint8_t GetEdgesAndCorners() const;
-    bool HasAddition() const;
     uint8_t GetAddition() const;
-    uint8_t GetAdditionEntryIndex() const;
     bool AdditionIsGhost() const;
     uint8_t GetAdditionStatus() const;
     uint8_t GetRCT1PathType() const;
     uint8_t GetRCT1SupportType() const;
+
+    void SetPathEntryIndex(RCT12ObjectEntryIndex newIndex);
+    void SetQueueBannerDirection(uint8_t direction);
+    void SetSloped(bool isSloped);
+    void SetSlopeDirection(uint8_t newSlope);
+    void SetRideIndex(uint8_t newRideIndex);
+    void SetStationIndex(uint8_t newStationIndex);
+    void SetWide(bool isWide);
+    void SetIsQueue(bool isQueue);
+    void SetHasQueueBanner(bool hasQueueBanner);
+    void SetEdges(uint8_t newEdges);
+    void SetCorners(uint8_t newCorners);
+    void SetAddition(uint8_t newAddition);
+    void SetAdditionIsGhost(bool isGhost);
+    void SetAdditionStatus(uint8_t newStatus);
+
+    bool IsBroken() const;
+    void SetIsBroken(bool isBroken);
+
+    bool IsBlockedByVehicle() const;
+    void SetIsBlockedByVehicle(bool isBlocked);
 };
 assert_struct_size(RCT12PathElement, 8);
 struct RCT12TrackElement : RCT12TileElementBase
@@ -261,13 +458,30 @@ public:
     bool HasGreenLight() const;
     uint8_t GetSeatRotation() const;
     uint16_t GetMazeEntry() const;
-    bool IsTakingPhoto() const;
     uint8_t GetPhotoTimeout() const;
-    bool IsHighlighted() const;
     // Used in RCT1, will be reintroduced at some point.
     // (See https://github.com/OpenRCT2/OpenRCT2/issues/7059)
     uint8_t GetDoorAState() const;
     uint8_t GetDoorBState() const;
+
+    void SetTrackType(uint8_t newEntryIndex);
+    void SetSequenceIndex(uint8_t newSequenceIndex);
+    void SetRideIndex(uint8_t newRideIndex);
+    void SetColourScheme(uint8_t newColourScheme);
+    void SetStationIndex(uint8_t newStationIndex);
+    void SetHasChain(bool on);
+    void SetHasCableLift(bool on);
+    void SetInverted(bool inverted);
+    bool BlockBrakeClosed() const;
+    void SetBlockBrakeClosed(bool isClosed);
+    void SetBrakeBoosterSpeed(uint8_t speed);
+    void SetHasGreenLight(uint8_t greenLight);
+    void SetSeatRotation(uint8_t newSeatRotation);
+    void SetMazeEntry(uint16_t newMazeEntry);
+    void SetPhotoTimeout(uint8_t newValue);
+
+    bool IsIndestructible() const;
+    void SetIsIndestructible(bool isIndestructible);
 };
 assert_struct_size(RCT12TrackElement, 8);
 struct RCT12SmallSceneryElement : RCT12TileElementBase
@@ -278,12 +492,19 @@ private:
     uint8_t colour_1;   // 6
     uint8_t colour_2;   // 7
 public:
-    uint8_t GetEntryIndex() const;
+    RCT12ObjectEntryIndex GetEntryIndex() const;
     uint8_t GetAge() const;
     uint8_t GetSceneryQuadrant() const;
     colour_t GetPrimaryColour() const;
     colour_t GetSecondaryColour() const;
     bool NeedsSupports() const;
+
+    void SetEntryIndex(RCT12ObjectEntryIndex newIndex);
+    void SetAge(uint8_t newAge);
+    void SetSceneryQuadrant(uint8_t newQuadrant);
+    void SetPrimaryColour(colour_t colour);
+    void SetSecondaryColour(colour_t colour);
+    void SetNeedsSupports();
 };
 assert_struct_size(RCT12SmallSceneryElement, 8);
 struct RCT12LargeSceneryElement : RCT12TileElementBase
@@ -296,7 +517,13 @@ public:
     uint16_t GetSequenceIndex() const;
     colour_t GetPrimaryColour() const;
     colour_t GetSecondaryColour() const;
-    BannerIndex GetBannerIndex() const;
+    uint8_t GetBannerIndex() const;
+
+    void SetEntryIndex(uint32_t newIndex);
+    void SetSequenceIndex(uint16_t sequence);
+    void SetPrimaryColour(colour_t colour);
+    void SetSecondaryColour(colour_t colour);
+    void SetBannerIndex(uint8_t newIndex);
 };
 assert_struct_size(RCT12LargeSceneryElement, 8);
 struct RCT12WallElement : RCT12TileElementBase
@@ -305,24 +532,34 @@ private:
     uint8_t entryIndex; // 4
     union
     {
-        uint8_t colour_3;         // 5
-        BannerIndex banner_index; // 5
+        uint8_t colour_3;     // 5
+        uint8_t banner_index; // 5
     };
     uint8_t colour_1;  // 6 0b_2221_1111 2 = colour_2 (uses flags for rest of colour2), 1 = colour_1
     uint8_t animation; // 7 0b_dfff_ft00 d = direction, f = frame num, t = across track flag (not used)
 public:
-    uint8_t GetEntryIndex() const;
+    RCT12ObjectEntryIndex GetEntryIndex() const;
     uint8_t GetSlope() const;
     colour_t GetPrimaryColour() const;
     colour_t GetSecondaryColour() const;
     colour_t GetTertiaryColour() const;
     uint8_t GetAnimationFrame() const;
-    BannerIndex GetBannerIndex() const;
+    uint8_t GetBannerIndex() const;
     bool IsAcrossTrack() const;
     bool AnimationIsBackwards() const;
     uint32_t GetRawRCT1WallTypeData() const;
     int32_t GetRCT1WallType(int32_t edge) const;
     colour_t GetRCT1WallColour() const;
+
+    void SetEntryIndex(RCT12ObjectEntryIndex newIndex);
+    void SetSlope(uint8_t newslope);
+    void SetPrimaryColour(colour_t newColour);
+    void SetSecondaryColour(colour_t newColour);
+    void SetTertiaryColour(colour_t newColour);
+    void SetAnimationFrame(uint8_t frameNum);
+    void SetBannerIndex(uint8_t newIndex);
+    void SetAcrossTrack(bool acrossTrack);
+    void SetAnimationIsBackwards(bool isBackwards);
 };
 assert_struct_size(RCT12WallElement, 8);
 struct RCT12EntranceElement : RCT12TileElementBase
@@ -338,22 +575,32 @@ public:
     uint8_t GetStationIndex() const;
     uint8_t GetSequenceIndex() const;
     uint8_t GetPathType() const;
+
+    void SetEntranceType(uint8_t newType);
+    void SetRideIndex(uint8_t newRideIndex);
+    void SetStationIndex(uint8_t stationIndex);
+    void SetSequenceIndex(uint8_t newSequenceIndex);
+    void SetPathType(uint8_t newPathType);
 };
 assert_struct_size(RCT12EntranceElement, 8);
 struct RCT12BannerElement : RCT12TileElementBase
 {
 private:
-    BannerIndex index; // 4
-    uint8_t position;  // 5
-    uint8_t flags;     // 6
+    uint8_t index;    // 4
+    uint8_t position; // 5
+    uint8_t flags;    // 6
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-private-field"
     uint8_t unused; // 7
 #pragma clang diagnostic pop
 public:
-    BannerIndex GetIndex() const;
+    uint8_t GetIndex() const;
     uint8_t GetPosition() const;
     uint8_t GetAllowedEdges() const;
+
+    void SetIndex(uint8_t newIndex);
+    void SetPosition(uint8_t newPosition);
+    void SetAllowedEdges(uint8_t newEdges);
 };
 assert_struct_size(RCT12BannerElement, 8);
 
@@ -537,4 +784,38 @@ struct RCT12Banner
 };
 assert_struct_size(RCT12Banner, 8);
 
+struct RCT12MapAnimation
+{
+    uint8_t baseZ;
+    uint8_t type;
+    uint16_t x;
+    uint16_t y;
+};
+assert_struct_size(RCT12MapAnimation, 6);
+
+struct RCT12ResearchItem
+{
+    // Bit 16 (0: scenery entry, 1: ride entry)
+    union
+    {
+        uint32_t rawValue;
+        struct
+        {
+            RCT12ObjectEntryIndex entryIndex;
+            uint8_t baseRideType;
+            uint8_t type; // 0: scenery entry, 1: ride entry
+            uint8_t flags;
+        };
+    };
+    uint8_t category;
+
+    bool IsInventedEndMarker() const;
+    bool IsRandomEndMarker() const;
+    bool IsUninventedEndMarker() const;
+};
+assert_struct_size(RCT12ResearchItem, 5);
+
 #pragma pack(pop)
+
+ObjectEntryIndex RCTEntryIndexToOpenRCT2EntryIndex(RCT12ObjectEntryIndex index);
+RCT12ObjectEntryIndex OpenRCT2EntryIndexToRCTEntryIndex(ObjectEntryIndex index);

@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2019 OpenRCT2 developers
+ * Copyright (c) 2014-2020 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -13,6 +13,7 @@
 
 #    include "../config/Config.h"
 #    include "../core/Console.hpp"
+#    include "../core/Http.h"
 #    include "../core/Json.hpp"
 #    include "../core/String.hpp"
 #    include "../localisation/Date.h"
@@ -23,7 +24,6 @@
 #    include "../util/Util.h"
 #    include "../world/Map.h"
 #    include "../world/Park.h"
-#    include "Http.h"
 #    include "Socket.h"
 #    include "network.h"
 
@@ -164,8 +164,6 @@ private:
 
     void SendRegistration(bool forceIPv4)
     {
-        using namespace OpenRCT2::Network;
-
         _lastAdvertiseTime = platform_get_ticks();
 
         // Send the registration request
@@ -177,6 +175,11 @@ private:
         json_t* body = json_object();
         json_object_set_new(body, "key", json_string(_key.c_str()));
         json_object_set_new(body, "port", json_integer(_port));
+
+        if (!gConfigNetwork.advertise_address.empty())
+        {
+            json_object_set_new(body, "address", json_string(gConfigNetwork.advertise_address.c_str()));
+        }
 
         char* bodyDump = json_dumps(body, JSON_COMPACT);
         request.body = bodyDump;
@@ -199,8 +202,6 @@ private:
 
     void SendHeartbeat()
     {
-        using namespace OpenRCT2::Network;
-
         Http::Request request;
         request.url = GetMasterServerUrl();
         request.method = Http::Method::PUT;
@@ -231,7 +232,7 @@ private:
         json_t* jsonStatus = json_object_get(jsonRoot, "status");
         if (json_is_integer(jsonStatus))
         {
-            int32_t status = (int32_t)json_integer_value(jsonStatus);
+            int32_t status = static_cast<int32_t>(json_integer_value(jsonStatus));
             if (status == MASTER_SERVER_STATUS_OK)
             {
                 json_t* jsonToken = json_object_get(jsonRoot, "token");
@@ -268,7 +269,7 @@ private:
         json_t* jsonStatus = json_object_get(jsonRoot, "status");
         if (json_is_integer(jsonStatus))
         {
-            int32_t status = (int32_t)json_integer_value(jsonStatus);
+            int32_t status = static_cast<int32_t>(json_integer_value(jsonStatus));
             if (status == MASTER_SERVER_STATUS_OK)
             {
                 // Master server has successfully updated our server status

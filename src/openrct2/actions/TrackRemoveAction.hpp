@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2019 OpenRCT2 developers
+ * Copyright (c) 2014-2020 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -31,12 +31,19 @@ public:
     {
     }
 
-    TrackRemoveAction(int32_t trackType, int32_t sequence, CoordsXYZD origin)
+    TrackRemoveAction(int32_t trackType, int32_t sequence, const CoordsXYZD& origin)
         : _trackType(trackType)
         , _sequence(sequence)
         , _origin(origin)
     {
         _origin.direction &= 3;
+    }
+
+    void AcceptParameters(GameActionParameterVisitor & visitor) override
+    {
+        visitor.Visit(_origin);
+        visitor.Visit("trackType", _trackType);
+        visitor.Visit("sequence", _sequence);
     }
 
     uint16_t GetActionFlags() const override
@@ -57,7 +64,7 @@ public:
         res->Position.x = _origin.x + 16;
         res->Position.y = _origin.y + 16;
         res->Position.z = _origin.z;
-        res->ExpenditureType = RCT_EXPENDITURE_TYPE_RIDE_CONSTRUCTION;
+        res->Expenditure = ExpenditureType::RideConstruction;
 
         // Stations require some massaging of the track type for comparing
         auto comparableTrackType = _trackType;
@@ -71,14 +78,14 @@ public:
 
         bool found = false;
         bool isGhost = GetFlags() & GAME_COMMAND_FLAG_GHOST;
-        TileElement* tileElement = map_get_first_element_at(_origin.x / 32, _origin.y / 32);
+        TileElement* tileElement = map_get_first_element_at(_origin);
 
         do
         {
             if (tileElement == nullptr)
                 break;
 
-            if (tileElement->base_height * 8 != _origin.z)
+            if (tileElement->GetBaseZ() != _origin.z)
                 continue;
 
             if (tileElement->GetType() != TILE_ELEMENT_TYPE_TRACK)
@@ -93,7 +100,7 @@ public:
             if (tileElement->IsGhost() != isGhost)
                 continue;
 
-            uint8_t tileTrackType = tileElement->AsTrack()->GetTrackType();
+            auto tileTrackType = tileElement->AsTrack()->GetTrackType();
             switch (tileTrackType)
             {
                 case TRACK_ELEM_BEGIN_STATION:
@@ -126,7 +133,7 @@ public:
         ride_id_t rideIndex = tileElement->AsTrack()->GetRideIndex();
         auto trackType = tileElement->AsTrack()->GetTrackType();
 
-        Ride* ride = get_ride(rideIndex);
+        auto ride = get_ride(rideIndex);
         if (ride == nullptr)
         {
             log_warning("Ride not found. ride index = %d.", rideIndex);
@@ -138,11 +145,10 @@ public:
         auto startLoc = _origin;
         startLoc.direction = tileElement->GetDirection();
 
-        LocationXY16 trackLoc = { trackBlock->x, trackBlock->y };
-        rotate_map_coordinates(&trackLoc.x, &trackLoc.y, startLoc.direction);
-        startLoc.x -= trackLoc.x;
-        startLoc.y -= trackLoc.y;
-        startLoc.z -= trackBlock->z;
+        auto rotatedTrack = CoordsXYZ{ CoordsXY{ trackBlock->x, trackBlock->y }.Rotate(startLoc.direction), trackBlock->z };
+        startLoc.x -= rotatedTrack.x;
+        startLoc.y -= rotatedTrack.y;
+        startLoc.z -= rotatedTrack.z;
         res->Position.x = startLoc.x;
         res->Position.y = startLoc.y;
         res->Position.z = startLoc.z;
@@ -152,23 +158,23 @@ public:
         trackBlock = get_track_def_from_ride(ride, trackType);
         for (; trackBlock->index != 255; trackBlock++)
         {
-            CoordsXYZ mapLoc{ startLoc.x, startLoc.y, startLoc.z };
-            trackLoc = { trackBlock->x, trackBlock->y };
-            rotate_map_coordinates(&trackLoc.x, &trackLoc.y, startLoc.direction);
-            mapLoc.x += trackLoc.x;
-            mapLoc.y += trackLoc.y;
-            mapLoc.z += trackBlock->z;
+            rotatedTrack = CoordsXYZ{ CoordsXY{ trackBlock->x, trackBlock->y }.Rotate(startLoc.direction), trackBlock->z };
+            auto mapLoc = CoordsXYZ{ startLoc.x, startLoc.y, startLoc.z } + rotatedTrack;
 
-            map_invalidate_tile_full(mapLoc.x, mapLoc.y);
+            if (!LocationValid(mapLoc))
+            {
+                return MakeResult(GA_ERROR::NOT_OWNED, STR_RIDE_CONSTRUCTION_CANT_REMOVE_THIS, STR_LAND_NOT_OWNED_BY_PARK);
+            }
+            map_invalidate_tile_full(mapLoc);
 
             found = false;
-            tileElement = map_get_first_element_at(mapLoc.x / 32, mapLoc.y / 32);
+            tileElement = map_get_first_element_at(mapLoc);
             do
             {
                 if (tileElement == nullptr)
                     break;
 
-                if (tileElement->base_height != mapLoc.z / 8)
+                if (tileElement->GetBaseZ() != mapLoc.z)
                     continue;
 
                 if (tileElement->GetType() != TILE_ELEMENT_TYPE_TRACK)
@@ -216,7 +222,7 @@ public:
                 }
             }
 
-            TileElement* surfaceElement = map_get_surface_element_at({ mapLoc.x, mapLoc.y });
+            auto* surfaceElement = map_get_surface_element_at(mapLoc);
             if (surfaceElement == nullptr)
             {
                 log_warning("Surface Element not found. x = %d, y = %d", mapLoc.x, mapLoc.y);
@@ -229,10 +235,10 @@ public:
                 _support_height = 10;
             }
 
-            cost += (_support_height / 2) * RideTrackCosts[ride->type].support_price;
+            cost += (_support_height / 2) * RideTypeDescriptors[ride->type].BuildCosts.SupportPrice;
         }
 
-        money32 price = RideTrackCosts[ride->type].track_price;
+        money32 price = RideTypeDescriptors[ride->type].BuildCosts.TrackPrice;
         if (ride_type_has_flag(ride->type, RIDE_TYPE_FLAG_FLAT_RIDE))
         {
             price *= FlatRideTrackPricing[trackType];
@@ -258,7 +264,7 @@ public:
         res->Position.x = _origin.x + 16;
         res->Position.y = _origin.y + 16;
         res->Position.z = _origin.z;
-        res->ExpenditureType = RCT_EXPENDITURE_TYPE_RIDE_CONSTRUCTION;
+        res->Expenditure = ExpenditureType::RideConstruction;
 
         // Stations require some massaging of the track type for comparing
         auto comparableTrackType = _trackType;
@@ -272,14 +278,14 @@ public:
 
         bool found = false;
         bool isGhost = GetFlags() & GAME_COMMAND_FLAG_GHOST;
-        TileElement* tileElement = map_get_first_element_at(_origin.x / 32, _origin.y / 32);
+        TileElement* tileElement = map_get_first_element_at(_origin);
 
         do
         {
             if (tileElement == nullptr)
                 break;
 
-            if (tileElement->base_height * 8 != _origin.z)
+            if (tileElement->GetBaseZ() != _origin.z)
                 continue;
 
             if (tileElement->GetType() != TILE_ELEMENT_TYPE_TRACK)
@@ -294,7 +300,7 @@ public:
             if (tileElement->IsGhost() != isGhost)
                 continue;
 
-            uint8_t tileTrackType = tileElement->AsTrack()->GetTrackType();
+            auto tileTrackType = tileElement->AsTrack()->GetTrackType();
             switch (tileTrackType)
             {
                 case TRACK_ELEM_BEGIN_STATION:
@@ -322,7 +328,7 @@ public:
         auto trackType = tileElement->AsTrack()->GetTrackType();
         bool isLiftHill = tileElement->AsTrack()->HasChain();
 
-        Ride* ride = get_ride(rideIndex);
+        auto ride = get_ride(rideIndex);
         if (ride == nullptr)
         {
             log_warning("Ride not found. ride index = %d.", rideIndex);
@@ -334,11 +340,10 @@ public:
         auto startLoc = _origin;
         startLoc.direction = tileElement->GetDirection();
 
-        LocationXY16 trackLoc = { trackBlock->x, trackBlock->y };
-        rotate_map_coordinates(&trackLoc.x, &trackLoc.y, startLoc.direction);
-        startLoc.x -= trackLoc.x;
-        startLoc.y -= trackLoc.y;
-        startLoc.z -= trackBlock->z;
+        auto rotatedTrackLoc = CoordsXYZ{ CoordsXY{ trackBlock->x, trackBlock->y }.Rotate(startLoc.direction), trackBlock->z };
+        startLoc.x -= rotatedTrackLoc.x;
+        startLoc.y -= rotatedTrackLoc.y;
+        startLoc.z -= rotatedTrackLoc.z;
         res->Position.x = startLoc.x;
         res->Position.y = startLoc.y;
         res->Position.z = startLoc.z;
@@ -347,23 +352,19 @@ public:
         trackBlock = get_track_def_from_ride(ride, trackType);
         for (; trackBlock->index != 255; trackBlock++)
         {
-            CoordsXYZ mapLoc{ startLoc.x, startLoc.y, startLoc.z };
-            trackLoc = { trackBlock->x, trackBlock->y };
-            rotate_map_coordinates(&trackLoc.x, &trackLoc.y, startLoc.direction);
-            mapLoc.x += trackLoc.x;
-            mapLoc.y += trackLoc.y;
-            mapLoc.z += trackBlock->z;
+            rotatedTrackLoc = CoordsXYZ{ CoordsXY{ trackBlock->x, trackBlock->y }.Rotate(startLoc.direction), trackBlock->z };
+            auto mapLoc = CoordsXYZ{ startLoc.x, startLoc.y, startLoc.z } + rotatedTrackLoc;
 
-            map_invalidate_tile_full(mapLoc.x, mapLoc.y);
+            map_invalidate_tile_full(mapLoc);
 
             found = false;
-            tileElement = map_get_first_element_at(mapLoc.x / 32, mapLoc.y / 32);
+            tileElement = map_get_first_element_at(mapLoc);
             do
             {
                 if (tileElement == nullptr)
                     break;
 
-                if (tileElement->base_height != mapLoc.z / 8)
+                if (tileElement->GetBaseZ() != mapLoc.z)
                     continue;
 
                 if (tileElement->GetType() != TILE_ELEMENT_TYPE_TRACK)
@@ -411,7 +412,7 @@ public:
                 }
             }
 
-            TileElement* surfaceElement = map_get_surface_element_at({ mapLoc.x, mapLoc.y });
+            auto* surfaceElement = map_get_surface_element_at(mapLoc);
             if (surfaceElement == nullptr)
             {
                 log_warning("Surface Element not found. x = %d, y = %d", mapLoc.x, mapLoc.y);
@@ -424,7 +425,7 @@ public:
                 _support_height = 10;
             }
 
-            cost += (_support_height / 2) * RideTrackCosts[ride->type].support_price;
+            cost += (_support_height / 2) * RideTypeDescriptors[ride->type].BuildCosts.SupportPrice;
 
             if (entranceDirections & TRACK_SEQUENCE_FLAG_ORIGIN && (tileElement->AsTrack()->GetSequenceIndex() == 0))
             {
@@ -437,14 +438,14 @@ public:
 
             if (ride_type_has_flag(ride->type, RIDE_TYPE_FLAG_TRACK_MUST_BE_ON_WATER))
             {
-                surfaceElement->AsSurface()->SetHasTrackThatNeedsWater(false);
+                surfaceElement->SetHasTrackThatNeedsWater(false);
             }
 
             invalidate_test_results(ride);
             footpath_queue_chain_reset();
             if (!gCheatsDisableClearanceChecks || !(tileElement->IsGhost()))
             {
-                footpath_remove_edges_at(mapLoc.x, mapLoc.y, tileElement);
+                footpath_remove_edges_at(mapLoc, tileElement);
             }
             tile_element_remove(tileElement);
             sub_6CB945(ride);
@@ -490,7 +491,7 @@ public:
                 break;
         }
 
-        money32 price = RideTrackCosts[ride->type].track_price;
+        money32 price = RideTypeDescriptors[ride->type].BuildCosts.TrackPrice;
         if (ride_type_has_flag(ride->type, RIDE_TYPE_FLAG_FLAT_RIDE))
         {
             price *= FlatRideTrackPricing[trackType];

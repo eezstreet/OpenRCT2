@@ -15,7 +15,10 @@
 #include <openrct2/object/Object.h>
 #include <openrct2/paint/tile_element/Paint.TileElement.h>
 #include <openrct2/ride/Ride.h>
+#include <openrct2/ride/RideData.h>
+#include <openrct2/ride/Station.h>
 #include <openrct2/ride/Track.h>
+#include <openrct2/ride/Vehicle.h>
 #include <openrct2/world/Location.hpp>
 #include <openrct2/world/Sprite.h>
 #include <openrct2/world/Surface.h>
@@ -26,27 +29,29 @@ class StationObject;
 #define gTileElementTilePointers RCT2_ADDRESS(0x013CE9A4, TileElement*)
 rct_sprite* sprite_list = RCT2_ADDRESS(0x010E63BC, rct_sprite);
 
+bool gCheatsEnableAllDrawableTrackPieces = false;
+
 Ride gRideList[MAX_RIDES];
 int16_t gMapSizeUnits;
 int16_t gMapBaseZ;
 bool gTrackDesignSaveMode = false;
 uint8_t gTrackDesignSaveRideIndex = RIDE_ID_NULL;
 uint8_t gClipHeight = 255;
-LocationXY8 gClipSelectionA = { 0, 0 };
-LocationXY8 gClipSelectionB = { MAXIMUM_MAP_SIZE_TECHNICAL - 1, MAXIMUM_MAP_SIZE_TECHNICAL - 1 };
+CoordsXY gClipSelectionA = { 0, 0 };
+CoordsXY gClipSelectionB = { MAXIMUM_TILE_START_XY, MAXIMUM_TILE_START_XY };
 uint32_t gScenarioTicks;
 uint8_t gCurrentRotation;
 
 // clang-format off
-const CoordsXY CoordsDirectionDelta[] = {
-    { -32, 0 },
-    { 0, +32 },
-    { +32, 0 },
-    { 0, -32 },
-    { -32, +32 },
-    { +32, +32 },
-    { +32, -32 },
-    { -32, -32 },
+constexpr const std::array<CoordsXY, 8> CoordsDirectionDelta = {
+    CoordsXY{ -COORDS_XY_STEP, 0 },
+    CoordsXY{               0, +COORDS_XY_STEP },
+    CoordsXY{ +COORDS_XY_STEP, 0 },
+    CoordsXY{               0, -COORDS_XY_STEP },
+    CoordsXY{ -COORDS_XY_STEP, +COORDS_XY_STEP },
+    CoordsXY{ +COORDS_XY_STEP, +COORDS_XY_STEP },
+    CoordsXY{ +COORDS_XY_STEP, -COORDS_XY_STEP },
+    CoordsXY{ -COORDS_XY_STEP, -COORDS_XY_STEP },
 };
 
 const TileCoordsXY TileDirectionDelta[] = {
@@ -61,18 +66,10 @@ const TileCoordsXY TileDirectionDelta[] = {
 };
 // clang-format on
 
-TileCoordsXYZD ride_get_entrance_location(const Ride* ride, const int32_t stationIndex);
-TileCoordsXYZD ride_get_exit_location(const Ride* ride, const int32_t stationIndex);
-
 uint8_t get_current_rotation()
 {
     return gCurrentRotation & 3;
 }
-
-const uint32_t construction_markers[] = {
-    COLOUR_DARK_GREEN << 19 | COLOUR_GREY << 24 | IMAGE_TYPE_REMAP, // White
-    2 << 19 | 0b110000 << 19 | IMAGE_TYPE_TRANSPARENT,              // Translucent
-};
 
 int object_entry_group_counts[] = {
     128, // rides
@@ -91,9 +88,9 @@ int object_entry_group_counts[] = {
 GeneralConfiguration gConfigGeneral;
 uint16_t gMapSelectFlags;
 uint16_t gMapSelectType;
-LocationXY16 gMapSelectPositionA;
-LocationXY16 gMapSelectPositionB;
-LocationXYZ16 gMapSelectArrowPosition;
+CoordsXY gMapSelectPositionA;
+CoordsXY gMapSelectPositionB;
+CoordsXYZ gMapSelectArrowPosition;
 uint8_t gMapSelectArrowDirection;
 
 void entrance_paint(paint_session* session, uint8_t direction, int height, const TileElement* tile_element)
@@ -118,9 +115,9 @@ void large_scenery_paint(paint_session* session, uint8_t direction, uint16_t hei
 {
 }
 
-Ride* get_ride(int index)
+Ride* get_ride(ride_id_t index)
 {
-    if (index < 0 || index >= MAX_RIDES)
+    if (index >= RCT12_MAX_RIDES_IN_PARK)
     {
         log_error("invalid index %d for ride", index);
         return nullptr;
@@ -128,9 +125,9 @@ Ride* get_ride(int index)
     return &gRideList[index];
 }
 
-rct_ride_entry* get_ride_entry(int index)
+rct_ride_entry* get_ride_entry(ObjectEntryIndex index)
 {
-    if (index < 0 || index >= object_entry_group_counts[OBJECT_TYPE_RIDE])
+    if (index >= object_entry_group_counts[OBJECT_TYPE_RIDE])
     {
         log_error("invalid index %d for ride type", index);
         return nullptr;
@@ -149,15 +146,38 @@ rct_ride_entry* Ride::GetRideEntry() const
     return rideEntry;
 }
 
+template<> bool SpriteBase::Is<SpriteBase>() const
+{
+    return true;
+}
+
+template<> bool SpriteBase::Is<Peep>() const
+{
+    return sprite_identifier == SPRITE_IDENTIFIER_PEEP;
+}
+
 rct_sprite* get_sprite(size_t sprite_idx)
 {
     assert(sprite_idx < MAX_SPRITES);
     return &sprite_list[sprite_idx];
 }
 
+SpriteBase* GetEntity(size_t sprite_idx)
+{
+    return GetEntity<SpriteBase>(sprite_idx);
+}
+
 bool TileElementBase::IsLastForTile() const
 {
-    return (this->flags & TILE_ELEMENT_FLAG_LAST_TILE) != 0;
+    return (this->Flags & TILE_ELEMENT_FLAG_LAST_TILE) != 0;
+}
+
+void TileElementBase::SetLastForTile(bool on)
+{
+    if (on)
+        Flags |= TILE_ELEMENT_FLAG_LAST_TILE;
+    else
+        Flags &= ~TILE_ELEMENT_FLAG_LAST_TILE;
 }
 
 uint8_t TileElementBase::GetType() const
@@ -167,27 +187,28 @@ uint8_t TileElementBase::GetType() const
 
 bool TileElementBase::IsGhost() const
 {
-    return (this->flags & TILE_ELEMENT_FLAG_GHOST) != 0;
+    return (this->Flags & TILE_ELEMENT_FLAG_GHOST) != 0;
 }
 
 bool TrackElement::BlockBrakeClosed() const
 {
-    return (flags & TILE_ELEMENT_FLAG_BLOCK_BRAKE_CLOSED) != 0;
+    return (Flags2 & TRACK_ELEMENT_FLAGS2_BLOCK_BRAKE_CLOSED) != 0;
 }
 
-TileElement* map_get_first_element_at(int x, int y)
+TileElement* map_get_first_element_at(const CoordsXY& elementPos)
 {
-    if (x < 0 || y < 0 || x > 255 || y > 255)
+    if (elementPos.x < 0 || elementPos.y < 0 || elementPos.x > 255 || elementPos.y > 255)
     {
         log_error("Trying to access element outside of range");
         return nullptr;
     }
-    return gTileElementTilePointers[x + y * 256];
+    auto tileElementPos = TileCoordsXY{ elementPos };
+    return gTileElementTilePointers[tileElementPos.x + tileElementPos.y * 256];
 }
 
-bool ride_type_has_flag(int rideType, uint32_t flag)
+bool ride_type_has_flag(int rideType, uint64_t flag)
 {
-    return (RideProperties[rideType].flags & flag) != 0;
+    return (RideTypeDescriptors[rideType].Flags & flag) != 0;
 }
 
 int16_t get_height_marker_offset()
@@ -202,195 +223,197 @@ bool is_csg_loaded()
 
 uint8_t TrackElement::GetSeatRotation() const
 {
-    return colour >> 4;
+    return ColourScheme >> 4;
 }
 
 void TrackElement::SetSeatRotation(uint8_t newSeatRotation)
 {
-    colour &= 0x0F;
-    colour |= (newSeatRotation << 4);
+    ColourScheme &= ~TRACK_ELEMENT_COLOUR_SEAT_ROTATION_MASK;
+    ColourScheme |= (newSeatRotation << 4);
 }
 
 bool TrackElement::IsTakingPhoto() const
 {
-    return (sequence & MAP_ELEM_TRACK_SEQUENCE_TAKING_PHOTO_MASK) != 0;
+    return OnridePhotoBits != 0;
 }
 
 void TrackElement::SetPhotoTimeout()
 {
-    sequence &= MAP_ELEM_TRACK_SEQUENCE_SEQUENCE_MASK;
-    sequence |= (3 << 4);
+    OnridePhotoBits = 3;
+}
+
+void TrackElement::SetPhotoTimeout(uint8_t value)
+{
+    OnridePhotoBits = value;
+}
+
+uint8_t TrackElement::GetPhotoTimeout() const
+{
+    return OnridePhotoBits;
 }
 
 void TrackElement::DecrementPhotoTimeout()
 {
-    // We should only touch the upper 4 bits, avoid underflow into the lower 4.
-    if (sequence & MAP_ELEM_TRACK_SEQUENCE_TAKING_PHOTO_MASK)
-    {
-        sequence -= (1 << 4);
-    }
+    OnridePhotoBits = std::max(0, OnridePhotoBits - 1);
 }
 
 uint16_t TrackElement::GetMazeEntry() const
 {
-    return mazeEntry;
+    return MazeEntry;
 }
 
 void TrackElement::SetMazeEntry(uint16_t newMazeEntry)
 {
-    mazeEntry = newMazeEntry;
+    MazeEntry = newMazeEntry;
 }
 
 void TrackElement::MazeEntryAdd(uint16_t addVal)
 {
-    mazeEntry |= addVal;
+    MazeEntry |= addVal;
 }
 
 void TrackElement::MazeEntrySubtract(uint16_t subVal)
 {
-    mazeEntry &= ~subVal;
+    MazeEntry &= ~subVal;
 }
 
-uint8_t TrackElement::GetTrackType() const
+track_type_t TrackElement::GetTrackType() const
 {
-    return trackType;
+    return TrackType;
 }
 
-void TrackElement::SetTrackType(uint8_t newType)
+void TrackElement::SetTrackType(track_type_t newType)
 {
-    trackType = newType;
+    TrackType = newType;
 }
 
 uint8_t TrackElement::GetSequenceIndex() const
 {
-    return sequence & MAP_ELEM_TRACK_SEQUENCE_SEQUENCE_MASK;
+    return Sequence;
 }
 
 void TrackElement::SetSequenceIndex(uint8_t newSequenceIndex)
 {
-    sequence &= ~MAP_ELEM_TRACK_SEQUENCE_SEQUENCE_MASK;
-    sequence |= (newSequenceIndex & MAP_ELEM_TRACK_SEQUENCE_SEQUENCE_MASK);
+    Sequence = newSequenceIndex;
 }
 
 uint8_t TrackElement::GetStationIndex() const
 {
-    return (sequence & MAP_ELEM_TRACK_SEQUENCE_STATION_INDEX_MASK) >> 4;
+    return StationIndex;
 }
 
 void TrackElement::SetStationIndex(uint8_t newStationIndex)
 {
-    sequence &= ~MAP_ELEM_TRACK_SEQUENCE_STATION_INDEX_MASK;
-    sequence |= (newStationIndex << 4);
+    StationIndex = newStationIndex;
 }
 
 uint8_t TrackElement::GetDoorAState() const
 {
-    return (colour & TRACK_ELEMENT_DOOR_A_MASK) >> 2;
+    return (ColourScheme & TRACK_ELEMENT_COLOUR_DOOR_A_MASK) >> 2;
 }
 
 uint8_t TrackElement::GetDoorBState() const
 {
-    return (colour & TRACK_ELEMENT_DOOR_B_MASK) >> 5;
+    return (ColourScheme & TRACK_ELEMENT_COLOUR_DOOR_B_MASK) >> 5;
 }
 
-uint8_t TrackElement::GetRideIndex() const
+ride_id_t TrackElement::GetRideIndex() const
 {
-    return rideIndex;
+    return RideIndex;
 }
 
-void TrackElement::SetRideIndex(uint8_t newRideIndex)
+void TrackElement::SetRideIndex(ride_id_t newRideIndex)
 {
-    rideIndex = newRideIndex;
+    RideIndex = newRideIndex;
 }
 
 uint8_t TrackElement::GetColourScheme() const
 {
-    return colour & 0x3;
+    return ColourScheme & TRACK_ELEMENT_COLOUR_SCHEME_MASK;
 }
 
 void TrackElement::SetColourScheme(uint8_t newColourScheme)
 {
-    colour &= ~0x3;
-    colour |= (newColourScheme & 0x3);
+    ColourScheme &= ~TRACK_ELEMENT_COLOUR_SCHEME_MASK;
+    ColourScheme |= (newColourScheme & TRACK_ELEMENT_COLOUR_SCHEME_MASK);
 }
 
 bool TrackElement::HasCableLift() const
 {
-    return colour & TRACK_ELEMENT_COLOUR_FLAG_CABLE_LIFT;
+    return Flags2 & TRACK_ELEMENT_FLAGS2_CABLE_LIFT;
 }
 
 void TrackElement::SetHasCableLift(bool on)
 {
-    colour &= ~TRACK_ELEMENT_COLOUR_FLAG_CABLE_LIFT;
+    Flags2 &= ~TRACK_ELEMENT_FLAGS2_CABLE_LIFT;
     if (on)
-        colour |= TRACK_ELEMENT_COLOUR_FLAG_CABLE_LIFT;
+        Flags2 |= TRACK_ELEMENT_FLAGS2_CABLE_LIFT;
 }
 
 bool TrackElement::IsInverted() const
 {
-    return colour & TRACK_ELEMENT_COLOUR_FLAG_INVERTED;
+    return Flags2 & TRACK_ELEMENT_FLAGS2_INVERTED;
 }
 
 void TrackElement::SetInverted(bool inverted)
 {
     if (inverted)
     {
-        colour |= TRACK_ELEMENT_COLOUR_FLAG_INVERTED;
+        Flags2 |= TRACK_ELEMENT_FLAGS2_INVERTED;
     }
     else
     {
-        colour &= ~TRACK_ELEMENT_COLOUR_FLAG_INVERTED;
+        Flags2 &= ~TRACK_ELEMENT_FLAGS2_INVERTED;
     }
 }
 
 uint8_t TrackElement::GetBrakeBoosterSpeed() const
 {
-    return (sequence >> 4) << 1;
+    return BrakeBoosterSpeed << 1;
 }
 
 void TrackElement::SetBrakeBoosterSpeed(uint8_t speed)
 {
-    sequence &= ~0b11110000;
-    sequence |= ((speed >> 1) << 4);
+    BrakeBoosterSpeed = (speed >> 1);
 }
 
-uint8_t TrackElement::HasGreenLight() const
+bool TrackElement::HasGreenLight() const
 {
-    return (sequence & MAP_ELEM_TRACK_SEQUENCE_GREEN_LIGHT) != 0;
+    return (Flags2 & TRACK_ELEMENT_FLAGS2_HAS_GREEN_LIGHT) != 0;
 }
 
-void TrackElement::SetHasGreenLight(uint8_t greenLight)
+void TrackElement::SetHasGreenLight(bool on)
 {
-    sequence &= ~MAP_ELEM_TRACK_SEQUENCE_GREEN_LIGHT;
-    if (greenLight)
+    Flags2 &= ~TRACK_ELEMENT_FLAGS2_HAS_GREEN_LIGHT;
+    if (on)
     {
-        sequence |= MAP_ELEM_TRACK_SEQUENCE_GREEN_LIGHT;
+        Flags2 |= TRACK_ELEMENT_FLAGS2_HAS_GREEN_LIGHT;
     }
 }
 
 bool TrackElement::HasChain() const
 {
-    return type & TRACK_ELEMENT_TYPE_FLAG_CHAIN_LIFT;
+    return (Flags2 & TRACK_ELEMENT_FLAGS2_CHAIN_LIFT) != 0;
 }
 
 void TrackElement::SetHasChain(bool on)
 {
     if (on)
     {
-        type |= TRACK_ELEMENT_TYPE_FLAG_CHAIN_LIFT;
+        Flags2 |= TRACK_ELEMENT_FLAGS2_CHAIN_LIFT;
     }
     else
     {
-        type &= ~TRACK_ELEMENT_TYPE_FLAG_CHAIN_LIFT;
+        Flags2 &= ~TRACK_ELEMENT_FLAGS2_CHAIN_LIFT;
     }
 }
 
-TileCoordsXYZD ride_get_entrance_location(const Ride* ride, const int32_t stationIndex)
+TileCoordsXYZD ride_get_entrance_location(const Ride* ride, const StationIndex stationIndex)
 {
     return ride->stations[stationIndex].Entrance;
 }
 
-TileCoordsXYZD ride_get_exit_location(const Ride* ride, const int32_t stationIndex)
+TileCoordsXYZD ride_get_exit_location(const Ride* ride, const StationIndex stationIndex)
 {
     return ride->stations[stationIndex].Exit;
 }
@@ -413,22 +436,22 @@ uint8_t TileElementBase::GetDirectionWithOffset(uint8_t offset) const
 
 uint8_t SurfaceElement::GetSlope() const
 {
-    return (slope & TILE_ELEMENT_SURFACE_SLOPE_MASK);
+    return Slope;
 }
 
-uint32_t SurfaceElement::GetWaterHeight() const
+int32_t SurfaceElement::GetWaterHeight() const
 {
-    return terrain & TILE_ELEMENT_SURFACE_WATER_HEIGHT_MASK;
+    return WaterHeight * 16;
 }
 
 bool TrackElement::IsHighlighted() const
 {
-    return (type & TILE_ELEMENT_TYPE_FLAG_HIGHLIGHT);
+    return (Flags2 & TRACK_ELEMENT_FLAGS2_HIGHLIGHT);
 }
 
 uint8_t PathElement::GetEdges() const
 {
-    return edges & 0xF;
+    return Edges & 0xF;
 }
 
 StationObject* ride_get_station_object(const Ride* ride)
@@ -436,8 +459,394 @@ StationObject* ride_get_station_object(const Ride* ride)
     return nullptr;
 }
 
-bool rct_vehicle::IsGhost() const
+Ride* Vehicle::GetRide() const
 {
-    auto r = get_ride(ride);
+    return get_ride(ride);
+}
+
+bool Vehicle::IsGhost() const
+{
+    auto r = GetRide();
     return r != nullptr && r->status == RIDE_STATUS_SIMULATING;
+}
+
+uint8_t TileElementBase::GetOccupiedQuadrants() const
+{
+    return Flags & TILE_ELEMENT_OCCUPIED_QUADRANTS_MASK;
+}
+
+void TileElementBase::SetOccupiedQuadrants(uint8_t quadrants)
+{
+    Flags &= ~TILE_ELEMENT_OCCUPIED_QUADRANTS_MASK;
+    Flags |= (quadrants & TILE_ELEMENT_OCCUPIED_QUADRANTS_MASK);
+}
+
+int32_t TileElementBase::GetBaseZ() const
+{
+    return base_height * COORDS_Z_STEP;
+}
+
+void TileElementBase::SetBaseZ(int32_t newZ)
+{
+    base_height = (newZ / COORDS_Z_STEP);
+}
+
+int32_t TileElementBase::GetClearanceZ() const
+{
+    return clearance_height * COORDS_Z_STEP;
+}
+
+void TileElementBase::SetClearanceZ(int32_t newZ)
+{
+    clearance_height = (newZ / COORDS_Z_STEP);
+}
+
+int32_t RideStation::GetBaseZ() const
+{
+    return Height * COORDS_Z_STEP;
+}
+
+void RideStation::SetBaseZ(int32_t newZ)
+{
+    Height = newZ / COORDS_Z_STEP;
+}
+
+CoordsXYZ RideStation::GetStart() const
+{
+    TileCoordsXYZ stationTileCoords{ Start.x, Start.y, Height };
+    return stationTileCoords.ToCoordsXYZ();
+}
+
+bool TrackElement::IsStation() const
+{
+    return track_type_is_station(GetTrackType());
+}
+
+bool track_type_is_station(track_type_t trackType)
+{
+    switch (trackType)
+    {
+        case TRACK_ELEM_END_STATION:
+        case TRACK_ELEM_BEGIN_STATION:
+        case TRACK_ELEM_MIDDLE_STATION:
+            return true;
+        default:
+            return false;
+    }
+}
+
+void ride_ratings_calculate_spiral_roller_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_stand_up_roller_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_suspended_swinging_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_inverted_roller_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_junior_roller_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_miniature_railway([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_monorail([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_mini_suspended_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_boat_hire([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_wooden_wild_mouse([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_steeplechase([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_car_ride([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_launched_freefall([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_bobsleigh_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_observation_tower([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_looping_roller_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_dinghy_slide([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_mine_train_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_chairlift([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_corkscrew_roller_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_maze([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_spiral_slide([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_go_karts([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_log_flume([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_river_rapids([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_dodgems([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_pirate_ship([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_inverter_ship([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_food_stall([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_shop([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_merry_go_round([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_information_kiosk([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_toilets([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_ferris_wheel([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_motion_simulator([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_3d_cinema([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_top_spin([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_space_rings([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_reverse_freefall_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_lift([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_vertical_drop_roller_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_cash_machine([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_twist([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_haunted_house([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_first_aid([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_circus_show([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_ghost_train([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_twister_roller_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_wooden_roller_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_side_friction_roller_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_wild_mouse([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_multi_dimension_roller_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_flying_roller_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_virginia_reel([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_splash_boats([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_mini_helicopters([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_lay_down_roller_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_suspended_monorail([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_reverser_roller_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_heartline_twister_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_mini_golf([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_giga_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_roto_drop([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_flying_saucers([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_crooked_house([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_monorail_cycles([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_compact_inverted_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_water_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_air_powered_vertical_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_inverted_hairpin_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_magic_carpet([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_submarine_ride([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_river_rafts([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_enterprise([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_inverted_impulse_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_mini_roller_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_mine_ride([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_lim_launched_roller_coaster([[maybe_unused]] Ride* ride)
+{
+}
+
+void ride_ratings_calculate_drink_stall([[maybe_unused]] Ride* ride)
+{
 }
